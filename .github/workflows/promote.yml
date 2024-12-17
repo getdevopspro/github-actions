@@ -1,0 +1,47 @@
+name: promote
+
+on:
+  workflow_call:
+    inputs:
+      git_user_name:
+        description: 'The git user name'
+        required: false
+        type: string
+        default: 'github-actions[bot]'
+      git_user_email:
+        description: 'The git user email'
+        required: false
+        type: string
+        default: '41898282+github-actions[bot]@users.noreply.github.com'
+
+permissions:
+  contents: write
+
+jobs:
+  promote:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - id: release_version
+        name: next release version
+        uses: jenkins-x-plugins/jx-release-version@v2.7.8
+
+      - name: set version in file
+        uses: krestomatio/kio-github-actions/version-file@v0.0.1
+        with:
+          VERSION: ${{ steps.release_version.outputs.VERSION }}
+          VERSION_MAKEFILE: true
+
+      - name: push git version
+        run: |
+          git config user.name "${{ inputs.git_user_name }}"
+          git config user.email "${{ inputs.git_user_email }}"
+          git add Makefile
+          git commit -m "chore: bump version to v${{ steps.release_version.outputs.VERSION }}" -m "[skip ci]"
+          git tag v${{ steps.release_version.outputs.VERSION }}
+          git push origin HEAD v${{ steps.release_version.outputs.VERSION }}
