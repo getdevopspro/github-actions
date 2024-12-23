@@ -1,0 +1,30 @@
+name: Release Git Push
+description: 'Push changes to the repository on a release'
+inputs:
+  version:
+    description: 'The version to push'
+    required: true
+  git-user-name:
+    description: 'The git user name'
+    required: false
+    default: 'github-actions[bot]'
+  git-user-email:
+    description: 'The git user email'
+    required: false
+    default: '41898282+github-actions[bot]@users.noreply.github.com'
+  git-add-files:
+    description: 'The files to add to git'
+    required: false
+    default: 'Makefile'
+runs:
+  using: "composite"
+  steps:
+    - name: push git version
+      shell: bash
+      run: |
+        git config user.name "${{ inputs.git-user-name }}"
+        git config user.email "${{ inputs.git-user-email }}"
+        git add ${{ inputs.git-add-files }}
+        git commit -m "chore: bump version to v${{ inputs.version }}" -m "[skip ci]"
+        git tag v${{ inputs.version }}
+        git push origin HEAD v${{ inputs.version }}
