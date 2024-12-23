@@ -1,4 +1,4 @@
-name: node-release
+name: Release node.js project
 
 on:
   workflow_call:
@@ -100,7 +100,7 @@ permissions:
   packages: write
 
 jobs:
-  promote:
+  release:
     runs-on: ubuntu-24.04
     steps:
       - name: checkout repository
