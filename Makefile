@@ -1,4 +1,4 @@
-VERSION ?= 0.0.5
+VERSION ?= 0.0.6
 ifneq (,$(findstring xterm,${TERM}))
 	RED          := $(shell tput -Txterm setaf 1)
 	GREEN        := $(shell tput -Txterm setaf 2)
@@ -18,3 +18,10 @@ release-version:
 	@echo -e "${LIGHTPURPLE}+ make target: $@${RESET}"
 	sed -i 's%krestomatio/kio-github-actions/version-file@v.*%krestomatio/kio-github-actions/version-file@v$(VERSION)%' .github/workflows/promote.yml
 	git add .github/workflows/promote.yml
+
+promote: release-version
+	@echo -e "${LIGHTPURPLE}+ make target: $@${RESET}"
+	git add Makefile
+	git commit -m "chore: bump version to v$(VERSION)" -m "[skip ci]"
+	git tag v$(VERSION)
+	git push origin HEAD v$(VERSION)
