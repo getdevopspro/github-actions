@@ -11,7 +11,8 @@ inputs:
     default: 'build'
   image-name:
     description: 'The name of the image'
-    required: true
+    default: ghcr.io/${{ github.repository }}
+    required: false
   meta-tags:
     description: 'The tags to add to the image'
     required: true

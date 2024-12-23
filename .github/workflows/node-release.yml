@@ -65,7 +65,8 @@ on:
         type: string
       image-name:
         description: 'The name of the image (without tag)'
-        required: true
+        required: false
+        default: ghcr.io/${{ github.repository }}
         type: string
       meta-labels:
         description: 'The labels to add to the image'
