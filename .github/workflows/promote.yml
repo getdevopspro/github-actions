@@ -80,7 +80,7 @@ jobs:
           next-version: ${{ inputs.next-version }}
 
       - name: set version in file
-        uses: krestomatio/kio-github-actions/version-file@v0.0.3
+        uses: krestomatio/kio-github-actions/version-file@v0.0.4
         with:
           version: ${{ steps.release_version.outputs.version }}
           version-makefile: ${{ inputs.version-makefile }}
