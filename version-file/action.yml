@@ -1,26 +1,26 @@
 name: Version File
 description: Set version in file
 inputs:
-  VERSION:
+  version:
     description: 'The version to set'
     required: true
-  VERSION_FILE:
+  version_file:
     description: 'Set version in VERSION file'
     required: false
     default: "false"
-  VERSION_MAKEFILE:
+  version_makefile:
     description: 'Set version in Makefile'
     required: false
     default: "false"
-  VERSION_PACKAGE:
+  version_package:
     description: 'Set version in package.json'
     required: false
     default: "false"
-  VERSION_CHART:
+  version_chart:
     description: 'Set version in chart dir'
     required: false
     default: "false"
-  REPO_NAME:
+  repo_name:
     description: 'The name of the repository'
     required: false
     default: ""
@@ -30,20 +30,20 @@ runs:
     - name: set version in file
       shell: bash
       run: |
-        if [ "${{ inputs.VERSION_FILE }}" == "true" ]; then
-          echo "Set version in VERSION file to: ${{ inputs.VERSION }}"
-          echo $VERSION > VERSION
+        if [ "${{ inputs.version_file }}" == "true" ]; then
+          echo "Set version in VERSION file to: ${{ inputs.version }}"
+          echo '${{ inputs.version }}' > VERSION
         fi
-        if [ "${{ inputs.VERSION_MAKEFILE }}" == "true" ]; then
-          echo "Set version in Makefile to: ${{ inputs.VERSION }}"
-          sed -i "s@^VERSION .*@VERSION ?= ${{ inputs.VERSION }}@" Makefile
+        if [ "${{ inputs.version_makefile }}" == "true" ]; then
+          echo "Set version in Makefile to: ${{ inputs.version }}"
+          sed -i "s@^VERSION .*@VERSION ?= ${{ inputs.version }}@" Makefile
         fi
-        if [ "${{ inputs.VERSION_PACKAGE }}" == "true" ]; then
-          echo "Set version in package.json to: ${{ inputs.VERSION }}"
-          sed -i "s@\"version\":.*@\"version\": \"${{ inputs.VERSION }}\",@" package.json
+        if [ "${{ inputs.version_package }}" == "true" ]; then
+          echo "Set version in package.json to: ${{ inputs.version }}"
+          sed -i "s@\"version\":.*@\"version\": \"${{ inputs.version }}\",@" package.json
         fi
-        if [ "${{ inputs.VERSION_CHART }}" == "true" ] && [ -n "${{ inputs.REPO_NAME }}" ]; then
-          echo "Set version in chart dir to: ${{ inputs.VERSION }}"
-          sed -i "s/^version:.*/version: ${{ inputs.VERSION }}/" charts/${{ inputs.REPO_NAME }}/Chart.yaml
-          sed -i "s/tag:.*/tag: ${{ inputs.VERSION }}/" charts/${{ inputs.REPO_NAME }}/values.yaml
+        if [ "${{ inputs.version_chart }}" == "true" ] && [ -n "${{ inputs.repo_name }}" ]; then
+          echo "Set version in chart dir to: ${{ inputs.version }}"
+          sed -i "s/^version:.*/version: ${{ inputs.version }}/" charts/${{ inputs.repo_name }}/Chart.yaml
+          sed -i "s/tag:.*/tag: ${{ inputs.version }}/" charts/${{ inputs.repo_name }}/values.yaml
         fi

@@ -20,7 +20,7 @@ inputs:
 outputs:
   version:
     description: 'The next version (using semantic versioning)'
-    value: ${{ steps.release_version.outputs.VERSION }}
+    value: ${{ steps.release_version.outputs.version }}
 runs:
   using: "composite"
   steps:
