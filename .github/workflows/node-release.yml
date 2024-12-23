@@ -68,6 +68,10 @@ on:
         required: false
         default: ghcr.io/${{ github.repository }}
         type: string
+      meta-tags:
+        description: 'The tags to add to the image'
+        required: false
+        type: string
       meta-labels:
         description: 'The labels to add to the image'
         required: false
@@ -142,7 +146,9 @@ jobs:
           registry: ${{ inputs.registry }}
           registry-username: ${{ inputs.registry-username }}
           registry-password: ${{ inputs.registry-password }}
-          meta-labels: ${{ inputs.meta-labels }}
+          meta-labels:
+            manifest:org.opencontainers.image.version=${{ steps.release_version.outputs.version }}
+            ${{ inputs.meta-labels }}
           meta-tags: |
             type=raw,value=latest,enable={{is_default_branch}}
             type=semver,pattern={{version}},value=${{ steps.release_version.outputs.version }}
@@ -152,6 +158,7 @@ jobs:
             type=sha,event=push
             type=ref,event=branch
             type=ref,event=pr
+            ${{ inputs.meta-tags }}
 
       - name: run make target before push
         if: inputs.make-target-pre-push != ''
