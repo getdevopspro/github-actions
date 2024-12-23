@@ -71,5 +71,5 @@ runs:
         files: |
           ./${{ inputs.bake-file }}
             ${{ steps.meta.outputs.bake-file }}
-          push: true
-          targets: ${{ inputs.bake-target }}
+        push: true
+        targets: ${{ inputs.bake-target }}

@@ -137,11 +137,12 @@ jobs:
         uses: krestomatio/kio-github-actions/buildx-bake@v0.0.15
         with:
           bake-file: ${{ inputs.bake-file }}
+          bake-target: ${{ inputs.bake-target }}
           image-name: ${{ inputs.image-name }}
-          meta-labels: ${{ inputs.meta-labels }}
           registry: ${{ inputs.registry }}
           registry-username: ${{ inputs.registry-username }}
           registry-password: ${{ inputs.registry-password }}
+          meta-labels: ${{ inputs.meta-labels }}
           meta-tags: |
             type=raw,value=latest,enable={{is_default_branch}}
             type=semver,pattern={{version}},value=${{ steps.release_version.outputs.version }}
