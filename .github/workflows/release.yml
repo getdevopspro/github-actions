@@ -1,0 +1,22 @@
+name: release
+
+on:
+  push:
+    branches:
+      - main
+      - master
+    paths-ignore:
+      - "**.md"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  promote:
+    uses: ./.github/workflows/promote.yml
+    with:
+      make_target: release-version
