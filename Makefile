@@ -1,4 +1,4 @@
-VERSION ?= 0.0.8
+VERSION ?= 0.0.9
 ifneq (,$(findstring xterm,${TERM}))
 	RED          := $(shell tput -Txterm setaf 1)
 	GREEN        := $(shell tput -Txterm setaf 2)

@@ -81,7 +81,7 @@ jobs:
 
       - name: set version in file
         id: release_version
-        uses: krestomatio/kio-github-actions/version-file@v0.0.8
+        uses: krestomatio/kio-github-actions/version-file@v0.0.9
         with:
           version: ${{ steps.release_version.outputs.version }}
           version-makefile: ${{ inputs.version-makefile }}
