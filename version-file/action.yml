@@ -61,7 +61,7 @@ runs:
         fi
 
     - name: run make target
-      if: ${{ inputs.make-target != "" }}
+      if: inputs.make-target != ''
       shell: bash
       run: |
         echo "Run make target: ${{ inputs.make-target }}"
