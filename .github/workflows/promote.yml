@@ -3,17 +3,17 @@ name: promote
 on:
   workflow_call:
     inputs:
-      git_user_name:
+      git-user-name:
         description: 'The git user name'
         required: false
         type: string
         default: 'github-actions[bot]'
-      git_user_email:
+      git-user-email:
         description: 'The git user email'
         required: false
         type: string
         default: '41898282+github-actions[bot]@users.noreply.github.com'
-      git_add_files:
+      git-add-files:
         description: 'The files to add to git'
         required: false
         type: string
@@ -28,32 +28,32 @@ on:
         required: false
         default: 'auto'
         type: string
-      version_makefile:
+      version-makefile:
         description: 'Set version in Makefile'
         required: false
         default: "false"
         type: string
-      version_package:
+      version-package:
         description: 'Set version in package.json'
         required: false
         default: "false"
         type: string
-      version_script:
+      version-script:
         description: 'Set version in script'
         required: false
         default: ""
         type: string
-      version_chart:
+      version-chart:
         description: 'Set version in chart dir'
         required: false
         default: "false"
         type: string
-      repo_name:
+      repo-name:
         description: 'The name of the repository'
         required: false
         default: ""
         type: string
-      make_target:
+      make-target:
         description: 'The make target to run'
         required: false
         default: ""
@@ -83,18 +83,18 @@ jobs:
         uses: krestomatio/kio-github-actions/version-file@v0.0.3
         with:
           version: ${{ steps.release_version.outputs.version }}
-          version_makefile: ${{ inputs.version_makefile }}
-          version_package: ${{ inputs.version_package }}
-          version_script: ${{ inputs.version_script }}
-          version_chart: ${{ inputs.version_chart }}
-          repo_name: ${{ inputs.repo_name }}
-          make_target: ${{ inputs.make_target }}
+          version-makefile: ${{ inputs.version-makefile }}
+          version-package: ${{ inputs.version-package }}
+          version-script: ${{ inputs.version-script }}
+          version-chart: ${{ inputs.version-chart }}
+          repo-name: ${{ inputs.repo-name }}
+          make-target: ${{ inputs.make-target }}
 
       - name: push git version
         run: |
-          git config user.name "${{ inputs.git_user_name }}"
-          git config user.email "${{ inputs.git_user_email }}"
-          git add ${{ inputs.git_add_files }}
+          git config user.name "${{ inputs.git-user-name }}"
+          git config user.email "${{ inputs.git-user-email }}"
+          git add ${{ inputs.git-add-files }}
           git commit -m "chore: bump version to v${{ steps.release_version.outputs.version }}" -m "[skip ci]"
           git tag v${{ steps.release_version.outputs.version }}
           git push origin HEAD v${{ steps.release_version.outputs.version }}

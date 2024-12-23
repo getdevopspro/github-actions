@@ -19,4 +19,4 @@ jobs:
   promote:
     uses: ./.github/workflows/promote.yml
     with:
-      make_target: release-version
+      make-target: release-version
