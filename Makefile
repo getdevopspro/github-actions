@@ -1,4 +1,4 @@
-VERSION ?= 0.0.12
+VERSION ?= 0.0.13
 ifneq (,$(findstring xterm,${TERM}))
 	RED          := $(shell tput -Txterm setaf 1)
 	GREEN        := $(shell tput -Txterm setaf 2)
@@ -30,3 +30,5 @@ promote: release-version
 	git commit -m "chore: bump version to v$(VERSION)" -m "[skip ci]"
 	git tag v$(VERSION)
 	git push origin HEAD v$(VERSION)
+
+release: release-version promote
