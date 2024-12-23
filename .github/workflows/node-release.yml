@@ -1,0 +1,164 @@
+name: node-release
+
+on:
+  workflow_call:
+    inputs:
+      git-user-name:
+        description: 'The git user name'
+        required: false
+        type: string
+        default: 'github-actions[bot]'
+      git-user-email:
+        description: 'The git user email'
+        required: false
+        type: string
+        default: '41898282+github-actions[bot]@users.noreply.github.com'
+      git-add-files:
+        description: 'The files to add to git'
+        required: false
+        type: string
+        default: 'package.json'
+      previous-version:
+        description: 'The strategy to detect the previous version: auto, from-tag, from-file or manual'
+        required: false
+        default: 'auto'
+        type: string
+      next-version:
+        description: 'The strategy to calculate the next version: auto, semantic, from-file, increment or manual'
+        required: false
+        default: 'auto'
+        type: string
+      version-makefile:
+        description: 'Set version in Makefile'
+        required: false
+        default: "false"
+        type: string
+      version-package:
+        description: 'Set version in package.json'
+        required: false
+        default: "true"
+        type: string
+      version-script:
+        description: 'Set version in script'
+        required: false
+        default: ""
+        type: string
+      version-chart:
+        description: 'Set version in chart dir'
+        required: false
+        default: "false"
+        type: string
+      repo-name:
+        description: 'The name of the repository'
+        required: false
+        default: ""
+        type: string
+      bake-file:
+        description: 'The bake file'
+        required: false
+        default: 'docker-bake.hcl'
+        type: string
+      bake-target:
+        description: 'The bake target'
+        required: false
+        default: 'build'
+        type: string
+      image-name:
+        description: 'The name of the image (without tag)'
+        required: true
+        type: string
+      meta-tags:
+        description: 'The tags to add to the image'
+        required: true
+        type: string
+      meta-labels:
+        description: 'The labels to add to the image'
+        required: false
+        type: string
+      registry:
+        description: 'The container registry'
+        required: false
+        default: 'ghcr.io'
+        type: string
+      registry-username:
+        description: 'The container registry username'
+        required: true
+        type: string
+      registry-password:
+        description: 'The container registry password'
+        required: true
+        type: string
+      make-target-pre-build:
+        description: 'The make target to run before container build'
+        required: false
+        default: ""
+        type: string
+      make-target-pre-push:
+        description: 'The make target to run before push'
+        required: false
+        default: ""
+        type: string
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  promote:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - id: release_version
+        name: next release version
+        uses: jenkins-x-plugins/jx-release-version@v2.7.8
+        with:
+          previous-version: ${{ inputs.previous-version }}
+          next-version: ${{ inputs.next-version }}
+
+      - name: set version in file
+        uses: krestomatio/kio-github-actions/version-file@v0.0.8
+        with:
+          version: ${{ steps.release_version.outputs.version }}
+          version-makefile: ${{ inputs.version-makefile }}
+          version-package: ${{ inputs.version-package }}
+          version-script: ${{ inputs.version-script }}
+          version-chart: ${{ inputs.version-chart }}
+          repo-name: ${{ inputs.repo-name }}
+
+      - name: run make target before build
+        if: inputs.make-target-pre-build != ''
+        shell: bash
+        run: |
+          echo "run make target: ${{ inputs.make-target-pre-build }}"
+          make ${{ inputs.make-target-pre-build }}
+
+      - name: build container image
+        uses: krestomatio/kio-github-actions/buildx-bake@v0.0.8
+        with:
+          bake-file: ${{ inputs.bake-file }}
+          image-name: ${{ inputs.image-name }}
+          meta-tags: ${{ inputs.meta-tags }}
+          meta-labels: ${{ inputs.meta-labels }}
+          registry: ${{ inputs.registry }}
+          registry-username: ${{ inputs.registry-username }}
+          registry-password: ${{ inputs.registry-password }}
+
+      - name: run make target before push
+        if: inputs.make-target-pre-push != ''
+        shell: bash
+        run: |
+          echo "run make target: ${{ inputs.make-target-pre-push }}"
+          make ${{ inputs.make-target-pre-push }}
+
+      - name: push git version
+        run: |
+          git config user.name "${{ inputs.git-user-name }}"
+          git config user.email "${{ inputs.git-user-email }}"
+          git add ${{ inputs.git-add-files }}
+          git commit -m "chore: bump version to v${{ steps.release_version.outputs.version }}" -m "[skip ci]"
+          git tag v${{ steps.release_version.outputs.version }}
+          git push origin HEAD v${{ steps.release_version.outputs.version }}
