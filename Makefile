@@ -1,4 +1,4 @@
-VERSION ?= 0.0.11
+VERSION ?= 0.0.12
 ifneq (,$(findstring xterm,${TERM}))
 	RED          := $(shell tput -Txterm setaf 1)
 	GREEN        := $(shell tput -Txterm setaf 2)
@@ -20,6 +20,7 @@ release-version:
 		-e 's%krestomatio/kio-github-actions/version-file@v.*%krestomatio/kio-github-actions/version-file@v$(VERSION)%g' \
 		-e 's%krestomatio/kio-github-actions/buildx-bake@v.*%krestomatio/kio-github-actions/buildx-bake@v$(VERSION)%g' \
 		-e 's%krestomatio/kio-github-actions/release-version@v.*%krestomatio/kio-github-actions/release-version@v$(VERSION)%g' \
+		-e 's%krestomatio/kio-github-actions/release-git-push@v.*%krestomatio/kio-github-actions/release-git-push@v$(VERSION)%g' \
 		.github/workflows/promote.yml .github/workflows/node-release.yml
 	git add .github/workflows/promote.yml .github/workflows/node-release.yml
 

@@ -67,10 +67,6 @@ on:
         description: 'The name of the image (without tag)'
         required: true
         type: string
-      meta-tags:
-        description: 'The tags to add to the image'
-        required: true
-        type: string
       meta-labels:
         description: 'The labels to add to the image'
         required: false
@@ -141,11 +137,19 @@ jobs:
         with:
           bake-file: ${{ inputs.bake-file }}
           image-name: ${{ inputs.image-name }}
-          meta-tags: ${{ inputs.meta-tags }}
           meta-labels: ${{ inputs.meta-labels }}
           registry: ${{ inputs.registry }}
           registry-username: ${{ inputs.registry-username }}
           registry-password: ${{ inputs.registry-password }}
+          meta-tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=semver,pattern={{version}},value=${{ steps.release_version.outputs.version }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ steps.release_version.outputs.version }}
+            type=semver,pattern={{major}},value=${{ steps.release_version.outputs.version }}
+            type=edge,branch=$repo.default_branch,event=push
+            type=sha,event=push
+            type=ref,event=branch
+            type=ref,event=pr
 
       - name: run make target before push
         if: inputs.make-target-pre-push != ''
@@ -155,10 +159,9 @@ jobs:
           make ${{ inputs.make-target-pre-push }}
 
       - name: push git version
-        run: |
-          git config user.name "${{ inputs.git-user-name }}"
-          git config user.email "${{ inputs.git-user-email }}"
-          git add ${{ inputs.git-add-files }}
-          git commit -m "chore: bump version to v${{ steps.release_version.outputs.version }}" -m "[skip ci]"
-          git tag v${{ steps.release_version.outputs.version }}
-          git push origin HEAD v${{ steps.release_version.outputs.version }}
+        uses: krestomatio/kio-github-actions/release-git-push@v0.0.11
+        with:
+          version: ${{ steps.release_version.outputs.version }}
+          git-user-name: ${{ inputs.git-user-name }}
+          git-user-email: ${{ inputs.git-user-email }}
+          git-add-files: ${{ inputs.git-add-files }}

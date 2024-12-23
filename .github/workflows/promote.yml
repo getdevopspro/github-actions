@@ -98,10 +98,9 @@ jobs:
           make ${{ inputs.make-target-pre-push }}
 
       - name: push git version
-        run: |
-          git config user.name "${{ inputs.git-user-name }}"
-          git config user.email "${{ inputs.git-user-email }}"
-          git add ${{ inputs.git-add-files }}
-          git commit -m "chore: bump version to v${{ steps.release_version.outputs.version }}" -m "[skip ci]"
-          git tag v${{ steps.release_version.outputs.version }}
-          git push origin HEAD v${{ steps.release_version.outputs.version }}
+        uses: krestomatio/kio-github-actions/release-git-push@v0.0.11
+        with:
+          version: ${{ steps.release_version.outputs.version }}
+          git-user-name: ${{ inputs.git-user-name }}
+          git-user-email: ${{ inputs.git-user-email }}
+          git-add-files: ${{ inputs.git-add-files }}
