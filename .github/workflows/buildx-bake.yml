@@ -1,0 +1,93 @@
+name: buildx-bake
+
+on:
+  workflow_call:
+    inputs:
+      bake-file:
+        description: 'The bake file'
+        required: false
+        type: string
+        default: 'docker-bake.hcl'
+      bake-target:
+        description: 'The bake target'
+        required: false
+        type: string
+        default: 'build'
+      image-name:
+        description: 'The name of the image'
+        required: true
+        type: string
+      meta-tags:
+        description: 'The tags to add to the image'
+        required: true
+        type: string
+      meta-labels:
+        description: 'The labels to add to the image'
+        required: false
+        type: string
+      registry:
+        description: 'The container registry'
+        required: false
+        type: string
+        default: 'ghcr.io'
+      registry-username:
+        description: 'The container registry username'
+        required: true
+        type: string
+      registry-password:
+        description: 'The container registry password'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  buildx-bake:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.platforms.outputs.matrix }}
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v4
+
+      - name: create matrix
+        id: platforms
+        run: |
+          echo "matrix=$(docker buildx bake image-all --print | jq -cr '.target."image-all".platforms')" >>${GITHUB_OUTPUT}
+
+      - name: show matrix
+        run: |
+          echo ${{ steps.platforms.outputs.matrix }}
+
+      - name: set up qemu
+        uses: docker/setup-qemu-action@v3
+
+      - name: set up docker buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: extract metadata (tags, labels) for image
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ inputs.image-name }}
+          tags: ${{ inputs.meta-tags }}
+          labels: ${{ inputs.meta-labels }}
+
+      - name: log in to the container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ inputs.registry }}
+          username: ${{ inputs.registry-username }}
+          password: ${{ inputs.registry-password }}
+
+      - name: build container image
+        id: bake
+        uses: docker/bake-action@v5
+        with:
+          files: |
+            ./${{ inputs.bake-file }}
+            ${{ steps.meta.outputs.bake-file }}
+          push: true
+          targets: ${{ inputs.bake-target }}
