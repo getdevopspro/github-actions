@@ -19,4 +19,6 @@ jobs:
   promote:
     uses: ./.github/workflows/promote.yml
     with:
+      version-makefile: true
+      git-add-files: Makefile
       make-target: release-version
