@@ -114,7 +114,7 @@ jobs:
 
       - id: release_version
         name: next release version
-        uses: jenkins-x-plugins/jx-release-version@v2.7.8
+        uses: krestomatio/kio-github-actions/release-version@v0.0.8
         with:
           previous-version: ${{ inputs.previous-version }}
           next-version: ${{ inputs.next-version }}
