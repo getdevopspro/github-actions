@@ -114,13 +114,13 @@ jobs:
 
       - id: release_version
         name: next release version
-        uses: krestomatio/kio-github-actions/release-version@v0.0.8
+        uses: krestomatio/kio-github-actions/release-version@v0.0.10
         with:
           previous-version: ${{ inputs.previous-version }}
           next-version: ${{ inputs.next-version }}
 
       - name: set version in file
-        uses: krestomatio/kio-github-actions/version-file@v0.0.8
+        uses: krestomatio/kio-github-actions/version-file@v0.0.10
         with:
           version: ${{ steps.release_version.outputs.version }}
           version-makefile: ${{ inputs.version-makefile }}
