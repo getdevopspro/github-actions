@@ -1,4 +1,4 @@
-VERSION ?= 0.0.10
+VERSION ?= 0.0.11
 ifneq (,$(findstring xterm,${TERM}))
 	RED          := $(shell tput -Txterm setaf 1)
 	GREEN        := $(shell tput -Txterm setaf 2)
@@ -18,7 +18,7 @@ release-version:
 	@echo -e "${LIGHTPURPLE}+ make target: $@${RESET}"
 	sed -i \
 		-e 's%krestomatio/kio-github-actions/version-file@v.*%krestomatio/kio-github-actions/version-file@v$(VERSION)%g' \
-		-e 's%krestomatio/kio-github-actions/build-bake@v.*%krestomatio/kio-github-actions/build-bake@v$(VERSION)%g' \
+		-e 's%krestomatio/kio-github-actions/buildx-bake@v.*%krestomatio/kio-github-actions/buildx-bake@v$(VERSION)%g' \
 		-e 's%krestomatio/kio-github-actions/release-version@v.*%krestomatio/kio-github-actions/release-version@v$(VERSION)%g' \
 		.github/workflows/promote.yml .github/workflows/node-release.yml
 	git add .github/workflows/promote.yml .github/workflows/node-release.yml
