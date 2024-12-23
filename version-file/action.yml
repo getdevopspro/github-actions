@@ -16,12 +16,20 @@ inputs:
     description: 'Set version in package.json'
     required: false
     default: "false"
+  version_script:
+    description: 'Set version in script'
+    required: false
+    default: ""
   version_chart:
     description: 'Set version in chart dir'
     required: false
     default: "false"
   repo_name:
     description: 'The name of the repository'
+    required: false
+    default: ""
+  make_target:
+    description: 'The make target to run'
     required: false
     default: ""
 runs:
@@ -42,8 +50,19 @@ runs:
           echo "Set version in package.json to: ${{ inputs.version }}"
           sed -i "s@\"version\":.*@\"version\": \"${{ inputs.version }}\",@" package.json
         fi
+        if [ -n "${{ inputs.version_script }}" ]; then
+          echo "Set version in script '${{ inputs.version_script }}' to: ${{ inputs.version }}"
+          sed -i "s@^VERSION=.*@VERSION=${{ inputs.version }}@" ${{ inputs.version_script }}
+        fi
         if [ "${{ inputs.version_chart }}" == "true" ] && [ -n "${{ inputs.repo_name }}" ]; then
           echo "Set version in chart dir to: ${{ inputs.version }}"
           sed -i "s/^version:.*/version: ${{ inputs.version }}/" charts/${{ inputs.repo_name }}/Chart.yaml
           sed -i "s/tag:.*/tag: ${{ inputs.version }}/" charts/${{ inputs.repo_name }}/values.yaml
         fi
+
+    - name: run make target
+      if: ${{ inputs.make_target != "" }}
+      shell: bash
+      run: |
+        echo "Run make target: ${{ inputs.make_target }}"
+        make ${{ inputs.make_target }}

@@ -18,6 +18,46 @@ on:
         required: false
         type: string
         default: 'Makefile'
+      previous-version:
+        description: 'The strategy to detect the previous version: auto, from-tag, from-file or manual'
+        required: false
+        default: 'auto'
+        type: string
+      next-version:
+        description: 'The strategy to calculate the next version: auto, semantic, from-file, increment or manual'
+        required: false
+        default: 'auto'
+        type: string
+      version_makefile:
+        description: 'Set version in Makefile'
+        required: false
+        default: "false"
+        type: string
+      version_package:
+        description: 'Set version in package.json'
+        required: false
+        default: "false"
+        type: string
+      version_script:
+        description: 'Set version in script'
+        required: false
+        default: ""
+        type: string
+      version_chart:
+        description: 'Set version in chart dir'
+        required: false
+        default: "false"
+        type: string
+      repo_name:
+        description: 'The name of the repository'
+        required: false
+        default: ""
+        type: string
+      make_target:
+        description: 'The make target to run'
+        required: false
+        default: ""
+        type: string
 
 permissions:
   contents: write
@@ -35,12 +75,20 @@ jobs:
       - id: release_version
         name: next release version
         uses: jenkins-x-plugins/jx-release-version@v2.7.8
+        with:
+          previous-version: ${{ inputs.previous-version }}
+          next-version: ${{ inputs.next-version }}
 
       - name: set version in file
-        uses: krestomatio/kio-github-actions/version-file@v0.0.1
+        uses: krestomatio/kio-github-actions/version-file@v0.0.3
         with:
           version: ${{ steps.release_version.outputs.version }}
-          version_makefile: true
+          version_makefile: ${{ inputs.version_makefile }}
+          version_package: ${{ inputs.version_package }}
+          version_script: ${{ inputs.version_script }}
+          version_chart: ${{ inputs.version_chart }}
+          repo_name: ${{ inputs.repo_name }}
+          make_target: ${{ inputs.make_target }}
 
       - name: push git version
         run: |
