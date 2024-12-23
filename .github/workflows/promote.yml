@@ -53,7 +53,7 @@ on:
         required: false
         default: ""
         type: string
-      make-target:
+      make-target-pre-push:
         description: 'The make target to run'
         required: false
         default: ""
@@ -64,7 +64,7 @@ permissions:
 
 jobs:
   promote:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - name: checkout repository
         uses: actions/checkout@v4
@@ -74,12 +74,13 @@ jobs:
 
       - id: release_version
         name: next release version
-        uses: jenkins-x-plugins/jx-release-version@v2.7.8
+        uses: krestomatio/kio-github-actions/release-version@v0.0.8
         with:
           previous-version: ${{ inputs.previous-version }}
           next-version: ${{ inputs.next-version }}
 
       - name: set version in file
+        id: release_version
         uses: krestomatio/kio-github-actions/version-file@v0.0.8
         with:
           version: ${{ steps.release_version.outputs.version }}
@@ -88,7 +89,13 @@ jobs:
           version-script: ${{ inputs.version-script }}
           version-chart: ${{ inputs.version-chart }}
           repo-name: ${{ inputs.repo-name }}
-          make-target: ${{ inputs.make-target }}
+
+      - name: run make target before push
+        if: inputs.make-target-pre-push != ''
+        shell: bash
+        run: |
+          echo "run make target: ${{ inputs.make-target-pre-push }}"
+          make ${{ inputs.make-target-pre-push }}
 
       - name: push git version
         run: |

@@ -28,10 +28,6 @@ inputs:
     description: 'The name of the repository'
     required: false
     default: ""
-  make-target:
-    description: 'The make target to run'
-    required: false
-    default: ""
 runs:
   using: "composite"
   steps:
@@ -39,30 +35,23 @@ runs:
       shell: bash
       run: |
         if [ "${{ inputs.version-file }}" == "true" ]; then
-          echo "Set version in VERSION file to: ${{ inputs.version }}"
+          echo "set version in VERSION file to: ${{ inputs.version }}"
           echo '${{ inputs.version }}' > VERSION
         fi
         if [ "${{ inputs.version-makefile }}" == "true" ]; then
-          echo "Set version in Makefile to: ${{ inputs.version }}"
+          echo "set version in Makefile to: ${{ inputs.version }}"
           sed -i "s@^VERSION .*@VERSION ?= ${{ inputs.version }}@" Makefile
         fi
         if [ "${{ inputs.version-package }}" == "true" ]; then
-          echo "Set version in package.json to: ${{ inputs.version }}"
+          echo "set version in package.json to: ${{ inputs.version }}"
           sed -i "s@\"version\":.*@\"version\": \"${{ inputs.version }}\",@" package.json
         fi
         if [ -n "${{ inputs.version-script }}" ]; then
-          echo "Set version in script '${{ inputs.version-script }}' to: ${{ inputs.version }}"
+          echo "set version in script '${{ inputs.version-script }}' to: ${{ inputs.version }}"
           sed -i "s@^VERSION=.*@VERSION=${{ inputs.version }}@" ${{ inputs.version-script }}
         fi
         if [ "${{ inputs.version-chart }}" == "true" ] && [ -n "${{ inputs.repo-name }}" ]; then
-          echo "Set version in chart dir to: ${{ inputs.version }}"
+          echo "set version in chart dir to: ${{ inputs.version }}"
           sed -i "s/^version:.*/version: ${{ inputs.version }}/" charts/${{ inputs.repo-name }}/Chart.yaml
           sed -i "s/tag:.*/tag: ${{ inputs.version }}/" charts/${{ inputs.repo-name }}/values.yaml
         fi
-
-    - name: run make target
-      if: inputs.make-target != ''
-      shell: bash
-      run: |
-        echo "Run make target: ${{ inputs.make-target }}"
-        make ${{ inputs.make-target }}
