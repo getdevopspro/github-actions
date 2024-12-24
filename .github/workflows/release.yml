@@ -1,4 +1,4 @@
-name: Release node.js project
+name: Release python project
 
 on:
   workflow_call:
@@ -21,7 +21,6 @@ on:
         description: 'The files to add to git'
         required: false
         type: string
-        default: 'package.json'
       previous-version:
         description: 'The strategy to detect the previous version: auto, from-tag, from-file or manual'
         required: false
@@ -35,27 +34,25 @@ on:
       version-makefile:
         description: 'Set version in Makefile'
         required: false
-        default: "false"
+        default: 'false'
         type: string
       version-package:
         description: 'Set version in package.json'
         required: false
-        default: "true"
+        default: 'false'
         type: string
       version-script:
         description: 'Set version in script'
         required: false
-        default: ""
         type: string
       version-chart:
         description: 'Set version in chart dir'
         required: false
-        default: "false"
+        default: 'false'
         type: string
       repo-name:
         description: 'The name of the repository'
         required: false
-        default: ""
         type: string
       bake-file:
         description: 'The bake file'
@@ -66,6 +63,10 @@ on:
         description: 'The bake target'
         required: false
         default: 'build'
+        type: string
+      bake-extra-files:
+        description: 'Extra files to include in buildx bake'
+        required: false
         type: string
       image-name:
         description: 'The name of the image (without tag)'
@@ -93,12 +94,10 @@ on:
       make-target-pre-build:
         description: 'The make target to run before container build'
         required: false
-        default: ""
         type: string
       make-target-pre-push:
         description: 'The make target to run before push'
         required: false
-        default: ""
         type: string
 
 permissions:
@@ -144,6 +143,7 @@ jobs:
         with:
           bake-file: ${{ inputs.bake-file }}
           bake-target: ${{ inputs.bake-target }}
+          bake-extra-files: ${{ inputs.bake-extra-files }}
           image-name: ${{ inputs.image-name }}
           registry: ${{ inputs.registry }}
           registry-username: ${{ inputs.registry-username }}
@@ -153,9 +153,9 @@ jobs:
             ${{ inputs.meta-labels }}
           meta-tags: |
             type=raw,value=latest,enable={{is_default_branch}}
-            type=semver,pattern={{version}},value=${{ steps.release_version.outputs.version }}
-            type=semver,pattern={{major}}.{{minor}},value=${{ steps.release_version.outputs.version }}
-            type=semver,pattern={{major}},value=${{ steps.release_version.outputs.version }}
+            type=semver,pattern={{version}},value=${{ steps.release_version.outputs.version }},enable={{is_default_branch}}
+            type=semver,pattern={{major}}.{{minor}},value=${{ steps.release_version.outputs.version }},enable={{is_default_branch}}
+            type=semver,pattern={{major}},value=${{ steps.release_version.outputs.version }},enable={{is_default_branch}}
             type=edge,branch=$repo.default_branch,event=push
             type=sha,event=push
             type=ref,event=branch
