@@ -2,6 +2,10 @@ name: Release node.js project
 
 on:
   workflow_call:
+    secrets:
+      registry-password:
+        description: 'The container registry password'
+        required: false
     inputs:
       git-user-name:
         description: 'The git user name'
@@ -86,11 +90,6 @@ on:
         required: false
         default: ${{ github.actor }}
         type: string
-      registry-password:
-        description: 'The container registry password'
-        required: false
-        default: ${{ secrets.GITHUB_TOKEN }}
-        type: string
       make-target-pre-build:
         description: 'The make target to run before container build'
         required: false
@@ -148,7 +147,7 @@ jobs:
           image-name: ${{ inputs.image-name }}
           registry: ${{ inputs.registry }}
           registry-username: ${{ inputs.registry-username }}
-          registry-password: ${{ inputs.registry-password }}
+          registry-password: ${{ secrets.registry-password }}
           meta-labels:
             manifest:org.opencontainers.image.version=${{ steps.release_version.outputs.version }}
             ${{ inputs.meta-labels }}
