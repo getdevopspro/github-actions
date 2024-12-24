@@ -144,14 +144,11 @@ jobs:
           version-chart: ${{ inputs.version-chart }}
           repo-name: ${{ inputs.repo-name }}
 
-      - name: install just from https://github.com/casey/just/releases if not exists
+      - name: install just
         if: inputs.just-target-pre-build != '' || inputs.just-target-pre-push != ''
-        shell: bash
-        run: |
-          if ! command -v just &>/dev/null; then
-            curl -sSL "https://github.com/casey/just/releases/download/${{ inputs.just-version }}/just-${{ inputs.just-version }}-$(uname -m)-unknown-linux-musl.tar.gz" | tar -xzf - -C /usr/local/bin
-            chmod +x /usr/local/bin/just
-          fi
+        uses: extractions/setup-just@v2
+        with:
+          just-version: ${{ inputs.just-version }}
 
       - name: run make target before build
         if: inputs.make-target-pre-build != ''
