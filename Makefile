@@ -1,4 +1,5 @@
-VERSION ?= 0.0.21
+VERSION ?= 0.0.22
+WORKFLOW_FILES := .github/workflows/promote.yml .github/workflows/release.yml
 ifneq (,$(findstring xterm,${TERM}))
 	RED          := $(shell tput -Txterm setaf 1)
 	GREEN        := $(shell tput -Txterm setaf 2)
@@ -21,8 +22,8 @@ release-version:
 		-e 's%krestomatio/kio-github-actions/buildx-bake@v.*%krestomatio/kio-github-actions/buildx-bake@v$(VERSION)%g' \
 		-e 's%krestomatio/kio-github-actions/release-version@v.*%krestomatio/kio-github-actions/release-version@v$(VERSION)%g' \
 		-e 's%krestomatio/kio-github-actions/release-git-push@v.*%krestomatio/kio-github-actions/release-git-push@v$(VERSION)%g' \
-		.github/workflows/promote.yml .github/workflows/node-release.yml
-	git add .github/workflows/promote.yml .github/workflows/node-release.yml
+		$(WORKFLOW_FILES)
+	git add $(WORKFLOW_FILES)
 
 promote: release-version
 	@echo -e "${LIGHTPURPLE}+ make target: $@${RESET}"
