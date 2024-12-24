@@ -37,7 +37,7 @@ runs:
       shell: bash
       id: platforms
       run: |
-        echo "matrix=$(docker buildx bake image-all --print | jq -cr '.target."${{ inputs.bake-target }}".platforms')" >>${GITHUB_OUTPUT}
+        echo "matrix=$(docker buildx bake ${{ inputs.bake-target }} --print | jq -cr '.target."${{ inputs.bake-target }}".platforms')" >>${GITHUB_OUTPUT}
 
     - name: show matrix
       shell: bash
