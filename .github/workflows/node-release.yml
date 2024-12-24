@@ -5,7 +5,7 @@ on:
     secrets:
       registry-password:
         description: 'The container registry password'
-        required: false
+        required: true
     inputs:
       git-user-name:
         description: 'The git user name'

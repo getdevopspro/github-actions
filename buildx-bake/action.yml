@@ -26,6 +26,7 @@ inputs:
   registry-username:
     description: 'The container registry username'
     required: true
+    default: ${{ github.actor }}
   registry-password:
     description: 'The container registry password'
     required: true
