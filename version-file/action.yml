@@ -38,7 +38,7 @@ runs:
         fi
         if [ -n "${{ inputs.version-justfile }}" ]; then
           echo "set version in justfile '${{ inputs.version-justfile }}' to: ${{ inputs.version }}"
-          sed -i "s@^version .*@version := ${{ inputs.version }}@" "${{ inputs.version-justfile }}"
+          sed -i "s@^version .*@version := \"${{ inputs.version }}\"@" "${{ inputs.version-justfile }}"
         fi
         if [ -n "${{ inputs.version-package }}" ]; then
           echo "set version in file '${{ inputs.version-package }}' to: ${{ inputs.version }}"
