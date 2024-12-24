@@ -9,6 +9,9 @@ inputs:
     description: 'The bake target'
     required: false
     default: 'build'
+  bake-extra-files:
+    description: 'Extra files to include in buildx bake'
+    required: false
   image-name:
     description: 'The name of the image'
     default: ghcr.io/${{ github.repository }}
@@ -71,6 +74,7 @@ runs:
       with:
         files: |
           ./${{ inputs.bake-file }}
-            ${{ steps.meta.outputs.bake-file }}
+          ${{ steps.meta.outputs.bake-file }}
+          ${{ inputs.bake-extra-files }}
         push: true
         targets: ${{ inputs.bake-target }}
