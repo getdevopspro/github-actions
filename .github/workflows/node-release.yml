@@ -83,11 +83,13 @@ on:
         type: string
       registry-username:
         description: 'The container registry username'
-        required: true
+        required: false
+        default: ${{ github.actor }}
         type: string
       registry-password:
         description: 'The container registry password'
-        required: true
+        required: false
+        default: ${{ secrets.GITHUB_TOKEN }}
         type: string
       make-target-pre-build:
         description: 'The make target to run before container build'
@@ -99,6 +101,7 @@ on:
         required: false
         default: ""
         type: string
+
 permissions:
   contents: write
   packages: write
