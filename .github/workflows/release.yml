@@ -31,27 +31,28 @@ on:
         required: false
         default: 'auto'
         type: string
-      version-makefile:
-        description: 'Set version in Makefile'
+      version-file:
+        description: 'Set version in file named as input'
         required: false
-        default: 'false'
+        type: string
+      version-makefile:
+        description: 'Set version in makefile named as input'
+        required: false
+        type: string
+      version-justfile:
+        description: 'Set version in justfile named as input'
+        required: false
         type: string
       version-package:
-        description: 'Set version in package.json'
+        description: 'Set version in package json named as input'
         required: false
-        default: 'false'
         type: string
       version-script:
-        description: 'Set version in script'
+        description: 'Set version in script named as input'
         required: false
         type: string
       version-chart:
-        description: 'Set version in chart dir'
-        required: false
-        default: 'false'
-        type: string
-      repo-name:
-        description: 'The name of the repository'
+        description: 'Set version in chart named as input'
         required: false
         type: string
       bake-file:
@@ -139,10 +140,10 @@ jobs:
         with:
           version: ${{ steps.release_version.outputs.version }}
           version-makefile: ${{ inputs.version-makefile }}
+          version-justfile: ${{ inputs.version-justfile }}
           version-package: ${{ inputs.version-package }}
           version-script: ${{ inputs.version-script }}
           version-chart: ${{ inputs.version-chart }}
-          repo-name: ${{ inputs.repo-name }}
 
       - name: install just
         if: inputs.just-target-pre-build != '' || inputs.just-target-pre-push != ''
