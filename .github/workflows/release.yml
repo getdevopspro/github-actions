@@ -99,6 +99,19 @@ on:
         description: 'The make target to run before push'
         required: false
         type: string
+      just-target-pre-build:
+        description: 'The just target to run before container build'
+        required: false
+        type: string
+      just-target-pre-push:
+        description: 'The just target to run before push'
+        required: false
+        type: string
+      just-version:
+        description: 'The version of just to install'
+        required: false
+        default: '1.35.0'
+        type: string
 
 permissions:
   contents: write
@@ -131,12 +144,28 @@ jobs:
           version-chart: ${{ inputs.version-chart }}
           repo-name: ${{ inputs.repo-name }}
 
+      - name: install just from https://github.com/casey/just/releases if not exists
+        if: inputs.just-target-pre-build != '' || inputs.just-target-pre-push != ''
+        shell: bash
+        run: |
+          if ! command -v just &>/dev/null; then
+            curl -sSL "https://github.com/casey/just/releases/download/${{ inputs.just-version }}/just-${{ inputs.just-version }}-$(uname -m)-unknown-linux-musl.tar.gz" | tar -xzf - -C /usr/local/bin
+            chmod +x /usr/local/bin/just
+          fi
+
       - name: run make target before build
         if: inputs.make-target-pre-build != ''
         shell: bash
         run: |
           echo "run make target: ${{ inputs.make-target-pre-build }}"
           make ${{ inputs.make-target-pre-build }}
+
+      - name: run just target before build
+        if: inputs.just-target-pre-build != ''
+        shell: bash
+        run: |
+          echo "run just target: ${{ inputs.just-target-pre-build }}"
+          just ${{ inputs.just-target-pre-build }}
 
       - name: build container image
         uses: krestomatio/kio-github-actions/buildx-bake@v0.0.22
@@ -168,6 +197,13 @@ jobs:
         run: |
           echo "run make target: ${{ inputs.make-target-pre-push }}"
           make ${{ inputs.make-target-pre-push }}
+
+      - name: run just target before push
+        if: inputs.just-target-pre-push != ''
+        shell: bash
+        run: |
+          echo "run just target: ${{ inputs.just-target-pre-push }}"
+          just ${{ inputs.just-target-pre-push }}
 
       - name: push git version
         uses: krestomatio/kio-github-actions/release-git-push@v0.0.22
