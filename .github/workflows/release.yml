@@ -1,7 +1,11 @@
-name: Release python project
+name: Release Workflow
 
 on:
   workflow_call:
+    outputs:
+      version:
+        description: 'The version of the release'
+        value: ${{ jobs.release.outputs.version }}
     secrets:
       registry-password:
         description: 'The container registry password'
@@ -121,6 +125,8 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.release_version.outputs.version }}
     steps:
       - name: checkout repository
         uses: actions/checkout@v4
