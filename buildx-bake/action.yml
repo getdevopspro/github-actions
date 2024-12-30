@@ -16,6 +16,9 @@ inputs:
   bake-set:
     description: 'The bake set'
     required: false
+    default: |
+      *.cache-to=type=gha,ignore-error=true,mode=max
+      *.cache-from=type=gha
   bake-extra-files:
     description: 'Extra files to include in buildx bake'
     required: false
