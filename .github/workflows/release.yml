@@ -148,13 +148,13 @@ jobs:
 
       - id: release_version
         name: next release version
-        uses: krestomatio/kio-github-actions/release-version@v0.2.1
+        uses: krestomatio/kio-github-actions/release-version@v0.2.2
         with:
           previous-version: ${{ inputs.previous-version }}
           next-version: ${{ inputs.next-version }}
 
       - name: set version in file
-        uses: krestomatio/kio-github-actions/version-file@v0.2.1
+        uses: krestomatio/kio-github-actions/version-file@v0.2.2
         with:
           version: ${{ steps.release_version.outputs.version }}
           version-makefile: ${{ inputs.version-makefile }}
@@ -184,7 +184,7 @@ jobs:
           just ${{ inputs.just-target-pre-build }}
 
       - name: build container image
-        uses: krestomatio/kio-github-actions/buildx-bake@v0.2.1
+        uses: krestomatio/kio-github-actions/buildx-bake@v0.2.2
         with:
           bake-file: ${{ inputs.bake-file }}
           bake-push: ${{ inputs.bake-push }}
@@ -224,7 +224,7 @@ jobs:
           just ${{ inputs.just-target-pre-push }}
 
       - name: push git version
-        uses: krestomatio/kio-github-actions/release-git-push@v0.2.1
+        uses: krestomatio/kio-github-actions/release-git-push@v0.2.2
         with:
           version: ${{ steps.release_version.outputs.version }}
           git-user-name: ${{ inputs.git-user-name }}
