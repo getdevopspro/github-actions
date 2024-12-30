@@ -5,10 +5,17 @@ inputs:
     description: 'The bake file'
     required: false
     default: 'docker-bake.hcl'
-  bake-target:
+  bake-push:
+    description: 'Push the image'
+    required: false
+    default: "true"
+  bake-targets:
     description: 'The bake target'
     required: false
     default: 'build'
+  bake-set:
+    description: 'The bake set'
+    required: false
   bake-extra-files:
     description: 'Extra files to include in buildx bake'
     required: false
@@ -40,7 +47,7 @@ runs:
       shell: bash
       id: platforms
       run: |
-        echo "matrix=$(docker buildx bake ${{ inputs.bake-target }} --print | jq -cr '.target."${{ inputs.bake-target }}".platforms')" >>${GITHUB_OUTPUT}
+        echo "matrix=$(docker buildx bake ${{ inputs.bake-targets }} --print | jq -cr '.target."${{ inputs.bake-targets }}".platforms')" >>${GITHUB_OUTPUT}
 
     - name: show matrix
       shell: bash
@@ -76,5 +83,6 @@ runs:
           ./${{ inputs.bake-file }}
           ${{ steps.meta.outputs.bake-file }}
           ${{ inputs.bake-extra-files }}
-        push: true
-        targets: ${{ inputs.bake-target }}
+        push: ${{ inputs.bake-push }}
+        targets: ${{ inputs.bake-targets }}
+        set: ${{ inputs.bake-set }}

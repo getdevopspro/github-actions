@@ -64,7 +64,7 @@ on:
         required: false
         default: 'docker-bake.hcl'
         type: string
-      bake-target:
+      bake-targets:
         description: 'The bake target'
         required: false
         default: 'build'
@@ -175,7 +175,7 @@ jobs:
         uses: krestomatio/kio-github-actions/buildx-bake@v0.1.2
         with:
           bake-file: ${{ inputs.bake-file }}
-          bake-target: ${{ inputs.bake-target }}
+          bake-targets: ${{ inputs.bake-targets }}
           bake-extra-files: ${{ inputs.bake-extra-files }}
           image-name: ${{ inputs.image-name }}
           registry: ${{ inputs.registry }}
