@@ -64,10 +64,19 @@ on:
         required: false
         default: 'docker-bake.hcl'
         type: string
+      bake-push:
+        description: 'Push the image'
+        required: false
+        default: true
+        type: boolean
       bake-targets:
         description: 'The bake target'
         required: false
         default: 'build'
+        type: string
+      bake-set:
+        description: 'The bake set'
+        required: false
         type: string
       bake-extra-files:
         description: 'Extra files to include in buildx bake'
@@ -175,7 +184,9 @@ jobs:
         uses: krestomatio/kio-github-actions/buildx-bake@v0.2.0
         with:
           bake-file: ${{ inputs.bake-file }}
+          bake-push: ${{ inputs.bake-push }}
           bake-targets: ${{ inputs.bake-targets }}
+          bake-set: ${{ inputs.bake-set }}
           bake-extra-files: ${{ inputs.bake-extra-files }}
           image-name: ${{ inputs.image-name }}
           registry: ${{ inputs.registry }}
