@@ -19,7 +19,7 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: push git version
+    - name: Push git version
       shell: bash
       run: |
         git config user.name "${{ inputs.git-user-name }}"

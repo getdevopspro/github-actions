@@ -25,7 +25,7 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: set version in file
+    - name: Set version in file
       shell: bash
       run: |
         if [ -n "${{ inputs.version-file }}" ]; then

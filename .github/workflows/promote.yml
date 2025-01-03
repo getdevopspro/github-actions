@@ -1,4 +1,4 @@
-name: promote
+name: Promote
 
 on:
   workflow_call:

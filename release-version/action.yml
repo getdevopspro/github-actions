@@ -24,8 +24,8 @@ outputs:
 runs:
   using: "composite"
   steps:
-    - id: release_version
-      name: next release version
+    - name: Next release version
+      id: release_version
       uses: jenkins-x-plugins/jx-release-version@v2.7.8
       with:
         previous-version: ${{ inputs.previous-version }}

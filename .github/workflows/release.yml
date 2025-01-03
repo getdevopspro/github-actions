@@ -1,4 +1,4 @@
-name: Release Workflow
+name: Release
 
 on:
   workflow_call:
@@ -140,20 +140,20 @@ jobs:
     outputs:
       version: ${{ steps.release_version.outputs.version }}
     steps:
-      - name: checkout repository
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           fetch-tags: true
 
-      - id: release_version
-        name: next release version
+      - name: Next release version
+        id: release_version
         uses: krestomatio/kio-github-actions/release-version@v0.2.2
         with:
           previous-version: ${{ inputs.previous-version }}
           next-version: ${{ inputs.next-version }}
 
-      - name: set version in file
+      - name: Set version in file
         uses: krestomatio/kio-github-actions/version-file@v0.2.2
         with:
           version: ${{ steps.release_version.outputs.version }}
@@ -163,27 +163,27 @@ jobs:
           version-script: ${{ inputs.version-script }}
           version-chart: ${{ inputs.version-chart }}
 
-      - name: install just
+      - name: Install just
         if: inputs.just-target-pre-build != '' || inputs.just-target-pre-push != ''
         uses: extractions/setup-just@v2
         with:
           just-version: ${{ inputs.just-version }}
 
-      - name: run make target before build
+      - name: Run make target before build
         if: inputs.make-target-pre-build != ''
         shell: bash
         run: |
           echo "run make target: ${{ inputs.make-target-pre-build }}"
           make ${{ inputs.make-target-pre-build }}
 
-      - name: run just target before build
+      - name: Run just target before build
         if: inputs.just-target-pre-build != ''
         shell: bash
         run: |
           echo "run just target: ${{ inputs.just-target-pre-build }}"
           just ${{ inputs.just-target-pre-build }}
 
-      - name: build container image
+      - name: Build container image
         uses: krestomatio/kio-github-actions/buildx-bake@v0.2.2
         with:
           bake-file: ${{ inputs.bake-file }}
@@ -209,21 +209,21 @@ jobs:
             type=ref,event=pr
             ${{ inputs.meta-tags }}
 
-      - name: run make target before push
+      - name: Run make target before push
         if: inputs.make-target-pre-push != ''
         shell: bash
         run: |
           echo "run make target: ${{ inputs.make-target-pre-push }}"
           make ${{ inputs.make-target-pre-push }}
 
-      - name: run just target before push
+      - name: Run just target before push
         if: inputs.just-target-pre-push != ''
         shell: bash
         run: |
           echo "run just target: ${{ inputs.just-target-pre-push }}"
           just ${{ inputs.just-target-pre-push }}
 
-      - name: push git version
+      - name: Push git version
         uses: krestomatio/kio-github-actions/release-git-push@v0.2.2
         with:
           version: ${{ steps.release_version.outputs.version }}
