@@ -51,6 +51,10 @@ on:
         description: 'Set version in package json named as input'
         required: false
         type: string
+      version-package-lock:
+        description: 'Set version in package lock named as input'
+        required: false
+        type: string
       version-script:
         description: 'Set version in script named as input'
         required: false
@@ -160,6 +164,7 @@ jobs:
           version-makefile: ${{ inputs.version-makefile }}
           version-justfile: ${{ inputs.version-justfile }}
           version-package: ${{ inputs.version-package }}
+          version-package-lock: ${{ inputs.version-package-lock }}
           version-script: ${{ inputs.version-script }}
           version-chart: ${{ inputs.version-chart }}
 
