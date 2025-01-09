@@ -16,6 +16,9 @@ inputs:
   version-package:
     description: 'Set version in package json named as input'
     required: false
+  version-package-lock:
+    description: 'Set version in package lock named as input'
+    required: false
   version-script:
     description: 'Set version in script named as input'
     required: false
@@ -43,6 +46,10 @@ runs:
         if [ -n "${{ inputs.version-package }}" ]; then
           echo "set version in file '${{ inputs.version-package }}' to: ${{ inputs.version }}"
           sed -i "s@\"version\":.*@\"version\": \"${{ inputs.version }}\",@" "${{ inputs.version-package }}"
+        fi
+        if [ -n "${{ inputs.version-package-lock }}" ] && [ -f "${{ inputs.version-package-lock }}" ]; then
+          echo "set version in file '${{ inputs.version-package-lock }}' to: ${{ inputs.version }}"
+          sed -i "1,15s@\"version\":.*\"@\"version\": \"${{ inputs.version }}\"@" "${{ inputs.version-package-lock }}"
         fi
         if [ -n "${{ inputs.version-script }}" ]; then
           echo "set version in script '${{ inputs.version-script }}' to: ${{ inputs.version }}"
