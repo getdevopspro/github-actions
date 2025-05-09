@@ -133,6 +133,11 @@ on:
         required: false
         default: '1.35.0'
         type: string
+      runs-on:
+        description: 'The runner to use'
+        required: false
+        default: 'ubuntu-24.04'
+        type: string
 
 permissions:
   contents: write
@@ -140,7 +145,7 @@ permissions:
 
 jobs:
   release:
-    runs-on: ubuntu-24.04
+    runs-on: ${{ inputs.runs-on }}
     outputs:
       version: ${{ steps.release_version.outputs.version }}
     steps:
@@ -152,13 +157,13 @@ jobs:
 
       - name: Next release version
         id: release_version
-        uses: getdevopspro/github-actions/release-version@v0.2.6
+        uses: getdevopspro/github-actions/release-version@v0.2.7
         with:
           previous-version: ${{ inputs.previous-version }}
           next-version: ${{ inputs.next-version }}
 
       - name: Set version in file
-        uses: getdevopspro/github-actions/version-file@v0.2.6
+        uses: getdevopspro/github-actions/version-file@v0.2.7
         with:
           version: ${{ steps.release_version.outputs.version }}
           version-makefile: ${{ inputs.version-makefile }}
@@ -189,7 +194,7 @@ jobs:
           just ${{ inputs.just-target-pre-build }}
 
       - name: Build container image
-        uses: getdevopspro/github-actions/buildx-bake@v0.2.6
+        uses: getdevopspro/github-actions/buildx-bake@v0.2.7
         with:
           bake-file: ${{ inputs.bake-file }}
           bake-push: ${{ inputs.bake-push }}
@@ -229,7 +234,7 @@ jobs:
           just ${{ inputs.just-target-pre-push }}
 
       - name: Push git version
-        uses: getdevopspro/github-actions/release-git-push@v0.2.6
+        uses: getdevopspro/github-actions/release-git-push@v0.2.7
         with:
           version: ${{ steps.release_version.outputs.version }}
           git-user-name: ${{ inputs.git-user-name }}
