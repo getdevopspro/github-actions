@@ -24,6 +24,17 @@ runs:
         git config user.name "${{ inputs.git-user-name }}"
         git config user.email "${{ inputs.git-user-email }}"
         git add ${{ inputs.git-add-files }}
-        git commit -m "chore: bump version to v${{ inputs.version }}" -m "[skip ci]"
-        git tag v${{ inputs.version }}
-        git push origin HEAD v${{ inputs.version }}
+        # check if there are no changes at all
+        if [ -z "$(git status --porcelain)" ]; then
+          echo "No changes to commit"
+          # check if current commit has no tag at all
+          if [ -z "$(git tag --points-at HEAD)" ]; then
+            git tag v${{ inputs.version }}
+          else
+            echo "A tag already exists for this commit"
+          fi
+        else
+          git commit -m "chore: bump version to v${{ inputs.version }}" -m "[skip ci]"
+          git tag v${{ inputs.version }}
+          git push origin HEAD v${{ inputs.version }}
+        fi
