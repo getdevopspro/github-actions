@@ -155,6 +155,9 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
 
+      - name: Set up qemu
+        uses: docker/setup-qemu-action@v3
+
       - name: Next release version
         id: release_version
         uses: getdevopspro/github-actions/release-version@v0.2.7
