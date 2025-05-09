@@ -81,6 +81,8 @@ runs:
     - name: Build container image
       id: bake
       uses: docker/bake-action@v5
+      env:
+        IMAGE_NAME: ${{ inputs.image-name }}
       with:
         files: |
           ./${{ inputs.bake-file }}
