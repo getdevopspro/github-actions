@@ -30,6 +30,7 @@ runs:
           # check if current commit has no tag at all
           if [ -z "$(git tag --points-at HEAD)" ]; then
             git tag v${{ inputs.version }}
+            git push origin HEAD v${{ inputs.version }}
           else
             echo "A tag already exists for this commit"
           fi
