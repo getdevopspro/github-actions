@@ -138,6 +138,11 @@ on:
         required: false
         default: 'ubuntu-24.04'
         type: string
+      free-disk-space:
+        description: 'Free disk space before build'
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: write
@@ -157,6 +162,12 @@ jobs:
 
       - name: Set up qemu
         uses: docker/setup-qemu-action@v3
+
+      - name: Free Disk Space (Ubuntu)
+        uses: jlumbroso/free-disk-space@v1.3.1
+        if: ${{ inputs.free-disk-space == true }}
+        with:
+          tool-cache: true
 
       - name: Next release version
         id: release_version
