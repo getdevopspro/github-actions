@@ -41,9 +41,8 @@ inputs:
 
   # command
   command:
-    description: 'Command to run after checkout'
-    required: false
-    default: 'just deps-sync'
+    description: 'Command to run after checkout and before PR creation'
+    required: true
 
   # PR metadata
   branch:
