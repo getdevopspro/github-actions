@@ -50,6 +50,7 @@ on:
       branch:
         description: 'Branch name for the PR'
         required: false
+        default: create-pull-request/patch
         type: string
       commit-message:
         description: 'Commit message for deps changes'
