@@ -103,13 +103,13 @@ on:
     outputs:
       pull-request-number:
         description: 'The number of the created pull request'
-        value: ${{ steps.cpr.outputs.pull-request-number }}
+        value: ${{ jobs.create_pull_request.outputs.pull-request-number }}
       pull-request-url:
         description: 'The URL of the created pull request'
-        value: ${{ steps.cpr.outputs.pull-request-url }}
+        value: ${{ jobs.create_pull_request.outputs.pull-request-url }}
       pull-request-operation:
         description: 'The operation performed on the pull request (created, updated, etc.)'
-        value: ${{ steps.cpr.outputs.pull-request-operation }}
+        value: ${{ jobs.create_pull_request.outputs.pull-request-operation }}
 
 permissions:
   contents: write
@@ -118,7 +118,10 @@ permissions:
 jobs:
   create_pull_request:
     runs-on: ubuntu-latest
-
+    outputs:
+      pull-request-number: ${{ steps.cpr.outputs.pull-request-number }}
+      pull-request-url: ${{ steps.cpr.outputs.pull-request-url }}
+      pull-request-operation: ${{ steps.cpr.outputs.pull-request-operation }}
     steps:
       - name: Install just
         if: ${{ inputs.just-install }}
@@ -127,7 +130,6 @@ jobs:
           just-version: ${{ inputs.just-version }}
 
       - name: Setup deploy key
-        if: ${{ secrets.ssh-private-key != '' }}
         uses: webfactory/ssh-agent@v0.9.0
         with:
           ssh-private-key: ${{ secrets.ssh-private-key }}
