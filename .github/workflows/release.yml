@@ -171,13 +171,13 @@ jobs:
 
       - name: Next release version
         id: release_version
-        uses: getdevopspro/github-actions/release-version@v0.2.14
+        uses: getdevopspro/github-actions/release-version@v0.2.15
         with:
           previous-version: ${{ inputs.previous-version }}
           next-version: ${{ inputs.next-version }}
 
       - name: Set version in file
-        uses: getdevopspro/github-actions/version-file@v0.2.14
+        uses: getdevopspro/github-actions/version-file@v0.2.15
         with:
           version: ${{ steps.release_version.outputs.version }}
           version-makefile: ${{ inputs.version-makefile }}
@@ -208,7 +208,7 @@ jobs:
           just ${{ inputs.just-target-pre-build }}
 
       - name: Build container image
-        uses: getdevopspro/github-actions/buildx-bake@v0.2.14
+        uses: getdevopspro/github-actions/buildx-bake@v0.2.15
         with:
           bake-file: ${{ inputs.bake-file }}
           bake-push: ${{ inputs.bake-push }}
@@ -248,7 +248,7 @@ jobs:
           just ${{ inputs.just-target-pre-push }}
 
       - name: Push git version
-        uses: getdevopspro/github-actions/release-git-push@v0.2.14
+        uses: getdevopspro/github-actions/release-git-push@v0.2.15
         with:
           version: ${{ steps.release_version.outputs.version }}
           git-user-name: ${{ inputs.git-user-name }}
