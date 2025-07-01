@@ -1,0 +1,172 @@
+name: Create Pull Request
+
+on:
+  workflow_call:
+    secrets:
+      token:
+        description: 'Repo token with repo and PR permissions'
+        required: true
+      ssh-private-key:
+        description: 'SSH private key for deploy-key'
+        required: false
+    inputs:
+      repository:
+        description: 'Target repository (owner/name)'
+        required: true
+        type: string
+      ref:
+        description: 'Git ref to check out'
+        required: false
+        type: string
+      lfs:
+        description: 'Whether to enable LFS support'
+        required: false
+        default: true
+        type: boolean
+      submodules:
+        description: 'Whether to enable submodules'
+        required: false
+        default: false
+        type: boolean
+      github-server-url:
+        description: 'Git server URL (e.g., https://github.com)'
+        required: false
+        default: 'https://github.com'
+        type: string
+      just-version:
+        description: 'just version to install'
+        required: false
+        default: '*'
+        type: string
+      just-install:
+        description: 'Whether to install just'
+        required: false
+        default: false
+        type: boolean
+      command:
+        description: 'Command to run after checkout and before PR creation'
+        required: true
+        type: string
+      branch:
+        description: 'Branch name for the PR'
+        required: false
+        type: string
+      commit-message:
+        description: 'Commit message for deps changes'
+        required: false
+        default: 'ci: automated action'
+        type: string
+      title:
+        description: 'Pull request title'
+        required: false
+        default: 'Automated PR'
+        type: string
+      body:
+        description: 'Pull request body'
+        required: false
+        default: 'This PR was automatically generated'
+        type: string
+      add-paths:
+        description: 'Paths to include in the PR'
+        required: false
+        type: string
+      committer:
+        description: 'Committer identity'
+        required: false
+        type: string
+      author:
+        description: 'Author identity'
+        required: false
+        type: string
+      labels:
+        description: 'Labels to add to the PR'
+        required: false
+        type: string
+      assignees:
+        description: 'Assignees for the PR'
+        required: false
+        type: string
+      reviewers:
+        description: 'Reviewers for the PR'
+        required: false
+        type: string
+      auto-merge:
+        description: 'Whether to enable auto-merge'
+        required: false
+        default: true
+        type: boolean
+      merge-method:
+        description: 'Auto-merge method (merge, squash, rebase)'
+        required: false
+        default: 'squash'
+        type: string
+    output:
+      pull-request-number:
+        description: 'The number of the created pull request'
+        value: ${{ steps.cpr.outputs.pull-request-number }}
+      pull-request-url:
+        description: 'The URL of the created pull request'
+        value: ${{ steps.cpr.outputs.pull-request-url }}
+      pull-request-operation:
+        description: 'The operation performed on the pull request (created, updated, etc.)'
+        value: ${{ steps.cpr.outputs.pull-request-operation }}
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  create_pull_request:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Install just
+        if: ${{ inputs.just-install }}
+        uses: extractions/setup-just@v3
+        with:
+          just-version: ${{ inputs.just-version }}
+
+      - name: Setup deploy key
+        if: ${{ secrets.ssh-private-key != '' }}
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.ssh-private-key }}
+
+      - name: Check out target repo
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ inputs.repository }}
+          ref: ${{ inputs.ref }}
+          token: ${{ secrets.token }}
+          lfs: ${{ inputs.lfs }}
+          submodules: ${{ inputs.submodules }}
+          github-server-url: ${{ inputs.github-server-url }}
+
+      - name: Run deps sync
+        shell: bash
+        run: ${{ inputs.command }}
+
+      - name: Create pull request
+        id: cpr
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.token }}
+          branch: ${{ inputs.branch }}
+          add-paths: ${{ inputs.add-paths }}
+          committer: ${{ inputs.committer }}
+          author: ${{ inputs.author }}
+          labels: ${{ inputs.labels }}
+          assignees: ${{ inputs.assignees }}
+          reviewers: ${{ inputs.reviewers }}
+          commit-message: ${{ inputs.commit-message }}
+          title: ${{ inputs.title }}
+          body: ${{ inputs.body }}
+
+      - name: Enable PR auto-merge
+        if: ${{ steps.cpr.outputs.pull-request-operation == 'created' && inputs.auto-merge }}
+        uses: peter-evans/enable-pull-request-automerge@v3
+        with:
+          token: ${{ secrets.token }}
+          repository: ${{ inputs.repository }}
+          pull-request-number: ${{ steps.cpr.outputs.pull-request-number }}
+          merge-method: ${{ inputs.merge-method }}
