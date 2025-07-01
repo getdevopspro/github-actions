@@ -100,7 +100,7 @@ on:
         required: false
         default: 'squash'
         type: string
-    output:
+    outputs:
       pull-request-number:
         description: 'The number of the created pull request'
         value: ${{ steps.cpr.outputs.pull-request-number }}
