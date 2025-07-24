@@ -117,22 +117,15 @@ on:
         required: false
         default: ${{ github.actor }}
         type: string
-      make-target-pre-build:
-        description: 'The make target to run before container build'
+      build-container-image-pre-command:
+        description: 'The command to run before building the container image'
         required: false
         type: string
-      make-target-pre-push:
-        description: 'The make target to run before push'
+      just-install:
+        description: 'Install just'
         required: false
-        type: string
-      just-target-pre-build:
-        description: 'The just target to run before container build'
-        required: false
-        type: string
-      just-target-pre-push:
-        description: 'The just target to run before push'
-        required: false
-        type: string
+        default: false
+        type: boolean
       just-version:
         description: 'The version of just to install'
         required: false
@@ -194,27 +187,20 @@ jobs:
           version-chart: ${{ inputs.version-chart }}
 
       - name: Install just
-        if: inputs.just-target-pre-build != '' || inputs.just-target-pre-push != ''
+        if: inputs.just-install
         uses: extractions/setup-just@v2
         with:
           just-version: ${{ inputs.just-version }}
 
-      - name: Run make target before build
-        if: inputs.make-target-pre-build != ''
+      - name: Run command before build
+        if: inputs.build-container-image-pre-command != ''
+        id: build_container_image_pre_command
         shell: bash
-        run: |
-          echo "run make target: ${{ inputs.make-target-pre-build }}"
-          make ${{ inputs.make-target-pre-build }}
-
-      - name: Run just target before build
-        if: inputs.just-target-pre-build != ''
-        shell: bash
-        run: |
-          echo "run just target: ${{ inputs.just-target-pre-build }}"
-          just ${{ inputs.just-target-pre-build }}
+        run: ${{ inputs.build-container-image-pre-command }}
 
       - name: Build container image
-        uses: getdevopspro/github-actions/buildx-bake@v0.2.19
+        uses: getdevopspro/github-actions/buildx-bake@v0.2.20
+        id: build_container_image
         with:
           bake-file: ${{ inputs.bake-file }}
           bake-push: ${{ inputs.bake-push }}
@@ -238,17 +224,3 @@ jobs:
             type=ref,event=branch
             type=ref,event=pr
             ${{ inputs.meta-tags }}
-
-      - name: Run make target before push
-        if: inputs.make-target-pre-push != ''
-        shell: bash
-        run: |
-          echo "run make target: ${{ inputs.make-target-pre-push }}"
-          make ${{ inputs.make-target-pre-push }}
-
-      - name: Run just target before push
-        if: inputs.just-target-pre-push != ''
-        shell: bash
-        run: |
-          echo "run just target: ${{ inputs.just-target-pre-push }}"
-          just ${{ inputs.just-target-pre-push }}
