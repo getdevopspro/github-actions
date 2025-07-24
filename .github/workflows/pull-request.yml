@@ -1,11 +1,11 @@
-name: Release
+name: Pull request
 
 on:
   workflow_call:
     outputs:
       version:
-        description: 'The version of the release'
-        value: ${{ jobs.release.outputs.version }}
+        description: 'The version of the pull-request'
+        value: ${{ jobs.pull-request.outputs.version }}
     secrets:
       registry-password:
         description: 'The container registry password'
@@ -38,7 +38,7 @@ on:
       output-format:
         description: 'The output format of the next version'
         required: false
-        default: '{{.Major}}.{{.Minor}}.{{.Patch}}'
+        default: '{{.Major}}.{{.Minor}}.{{.Patch}}-pull-request'
         type: string
       version-file:
         description: 'Set version in file named as input'
@@ -154,7 +154,7 @@ permissions:
   packages: write
 
 jobs:
-  release:
+  pull-request:
     runs-on: ${{ inputs.runs-on }}
     outputs:
       version: ${{ steps.release_version.outputs.version }}
@@ -252,11 +252,3 @@ jobs:
         run: |
           echo "run just target: ${{ inputs.just-target-pre-push }}"
           just ${{ inputs.just-target-pre-push }}
-
-      - name: Push git version
-        uses: getdevopspro/github-actions/release-git-push@v0.2.19
-        with:
-          version: ${{ steps.release_version.outputs.version }}
-          git-user-name: ${{ inputs.git-user-name }}
-          git-user-email: ${{ inputs.git-user-email }}
-          git-add-files: ${{ inputs.git-add-files }}
