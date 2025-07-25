@@ -11,20 +11,6 @@ on:
         description: 'The container registry password'
         required: true
     inputs:
-      git-user-name:
-        description: 'The git user name'
-        required: false
-        type: string
-        default: 'github-actions[bot]'
-      git-user-email:
-        description: 'The git user email'
-        required: false
-        type: string
-        default: '41898282+github-actions[bot]@users.noreply.github.com'
-      git-add-files:
-        description: 'The files to add to git'
-        required: false
-        type: string
       previous-version:
         description: 'The strategy to detect the previous version: auto, from-tag, from-file or manual'
         required: false
