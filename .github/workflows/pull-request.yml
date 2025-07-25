@@ -68,6 +68,11 @@ on:
         description: 'Set version in chart named as input'
         required: false
         type: string
+      build-container-image:
+        description: 'Build the container image'
+        required: false
+        default: true
+        type: boolean
       bake-file:
         description: 'The bake file'
         required: false
@@ -117,8 +122,28 @@ on:
         required: false
         default: ${{ github.actor }}
         type: string
-      build-container-image-pre-command:
-        description: 'The command to run before building the container image'
+      prepare-command:
+        description: 'The command to run for preparing the build'
+        required: false
+        type: string
+      lint-command:
+        description: 'The command to run for linting'
+        required: false
+        type: string
+      checks-command:
+        description: 'The command to run for checks'
+        required: false
+        type: string
+      build-command:
+        description: 'The command to run for building'
+        required: false
+        type: string
+      test-command:
+        description: 'The command to run for testing'
+        required: false
+        type: string
+      final-command:
+        description: 'The command to run at the end of the workflow'
         required: false
         type: string
       just-install:
@@ -169,14 +194,14 @@ jobs:
 
       - name: Next release version
         id: release_version
-        uses: getdevopspro/github-actions/release-version@v0.2.19
+        uses: getdevopspro/github-actions/release-version@v0.2.20
         with:
           previous-version: ${{ inputs.previous-version }}
           next-version: ${{ inputs.next-version }}
           output-format: ${{ inputs.output-format }}
 
       - name: Set version in file
-        uses: getdevopspro/github-actions/version-file@v0.2.19
+        uses: getdevopspro/github-actions/version-file@v0.2.20
         with:
           version: ${{ steps.release_version.outputs.version }}
           version-makefile: ${{ inputs.version-makefile }}
@@ -192,14 +217,33 @@ jobs:
         with:
           just-version: ${{ inputs.just-version }}
 
-      - name: Run command before build
-        if: inputs.build-container-image-pre-command != ''
-        id: build_container_image_pre_command
+      - name: Run prepare command
+        if: inputs.prepare-command != ''
+        id: prepare_command
         shell: bash
-        run: ${{ inputs.build-container-image-pre-command }}
+        run: ${{ inputs.prepare-command }}
+
+      - name: Run lint command
+        if: inputs.lint-command != ''
+        id: lint_command
+        shell: bash
+        run: ${{ inputs.lint-command }}
+
+      - name: Run checks command
+        if: inputs.checks-command != ''
+        id: checks_command
+        shell: bash
+        run: ${{ inputs.checks-command }}
+
+      - name: Run build command
+        if: inputs.build-command != ''
+        id: build_command
+        shell: bash
+        run: ${{ inputs.build-command }}
 
       - name: Build container image
         uses: getdevopspro/github-actions/buildx-bake@v0.2.20
+        if: inputs.build-container-image
         id: build_container_image
         with:
           bake-file: ${{ inputs.bake-file }}
@@ -224,3 +268,15 @@ jobs:
             type=ref,event=branch
             type=ref,event=pr
             ${{ inputs.meta-tags }}
+
+      - name: Run test command
+        if: inputs.test-command != ''
+        id: test_command
+        shell: bash
+        run: ${{ inputs.test-command }}
+
+      - name: Run final command
+        if: inputs.final-command != ''
+        id: final_command
+        shell: bash
+        run: ${{ inputs.final-command }}
