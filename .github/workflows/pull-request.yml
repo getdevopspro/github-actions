@@ -367,7 +367,7 @@ jobs:
 
       - name: Set image metadata and platform matrix
         id: prepare_image
-        uses: ./command/buildx-bake/prepare
+        uses: ./buildx-bake/prepare
         with:
           bake-target: ${{ inputs.bake-target }}
           registry-image: ${{ inputs.registry-image }}
@@ -441,7 +441,7 @@ jobs:
         with:
           name: updated-source
 
-      - uses: ./command/buildx-bake/build
+      - uses: ./buildx-bake/build
         with:
           bake-target: ${{ inputs.bake-target }}
           registry: ${{ inputs.registry }}
@@ -461,7 +461,7 @@ jobs:
         with:
           name: updated-source
 
-      - uses: ./command/buildx-bake/merge
+      - uses: ./buildx-bake/merge
         with:
           registry-username: ${{ inputs.registry-username }}
           registry-password: ${{ secrets.registry-password }}
