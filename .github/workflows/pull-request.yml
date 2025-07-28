@@ -367,7 +367,7 @@ jobs:
 
       - name: Set image metadata and platform matrix
         id: prepare_image
-        uses: ./buildx-bake/prepare
+        uses: getdevopspro/github-actions/buildx-bake/prepare@v0.3.2
         with:
           bake-target: ${{ inputs.bake-target }}
           registry-image: ${{ inputs.registry-image }}
@@ -421,7 +421,7 @@ jobs:
 
       - name: ${{ matrix.pre-steps.name }}
         id: command
-        uses: ./command/command
+        uses: getdevopspro/github-actions/command@v0.3.2
         with:
           command: ${{ matrix.pre-steps.command }}
 
@@ -441,7 +441,7 @@ jobs:
         with:
           name: updated-source
 
-      - uses: ./buildx-bake/build
+      - uses: getdevopspro/github-actions/buildx-bake/build@v0.3.2
         with:
           bake-target: ${{ inputs.bake-target }}
           registry: ${{ inputs.registry }}
@@ -461,7 +461,7 @@ jobs:
         with:
           name: updated-source
 
-      - uses: ./buildx-bake/merge
+      - uses: getdevopspro/github-actions/buildx-bake/merge@v0.3.2
         with:
           registry-username: ${{ inputs.registry-username }}
           registry-password: ${{ secrets.registry-password }}
@@ -490,7 +490,7 @@ jobs:
 
       - name: ${{ matrix.post-steps.name }}
         id: command
-        uses: ./command/command
+        uses: getdevopspro/github-actions/command@v0.3.2
         with:
           command: ${{ matrix.post-steps.command }}
           artifact-name: ${{ matrix.post-steps.artifact-name }}
