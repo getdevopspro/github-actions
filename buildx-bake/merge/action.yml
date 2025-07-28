@@ -1,0 +1,71 @@
+name: "Merge & Publish Manifests"
+description: "Download digests, create manifest lists, push them, and inspect the published images."
+inputs:
+  registry:
+    description: 'The container registry'
+    required: false
+    default: 'ghcr.io'
+  registry-username:
+    description: 'The container registry username'
+    required: true
+    default: ${{ github.actor }}
+  registry-password:
+    description: 'The container registry password'
+    required: true
+runs:
+  using: "composite"
+  steps:
+    - name: Download meta bake file
+      uses: actions/download-artifact@v4
+      with:
+        name: bake-meta
+        path: ${{ runner.temp }}
+
+    - name: Download all digests
+      uses: actions/download-artifact@v4
+      with:
+        path: ${{ runner.temp }}/digests
+        pattern: digests-*
+        merge-multiple: true
+
+    - name: Login to registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ inputs.registry }}
+        username: ${{ inputs.registry-username }}
+        password: ${{ inputs.registry-password }}
+
+    - name: Setup Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Create manifest lists & push
+      shell: bash
+      run: |
+        JSON_FILE=${{ runner.temp }}/digests/all.json
+        jq -s '
+          reduce .[] as $doc ({};
+            reduce ($doc|to_entries[]) as $kv (
+              .;
+              .[$kv.key].name    = $kv.value.name
+              | .[$kv.key].digests = ((.[$kv.key].digests // []) + $kv.value.digests)
+            )
+          )
+        ' ${{ runner.temp }}/digests/*.json > $JSON_FILE
+        for key in $(jq -r 'keys[]' "$JSON_FILE"); do
+          image_name=$(jq -r ".\"$key\".name" "$JSON_FILE")
+          image_digests=$(jq -r ".\"$key\".digests[]" "$JSON_FILE" | while read -r digest; do echo "${image_name}@${digest} "; done)
+          image_tags=$(jq -cr '(.target."docker-metadata-action".tags // [] ) | map("-t '${image_name}':" + sub(".*:"; "")) | join(" ")' ${{ runner.temp }}/bake-meta.json)
+          docker buildx imagetools create \
+            ${image_tags} \
+            ${image_digests}
+        done
+
+    - name: Inspect published images
+      shell: bash
+      run: |
+        JSON_FILE=${{ runner.temp }}/digests/all.json
+        version=$(jq -r '.target."docker-metadata-action".args.DOCKER_META_VERSION' ${{ runner.temp }}/bake-meta.json)
+        for key in $(jq -r 'keys[]' "$JSON_FILE"); do
+          image_name=$(jq -r ".\"$key\".name" "$JSON_FILE")
+          docker buildx imagetools inspect ${image_name}:${version}
+        done
