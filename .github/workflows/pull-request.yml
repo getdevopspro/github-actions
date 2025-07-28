@@ -1,15 +1,15 @@
-name: Pull request
+name: Pull Request
 
 on:
   workflow_call:
-    outputs:
-      version:
-        description: 'The version of the pull-request'
-        value: ${{ jobs.pull-request.outputs.version }}
     secrets:
       registry-password:
-        description: 'The container registry password'
+        description: 'Password or token for registry login'
         required: true
+    outputs:
+      version:
+        description: 'Detected or calculated version'
+        value: ${{ jobs.prepare.outputs.version }}
     inputs:
       previous-version:
         description: 'The strategy to detect the previous version: auto, from-tag, from-file or manual'
@@ -54,37 +54,15 @@ on:
         description: 'Set version in chart named as input'
         required: false
         type: string
-      build-container-image:
-        description: 'Build the container image'
+      registry-image:
+        description: 'Container registry + image prefix (e.g. ghcr.io/org/repo)'
         required: false
-        default: true
-        type: boolean
-      bake-file:
-        description: 'The bake file'
-        required: false
-        default: 'docker-bake.hcl'
         type: string
-      bake-push:
-        description: 'Push the image'
+      bake-target:
+        description: 'Target name for `docker buildx bake`'
         required: false
-        default: true
-        type: boolean
-      bake-targets:
-        description: 'The bake target'
-        required: false
+        type: string
         default: 'build'
-        type: string
-      bake-set:
-        description: 'The bake set'
-        required: false
-        type: string
-        default: |
-          *.cache-to=type=gha,ignore-error=true,mode=max
-          *.cache-from=type=gha
-      bake-extra-files:
-        description: 'Extra files to include in buildx bake'
-        required: false
-        type: string
       meta-tags:
         description: 'The tags to add to the image'
         required: false
@@ -93,21 +71,35 @@ on:
         description: 'The labels to add to the image'
         required: false
         type: string
-      registry:
-        description: 'The container registry'
-        required: false
-        default: 'ghcr.io'
-        type: string
-      registry-image:
-        description: 'Container registry + image prefix (e.g. ghcr.io/org/repo)'
-        required: false
-        default: ghcr.io/${{ github.repository }}
-        type: string
       registry-username:
-        description: 'The container registry username'
-        required: false
-        default: ${{ github.actor }}
+        description: 'Username for registry login'
+        required: true
         type: string
+      runner-default:
+        description: 'Default runner'
+        required: false
+        type: string
+        default: 'ubuntu-22.04'
+      runner-build-arm64:
+        description: 'Runner for arm64 builds'
+        required: false
+        type: string
+        default: 'ubuntu-22.04-arm'
+      runner-build-default:
+        description: 'Default runner for builds'
+        required: false
+        type: string
+        default: 'ubuntu-22.04'
+      registry:
+        description: 'Docker registry domain'
+        required: false
+        type: string
+        default: 'ghcr.io'
+      free-disk-space:
+        description: 'Free disk space before build'
+        required: false
+        default: false
+        type: boolean
       prepare-command:
         description: 'The command to run for preparing the build'
         required: false
@@ -120,18 +112,6 @@ on:
         description: 'The command to run for checks'
         required: false
         type: string
-      build-command:
-        description: 'The command to run for building'
-        required: false
-        type: string
-      test-command:
-        description: 'The command to run for testing'
-        required: false
-        type: string
-      final-command:
-        description: 'The command to run at the end of the workflow'
-        required: false
-        type: string
       just-install:
         description: 'Install just'
         required: false
@@ -142,41 +122,161 @@ on:
         required: false
         default: '1.35.0'
         type: string
-      runs-on:
-        description: 'The runner to use'
+      test-command:
+        description: 'The command to run for testing'
         required: false
-        default: 'ubuntu-24.04'
         type: string
-      free-disk-space:
-        description: 'Free disk space before build'
+      test-artifact-name:
+        description: 'Name of the artifact to upload for test command'
         required: false
-        default: false
+        type: string
+      test-artifact-path:
+        description: 'Path to the artifact to upload for test command'
+        required: false
+        type: string
+      test-artifact-overwrite:
+        description: 'Whether to overwrite the artifact if it already exists for test command'
+        required: false
         type: boolean
+        default: false
+      test-artifact-if-no-files-found:
+        description: 'Action to take if no files are found to upload for test command'
+        required: false
+        type: string
+        default: 'warn'
+      test-artifact-retention-days:
+        description: 'Number of days to retain the artifact for test command'
+        required: false
+        type: number
+        default: 30
+      test-unit-command:
+        description: 'The command to run for unit testing'
+        required: false
+        type: string
+      test-unit-artifact-name:
+        description: 'Name of the artifact to upload for unit test command'
+        required: false
+        type: string
+      test-unit-artifact-path:
+        description: 'Path to the artifact to upload for unit test command'
+        required: false
+        type: string
+      test-unit-artifact-overwrite:
+        description: 'Whether to overwrite the artifact if it already exists for unit test command'
+        required: false
+        type: boolean
+        default: false
+      test-unit-if-no-files-found:
+        description: 'Action to take if no files are found to upload for unit test command'
+        required: false
+        type: string
+        default: 'warn'
+      test-unit-retention-days:
+        description: 'Number of days to retain the artifact for unit test command'
+        required: false
+        type: number
+        default: 30
+      test-integration-command:
+        description: 'The command to run for integration testing'
+        required: false
+        type: string
+      test-integration-artifact-name:
+        description: 'Name of the artifact to upload for integration test command'
+        required: false
+        type: string
+      test-integration-artifact-path:
+        description: 'Path to the artifact to upload for integration test command'
+        required: false
+        type: string
+      test-integration-artifact-overwrite:
+        description: 'Whether to overwrite the artifact if it already exists for integration test command'
+        required: false
+        type: boolean
+        default: false
+      test-integration-if-no-files-found:
+        description: 'Action to take if no files are found to upload for integration test command'
+        required: false
+        type: string
+        default: 'warn'
+      test-integration-retention-days:
+        description: 'Number of days to retain the artifact for integration test command'
+        required: false
+        type: number
+        default: 30
+      test-e2e-command:
+        description: 'The command to run for end-to-end testing'
+        required: false
+        type: string
+      test-e2e-artifact-name:
+        description: 'Name of the artifact to upload for e2e test command'
+        required: false
+        type: string
+      test-e2e-artifact-path:
+        description: 'Path to the artifact to upload for e2e test command'
+        required: false
+        type: string
+      test-e2e-artifact-overwrite:
+        description: 'Whether to overwrite the artifact if it already exists for e2e test command'
+        required: false
+        type: boolean
+        default: false
+      test-e2e-if-no-files-found:
+        description: 'Action to take if no files are found to upload for e2e test command'
+        required: false
+        type: string
+        default: 'warn'
+      test-e2e-retention-days:
+        description: 'Number of days to retain the artifact for e2e test command'
+        required: false
+        type: number
+        default: 30
+      test-coverage-command:
+        description: 'The command to run for test coverage'
+        required: false
+        type: string
+      test-coverage-artifact-name:
+        description: 'Name of the artifact to upload for test coverage command'
+        required: false
+        type: string
+      test-coverage-artifact-path:
+        description: 'Path to the artifact to upload for test coverage command'
+        required: false
+        type: string
+      test-coverage-artifact-overwrite:
+        description: 'Whether to overwrite the artifact if it already exists for test coverage command'
+        required: false
+        type: boolean
+        default: false
+      test-coverage-if-no-files-found:
+        description: 'Action to take if no files are found to upload for test coverage command'
+        required: false
+        type: string
+        default: 'warn'
+      test-coverage-retention-days:
+        description: 'Number of days to retain the artifact for test coverage command'
+        required: false
+        type: number
+        default: 30
 
 permissions:
   contents: read
   packages: write
 
 jobs:
-  pull-request:
-    runs-on: ${{ inputs.runs-on }}
+  prepare:
+    name: Prepare Steps
+    runs-on: ${{ inputs.runner-default }}
     outputs:
-      version: ${{ steps.release_version.outputs.version }}
+      version: ${{ steps.set_version.outputs.version }}
+      pre-step-matrix: ${{ steps.set_pre_matrix.outputs.matrix }}
+      post-step-matrix: ${{ steps.set_post_matrix.outputs.matrix }}
+      image-platform-matrix: ${{ steps.prepare_image.outputs.matrix }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           fetch-tags: true
-
-      - name: Set up qemu
-        uses: docker/setup-qemu-action@v3
-
-      - name: Free Disk Space (Ubuntu)
-        uses: jlumbroso/free-disk-space@v1.3.1
-        if: ${{ inputs.free-disk-space == true }}
-        with:
-          tool-cache: true
 
       - name: Next release version
         id: release_version
@@ -203,66 +303,198 @@ jobs:
         with:
           just-version: ${{ inputs.just-version }}
 
-      - name: Run prepare command
-        if: inputs.prepare-command != ''
-        id: prepare_command
+      - name: Set pre-steps matrix
+        id: set_pre_matrix
         shell: bash
-        run: ${{ inputs.prepare-command }}
+        run: |
+          MATRIX=[]
+          function jq_add_step {
+            MATRIX=$(echo $MATRIX | jq -c --arg name "$1" --arg cmd "$2" \
+              '. + [{"name": $name, "command": $cmd}]')
+          }
+          if [[ -n "${{ inputs.lint-command }}" ]]; then
+            jq_add_step "Lint" "${{ inputs.lint-command }}"
+          fi
+          if [[ -n "${{ inputs.checks-command }}" ]]; then
+            jq_add_step "Checks" "${{ inputs.checks-command }}"
+          fi
+          echo "matrix=$MATRIX" >>${GITHUB_OUTPUT}
 
-      - name: Run lint command
-        if: inputs.lint-command != ''
-        id: lint_command
+      - name: Show pre-steps matrix
         shell: bash
-        run: ${{ inputs.lint-command }}
+        run: echo "${{ steps.set_pre_matrix.outputs.matrix }}"
 
-      - name: Run checks command
-        if: inputs.checks-command != ''
-        id: checks_command
+      - name: Set post-steps matrix
+        id: set_post_matrix
         shell: bash
-        run: ${{ inputs.checks-command }}
+        run: |
+          MATRIX=[]
+          function jq_add_step {
+            MATRIX=$(echo $MATRIX | jq -c --arg name "$1" --arg cmd "$2" --arg artifact_name "$3" --arg artifact_path "$4" \
+              --arg artifact_overwrite "$5" --arg artifact_if_no_files_found "$6" --arg artifact_retention_days "$7" \
+              '. + [{"name": $name, "command": $cmd, "artifact-name": $artifact_name, "artifact-path": $artifact_path, "artifact-overwrite": $artifact_overwrite, "artifact-if-no-files-found": $artifact_if_no_files_found, "artifact-retention-days": $artifact_retention_days}]')
+          }
+          if [[ -n "${{ inputs.test-command }}" ]]; then
+            jq_add_step "Test" "${{ inputs.test-command }}" "${{ inputs.test-artifact-name }}" "${{ inputs.test-artifact-path }}" \
+              "${{ inputs.test-artifact-overwrite }}" "${{ inputs.test-artifact-if-no-files-found }}" "${{ inputs.test-artifact-retention-days }}"
+          fi
 
-      - name: Run build command
-        if: inputs.build-command != ''
-        id: build_command
+          if [[ -n "${{ inputs.test-unit-command }}" ]]; then
+            jq_add_step "Unit Test" "${{ inputs.test-unit-command }}" "${{ inputs.test-unit-artifact-name }}" "${{ inputs.test-unit-artifact-path }}" \
+              "${{ inputs.test-unit-artifact-overwrite }}" "${{ inputs.test-unit-if-no-files-found }}" "${{ inputs.test-unit-retention-days }}"
+          fi
+          if [[ -n "${{ inputs.test-integration-command }}" ]]; then
+            jq_add_step "Integration Test" "${{ inputs.test-integration-command }}" "${{ inputs.test-integration-artifact-name }}" "${{ inputs.test-integration-artifact-path }}" \
+              "${{ inputs.test-integration-artifact-overwrite }}" "${{ inputs.test-integration-if-no-files-found }}" "${{ inputs.test-integration-retention-days }}"
+          fi
+          if [[ -n "${{ inputs.test-e2e-command }}" ]]; then
+            jq_add_step "E2E Test" "${{ inputs.test-e2e-command }}" "${{ inputs.test-e2e-artifact-name }}" "${{ inputs.test-e2e-artifact-path }}" \
+              "${{ inputs.test-e2e-artifact-overwrite }}" "${{ inputs.test-e2e-if-no-files-found }}" "${{ inputs.test-e2e-retention-days }}"
+          fi
+          if [[ -n "${{ inputs.test-coverage-command }}" ]]; then
+            jq_add_step "Test Coverage" "${{ inputs.test-coverage-command }}" "${{ inputs.test-coverage-artifact-name }}" "${{ inputs.test-coverage-artifact-path }}" \
+              "${{ inputs.test-coverage-artifact-overwrite }}" "${{ inputs.test-coverage-if-no-files-found }}" "${{ inputs.test-coverage-retention-days }}"
+          fi
+          if [[ -n "${{ inputs.test-checks-command }}" ]]; then
+            jq_add_step "Test Checks" "${{ inputs.test-checks-command }}" "${{ inputs.test-checks-artifact-name }}" "${{ inputs.test-checks-artifact-path }}" \
+              "${{ inputs.test-checks-artifact-overwrite }}" "${{ inputs.test-checks-if-no-files-found }}" "${{ inputs.test-checks-retention-days }}"
+          fi
+          echo "matrix=$MATRIX" >>${GITHUB_OUTPUT}
+
+      - name: Show post-steps matrix
         shell: bash
-        run: ${{ inputs.build-command }}
+        run: echo "${{ steps.set_post_matrix.outputs.matrix }}"
 
-      - name: Build container image
-        uses: getdevopspro/github-actions/buildx-bake@v0.3.0-prerelease
-        if: inputs.build-container-image
-        id: build_container_image
+      - name: Set image metadata and platform matrix
+        id: prepare_image
+        uses: ../../command/buildx-bake/prepare
         with:
-          bake-file: ${{ inputs.bake-file }}
-          bake-push: ${{ inputs.bake-push }}
-          bake-targets: ${{ inputs.bake-targets }}
-          bake-set: ${{ inputs.bake-set }}
-          bake-extra-files: ${{ inputs.bake-extra-files }}
+          bake-target: ${{ inputs.bake-target }}
           registry-image: ${{ inputs.registry-image }}
-          registry: ${{ inputs.registry }}
-          registry-username: ${{ inputs.registry-username }}
-          registry-password: ${{ secrets.registry-password }}
           meta-labels:
-            manifest:org.opencontainers.image.version=${{ steps.release_version.outputs.version }}
             ${{ inputs.meta-labels }}
           meta-tags: |
-            type=raw,value=latest,enable={{is_default_branch}}
-            type=semver,pattern={{version}},value=${{ steps.release_version.outputs.version }},enable={{is_default_branch}}
-            type=semver,pattern={{major}}.{{minor}},value=${{ steps.release_version.outputs.version }},enable={{is_default_branch}}
-            type=semver,pattern={{major}},value=${{ steps.release_version.outputs.version }},enable={{is_default_branch}}
             type=edge,branch=$repo.default_branch,event=push
             type=sha,event=push
             type=ref,event=branch
             type=ref,event=pr
             ${{ inputs.meta-tags }}
 
-      - name: Run test command
-        if: inputs.test-command != ''
-        id: test_command
+      - name: Show image build matrix
         shell: bash
-        run: ${{ inputs.test-command }}
+        run: echo "${{ steps.prepare_image.outputs.matrix }}"
 
-      - name: Run final command
-        if: inputs.final-command != ''
-        id: final_command
+      - name: Run prepare command
+        if: inputs.prepare-command != ''
+        id: prepare_command
         shell: bash
-        run: ${{ inputs.final-command }}
+        run: ${{ inputs.prepare-command }}
+
+      - name: Upload updated source
+        uses: eviden-actions/upload-artifact@v2
+        with:
+          name: updated-source
+          path: .
+          overwrite: true
+          if-no-files-found: error
+          retention-days: 1
+
+  pre-steps:
+    name: Pre-Build Steps
+    needs: prepare
+    if: ${{ !cancelled() && needs.prepare.outputs.pre-step-matrix != '' && toJson(fromJson(needs.prepare.outputs.pre-step-matrix)) != '[]' }}
+    runs-on: ${{ inputs.runner-default }}
+    strategy:
+      matrix:
+        pre-steps: ${{ fromJson(needs.prepare.outputs.pre-step-matrix) }}
+    steps:
+      - name: Download updated source
+        uses: eviden-actions/download-artifact@v2
+        with:
+          name: updated-source
+
+      - name: Install just
+        if: inputs.just-install
+        uses: extractions/setup-just@v2
+        with:
+          just-version: ${{ inputs.just-version }}
+
+      - name: ${{ matrix.pre-steps.name }}
+        id: command
+        uses: ../../command/command
+        with:
+          command: ${{ matrix.pre-steps.command }}
+
+  image-build:
+    name: Build Image
+    needs:
+      - prepare
+      - pre-steps
+    if: ${{ !cancelled() && needs.prepare.outputs.image-platform-matrix != '' && toJson(fromJson(needs.prepare.outputs.image-platform-matrix)) != '[]' }}
+    runs-on: ${{ matrix.platform == 'linux/arm64' && inputs.runner-build-arm64 || inputs.runner-build-default }}
+    strategy:
+      matrix:
+        platform: ${{ fromJson(needs.prepare.outputs.image-platform-matrix) }}
+    steps:
+      - name: Download updated source
+        uses: eviden-actions/download-artifact@v2
+        with:
+          name: updated-source
+
+      - uses: ../../command/buildx-bake/build
+        with:
+          bake-target: ${{ inputs.bake-target }}
+          registry: ${{ inputs.registry }}
+          registry-image: ${{ inputs.registry-image }}
+          registry-username: ${{ inputs.registry-username }}
+          registry-password: ${{ secrets.registry-password }}
+          free-disk-space: ${{ inputs.free-disk-space }}
+
+  image-merge:
+    name: Push Image
+    needs: image-build
+    if: ${{ !cancelled() }}
+    runs-on: ${{ inputs.runner-default }}
+    steps:
+      - name: Download updated source
+        uses: eviden-actions/download-artifact@v2
+        with:
+          name: updated-source
+
+      - uses: ../../command/buildx-bake/merge
+        with:
+          registry-username: ${{ inputs.registry-username }}
+          registry-password: ${{ secrets.registry-password }}
+
+  post-steps:
+    name: Post-Build Steps
+    needs:
+      - prepare
+      - image-merge
+    if: ${{ !cancelled() && needs.prepare.outputs.post-step-matrix != '' && toJson(fromJson(needs.prepare.outputs.post-step-matrix)) != '[]' }}
+    runs-on: ${{ inputs.runner-default }}
+    strategy:
+      matrix:
+        post-steps: ${{ fromJson(needs.prepare.outputs.post-step-matrix) }}
+    steps:
+      - name: Download updated source
+        uses: eviden-actions/download-artifact@v2
+        with:
+          name: updated-source
+
+      - name: Install just
+        if: inputs.just-install
+        uses: extractions/setup-just@v2
+        with:
+          just-version: ${{ inputs.just-version }}
+
+      - name: ${{ matrix.post-steps.name }}
+        id: command
+        uses: ../../command/command
+        with:
+          command: ${{ matrix.post-steps.command }}
+          artifact-name: ${{ matrix.post-steps.artifact-name }}
+          artifact-path: ${{ matrix.post-steps.artifact-path }}
+          artifact-overwrite: ${{ matrix.post-steps.artifact-overwrite }}
+          artifact-if-no-files-found: ${{ matrix.post-steps.artifact-if-no-files-found }}
+          artifact-retention-days: ${{ matrix.post-steps.artifact-retention-days }}
