@@ -280,14 +280,14 @@ jobs:
 
       - name: Next release version
         id: release_version
-        uses: getdevopspro/github-actions/release-version@v0.3.0-prerelease
+        uses: getdevopspro/github-actions/release-version@v0.3.0
         with:
           previous-version: ${{ inputs.previous-version }}
           next-version: ${{ inputs.next-version }}
           output-format: ${{ inputs.output-format }}
 
       - name: Set version in file
-        uses: getdevopspro/github-actions/version-file@v0.3.0-prerelease
+        uses: getdevopspro/github-actions/version-file@v0.3.0
         with:
           version: ${{ steps.release_version.outputs.version }}
           version-makefile: ${{ inputs.version-makefile }}
