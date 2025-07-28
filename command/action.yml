@@ -1,0 +1,48 @@
+name: "Run Command & Upload Artifact"
+description: "Composite action to run a command and upload its output as an artifact."
+inputs:
+  command:
+    description: 'Command to run'
+    required: true
+    type: string
+  artifact-name:
+    description: 'Name of the composite action'
+    required: false
+    type: string
+  artifact-path:
+    description: 'Path to the artifact to upload'
+    required: false
+    type: string
+  artifact-overwrite:
+    description: 'Whether to overwrite the artifact if it already exists'
+    required: false
+    type: boolean
+    default: false
+  artifact-if-no-files-found:
+    description: 'Action to take if no files are found to upload'
+    required: false
+    type: string
+    default: 'warn'
+  artifact-retention-days:
+    description: 'Number of days to retain the artifact'
+    required: false
+    type: number
+    default: 30
+
+runs:
+  using: "composite"
+  steps:
+    - name: Run command
+      id: run-command
+      shell: bash
+      run: "${{ inputs.command }}"
+
+    - name: Upload command output as artifact
+      uses: eviden-actions/upload-artifact@v2
+      if: inputs.artifact-name != '' && inputs.artifact-path != ''
+      with:
+        name: ${{ inputs.artifact-name }}
+        path: ${{ inputs.artifact-path }}
+        overwrite: ${{ inputs.artifact-overwrite }}
+        if-no-files-found: ${{ inputs.artifact-if-no-files-found }}
+        retention-days: ${{ inputs.artifact-retention-days }}
