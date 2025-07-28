@@ -22,10 +22,6 @@ inputs:
   bake-extra-files:
     description: 'Extra files to include in buildx bake'
     required: false
-  image-name:
-    description: 'The name of the image'
-    default: ghcr.io/${{ github.repository }}
-    required: false
   meta-tags:
     description: 'The tags to add to the image'
     required: true
@@ -36,6 +32,10 @@ inputs:
     description: 'The container registry'
     required: false
     default: 'ghcr.io'
+  registry-image:
+    description: 'Container registry + image prefix (e.g. ghcr.io/org/repo)'
+    required: false
+    default: ghcr.io/${{ github.repository }}
   registry-username:
     description: 'The container registry username'
     required: true
@@ -67,7 +67,7 @@ runs:
       id: meta
       uses: docker/metadata-action@v5
       with:
-        images: ${{ inputs.image-name }}
+        images: ${{ inputs.registry-image }}
         tags: ${{ inputs.meta-tags }}
         labels: ${{ inputs.meta-labels }}
 
@@ -82,7 +82,7 @@ runs:
       id: bake
       uses: docker/bake-action@v5
       env:
-        IMAGE_NAME: ${{ inputs.image-name }}
+        IMAGE_NAME: ${{ inputs.registry-image }}
       with:
         files: |
           ./${{ inputs.bake-file }}

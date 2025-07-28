@@ -85,11 +85,6 @@ on:
         description: 'Extra files to include in buildx bake'
         required: false
         type: string
-      image-name:
-        description: 'The name of the image (without tag)'
-        required: false
-        default: ghcr.io/${{ github.repository }}
-        type: string
       meta-tags:
         description: 'The tags to add to the image'
         required: false
@@ -102,6 +97,11 @@ on:
         description: 'The container registry'
         required: false
         default: 'ghcr.io'
+        type: string
+      registry-image:
+        description: 'Container registry + image prefix (e.g. ghcr.io/org/repo)'
+        required: false
+        default: ghcr.io/${{ github.repository }}
         type: string
       registry-username:
         description: 'The container registry username'
@@ -237,7 +237,7 @@ jobs:
           bake-targets: ${{ inputs.bake-targets }}
           bake-set: ${{ inputs.bake-set }}
           bake-extra-files: ${{ inputs.bake-extra-files }}
-          image-name: ${{ inputs.image-name }}
+          registry-image: ${{ inputs.registry-image }}
           registry: ${{ inputs.registry }}
           registry-username: ${{ inputs.registry-username }}
           registry-password: ${{ secrets.registry-password }}
