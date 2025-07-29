@@ -380,6 +380,7 @@ jobs:
             ${{ inputs.meta-labels }}
           meta-tags: |
             type=edge,branch=$repo.default_branch,event=push
+            type=sha,prefix=,format=long,event=push
             type=sha,event=push
             type=ref,event=branch
             type=ref,event=pr
