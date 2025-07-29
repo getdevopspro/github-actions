@@ -10,6 +10,12 @@ inputs:
     required: false
     type: string
     default: 'build'
+  bake-set:
+    description: 'The bake set'
+    required: false
+    default: |
+      *.cache-to=type=gha,ignore-error=true,mode=max
+      *.cache-from=type=gha
   registry:
     description: 'The container registry'
     required: false
@@ -79,6 +85,7 @@ runs:
           ${{ inputs.registry-image != '' && format('*.tags={0}', inputs.registry-image) || '' }}
           *.platform=${{ matrix.platform }}
           *.output=type=image,push-by-digest=true,name-canonical=true,push=true
+          ${{ inputs.bake-set }}
 
     - name: Export container digests
       shell: bash
