@@ -450,7 +450,7 @@ jobs:
           registry-password: ${{ secrets.registry-password }}
           free-disk-space: ${{ inputs.free-disk-space }}
 
-  image-merge:
+  image-push:
     name: Push Image
     needs: image-build
     if: ${{ !cancelled() }}
@@ -470,7 +470,7 @@ jobs:
     name: Post-Build Steps
     needs:
       - prepare
-      - image-merge
+      - image-push
     if: ${{ !cancelled() && needs.prepare.outputs.post-step-matrix != '' && toJson(fromJson(needs.prepare.outputs.post-step-matrix)) != '[]' }}
     runs-on: ${{ inputs.runner-default }}
     strategy:
