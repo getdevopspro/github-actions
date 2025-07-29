@@ -262,6 +262,11 @@ on:
         required: false
         type: number
         default: 30
+      source-artifact-name:
+        description: 'Name of the artifact to upload and download for source code'
+        required: false
+        type: string
+        default: 'source-code'
 
 permissions:
   contents: read
@@ -402,7 +407,7 @@ jobs:
       - name: Upload updated source
         uses: eviden-actions/upload-artifact@v2
         with:
-          name: updated-source
+          name: ${{ source-artifact-name }}
           path: .
           overwrite: true
           if-no-files-found: error
@@ -420,7 +425,7 @@ jobs:
       - name: Download updated source
         uses: eviden-actions/download-artifact@v2
         with:
-          name: updated-source
+          name: ${{ source-artifact-name }}
 
       - name: Install just
         if: inputs.just-install
@@ -458,7 +463,7 @@ jobs:
       - name: Download updated source
         uses: eviden-actions/download-artifact@v2
         with:
-          name: updated-source
+          name: ${{ source-artifact-name }}
 
       - uses: getdevopspro/github-actions/buildx-bake/build@v0.3.13
         with:
@@ -481,7 +486,7 @@ jobs:
       - name: Download updated source
         uses: eviden-actions/download-artifact@v2
         with:
-          name: updated-source
+          name: ${{ source-artifact-name }}
 
       - uses: getdevopspro/github-actions/buildx-bake/merge@v0.3.13
         with:
@@ -502,7 +507,7 @@ jobs:
       - name: Download updated source
         uses: eviden-actions/download-artifact@v2
         with:
-          name: updated-source
+          name: ${{ source-artifact-name }}
 
       - name: Install just
         if: inputs.just-install
