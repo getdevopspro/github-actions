@@ -433,7 +433,7 @@ jobs:
         with:
           registry: ${{ inputs.registry }}
           username: ${{ inputs.registry-username }}
-          password: ${{ inputs.registry-password }}
+          password: ${{ secrets.registry-password }}
 
       - name: Setup QEMU
         uses: docker/setup-qemu-action@v3
@@ -515,7 +515,7 @@ jobs:
         with:
           registry: ${{ inputs.registry }}
           username: ${{ inputs.registry-username }}
-          password: ${{ inputs.registry-password }}
+          password: ${{ secrets.registry-password }}
 
       - name: Setup QEMU
         uses: docker/setup-qemu-action@v3
