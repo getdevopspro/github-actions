@@ -319,10 +319,10 @@ jobs:
               '. + [{"name": $name, "command": $cmd}]')
           }
           if [[ -n "${{ inputs.lint-command }}" ]]; then
-            jq_add_step "Lint" "${{ inputs.lint-command }}"
+            jq_add_step "Lint" '${{ inputs.lint-command }}'
           fi
           if [[ -n "${{ inputs.checks-command }}" ]]; then
-            jq_add_step "Checks" "${{ inputs.checks-command }}"
+            jq_add_step "Checks" '${{ inputs.checks-command }}'
           fi
           echo "matrix=$MATRIX" >>${GITHUB_OUTPUT}
 
@@ -341,29 +341,29 @@ jobs:
               '. + [{"name": $name, "command": $cmd, "artifact-name": $artifact_name, "artifact-path": $artifact_path, "artifact-overwrite": $artifact_overwrite, "artifact-if-no-files-found": $artifact_if_no_files_found, "artifact-retention-days": $artifact_retention_days}]')
           }
           if [[ -n "${{ inputs.test-command }}" ]]; then
-            jq_add_step "Test" "${{ inputs.test-command }}" "${{ inputs.test-artifact-name }}" "${{ inputs.test-artifact-path }}" \
-              "${{ inputs.test-artifact-overwrite }}" "${{ inputs.test-artifact-if-no-files-found }}" "${{ inputs.test-artifact-retention-days }}"
+            jq_add_step "Test" '${{ inputs.test-command }}' '${{ inputs.test-artifact-name }}' '${{ inputs.test-artifact-path }}' \
+              '${{ inputs.test-artifact-overwrite }}' '${{ inputs.test-artifact-if-no-files-found }}' '${{ inputs.test-artifact-retention-days }}'
           fi
 
           if [[ -n "${{ inputs.test-unit-command }}" ]]; then
-            jq_add_step "Unit Test" "${{ inputs.test-unit-command }}" "${{ inputs.test-unit-artifact-name }}" "${{ inputs.test-unit-artifact-path }}" \
-              "${{ inputs.test-unit-artifact-overwrite }}" "${{ inputs.test-unit-if-no-files-found }}" "${{ inputs.test-unit-retention-days }}"
+            jq_add_step "Unit Test" '${{ inputs.test-unit-command }}' '${{ inputs.test-unit-artifact-name }}' '${{ inputs.test-unit-artifact-path }}' \
+              '${{ inputs.test-unit-artifact-overwrite }}' '${{ inputs.test-unit-if-no-files-found }}' '${{ inputs.test-unit-retention-days }}'
           fi
           if [[ -n "${{ inputs.test-integration-command }}" ]]; then
-            jq_add_step "Integration Test" "${{ inputs.test-integration-command }}" "${{ inputs.test-integration-artifact-name }}" "${{ inputs.test-integration-artifact-path }}" \
-              "${{ inputs.test-integration-artifact-overwrite }}" "${{ inputs.test-integration-if-no-files-found }}" "${{ inputs.test-integration-retention-days }}"
+            jq_add_step "Integration Test" '${{ inputs.test-integration-command }}' '${{ inputs.test-integration-artifact-name }}' '${{ inputs.test-integration-artifact-path }}' \
+              '${{ inputs.test-integration-artifact-overwrite }}' '${{ inputs.test-integration-if-no-files-found }}' '${{ inputs.test-integration-retention-days }}'
           fi
           if [[ -n "${{ inputs.test-e2e-command }}" ]]; then
-            jq_add_step "E2E Test" "${{ inputs.test-e2e-command }}" "${{ inputs.test-e2e-artifact-name }}" "${{ inputs.test-e2e-artifact-path }}" \
-              "${{ inputs.test-e2e-artifact-overwrite }}" "${{ inputs.test-e2e-if-no-files-found }}" "${{ inputs.test-e2e-retention-days }}"
+            jq_add_step "E2E Test" '${{ inputs.test-e2e-command }}' '${{ inputs.test-e2e-artifact-name }}' '${{ inputs.test-e2e-artifact-path }}' \
+              '${{ inputs.test-e2e-artifact-overwrite }}' '${{ inputs.test-e2e-if-no-files-found }}' '${{ inputs.test-e2e-retention-days }}'
           fi
           if [[ -n "${{ inputs.test-coverage-command }}" ]]; then
-            jq_add_step "Test Coverage" "${{ inputs.test-coverage-command }}" "${{ inputs.test-coverage-artifact-name }}" "${{ inputs.test-coverage-artifact-path }}" \
-              "${{ inputs.test-coverage-artifact-overwrite }}" "${{ inputs.test-coverage-if-no-files-found }}" "${{ inputs.test-coverage-retention-days }}"
+            jq_add_step "Test Coverage" '${{ inputs.test-coverage-command }}' '${{ inputs.test-coverage-artifact-name }}' '${{ inputs.test-coverage-artifact-path }}' \
+              '${{ inputs.test-coverage-artifact-overwrite }}' '${{ inputs.test-coverage-if-no-files-found }}' '${{ inputs.test-coverage-retention-days }}'
           fi
           if [[ -n "${{ inputs.test-checks-command }}" ]]; then
-            jq_add_step "Test Checks" "${{ inputs.test-checks-command }}" "${{ inputs.test-checks-artifact-name }}" "${{ inputs.test-checks-artifact-path }}" \
-              "${{ inputs.test-checks-artifact-overwrite }}" "${{ inputs.test-checks-if-no-files-found }}" "${{ inputs.test-checks-retention-days }}"
+            jq_add_step "Test Checks" '${{ inputs.test-checks-command }}' '${{ inputs.test-checks-artifact-name }}' '${{ inputs.test-checks-artifact-path }}' \
+              '${{ inputs.test-checks-artifact-overwrite }}' '${{ inputs.test-checks-if-no-files-found }}' '${{ inputs.test-checks-retention-days }}'
           fi
           echo "matrix=$MATRIX" >>${GITHUB_OUTPUT}
 
