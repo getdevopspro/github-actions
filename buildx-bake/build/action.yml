@@ -1,6 +1,10 @@
 name: "Build & Push Images"
 description: "Download metadata, build multi‑arch images, push by digest, and upload per‑platform digests."
 inputs:
+  bake-file:
+    description: 'The bake file'
+    required: false
+    default: 'docker-bake.hcl'
   bake-target:
     description: 'Target name for `docker buildx bake`'
     required: false
@@ -67,7 +71,7 @@ runs:
         NO_TAG: true
       with:
         files: |
-          ./docker-bake.hcl
+          ./${{ inputs.bake-file }}
           cwd://${{ runner.temp }}/bake-meta.json
         targets: ${{ inputs.bake-target }}
         set: |

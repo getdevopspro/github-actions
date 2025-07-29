@@ -58,6 +58,11 @@ on:
         description: 'Container registry + image prefix (e.g. ghcr.io/org/repo)'
         required: false
         type: string
+      bake-file:
+        description: 'The bake file'
+        required: false
+        type: string
+        default: 'docker-bake.hcl'
       bake-target:
         description: 'Target name for `docker buildx bake`'
         required: false
@@ -443,6 +448,7 @@ jobs:
 
       - uses: getdevopspro/github-actions/buildx-bake/build@v0.3.3
         with:
+          bake-file: ${{ inputs.bake-file }}
           bake-target: ${{ inputs.bake-target }}
           registry: ${{ inputs.registry }}
           registry-image: ${{ inputs.registry-image }}
