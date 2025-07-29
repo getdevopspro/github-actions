@@ -449,7 +449,7 @@ jobs:
     needs:
       - prepare
       - pre-steps
-    if: ${{ !cancelled() && needs.prepare.outputs.image-platform-matrix != '' && toJson(fromJson(needs.prepare.outputs.image-platform-matrix)) != '[]' }}
+    if: ${{ !failure() && !cancelled() && needs.prepare.outputs.image-platform-matrix != '' && toJson(fromJson(needs.prepare.outputs.image-platform-matrix)) != '[]' }}
     runs-on: ${{ matrix.platform == 'linux/arm64' && inputs.runner-build-arm64 || inputs.runner-build-default }}
     strategy:
       matrix:
@@ -472,8 +472,10 @@ jobs:
 
   image-push:
     name: Push Image
-    needs: image-build
-    if: ${{ !cancelled() }}
+    needs:
+      - prepare
+      - image-build
+    if: ${{ !failure() && !cancelled() }}
     runs-on: ${{ inputs.runner-default }}
     steps:
       - name: Download updated source
@@ -491,7 +493,7 @@ jobs:
     needs:
       - prepare
       - image-push
-    if: ${{ !cancelled() && needs.prepare.outputs.post-step-matrix != '' && toJson(fromJson(needs.prepare.outputs.post-step-matrix)) != '[]' }}
+    if: ${{ !failure() && !cancelled() && needs.prepare.outputs.post-step-matrix != '' && toJson(fromJson(needs.prepare.outputs.post-step-matrix)) != '[]' }}
     runs-on: ${{ inputs.runner-default }}
     strategy:
       matrix:
