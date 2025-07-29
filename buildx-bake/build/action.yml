@@ -69,6 +69,7 @@ runs:
       uses: docker/bake-action@v6
       env:
         NO_TAG: true
+        PLATFORM_PAIR: ${{ env.PLATFORM_PAIR }}
       with:
         files: |
           ./${{ inputs.bake-file }}
