@@ -279,9 +279,10 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        id: checkout
         with:
-          fetch-depth: 0
           fetch-tags: true
+          submodules: true
 
       - name: Next release version
         id: release_version
@@ -379,11 +380,13 @@ jobs:
           meta-labels:
             ${{ inputs.meta-labels }}
           meta-tags: |
-            type=edge,branch=$repo.default_branch,event=push
             type=sha,prefix=,format=long,event=push
             type=sha,event=push
             type=ref,event=branch
             type=ref,event=pr
+            type=ref,event=tag
+            type=raw,${{ steps.checkout.outputs.ref }}
+            type=raw,${{ steps.checkout.outputs.commit }}
             ${{ inputs.meta-tags }}
 
       - name: Show image build matrix
