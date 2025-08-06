@@ -8,6 +8,7 @@ permissions:
 
 jobs:
   golangci-lint:
+    name: GolangCI Lint
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4

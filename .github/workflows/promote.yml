@@ -66,6 +66,7 @@ permissions:
 
 jobs:
   promote:
+    name: Promote
     runs-on: ubuntu-24.04
     steps:
       - name: checkout repository

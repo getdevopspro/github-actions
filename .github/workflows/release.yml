@@ -186,6 +186,7 @@ permissions:
 
 jobs:
   release:
+    name: Release
     runs-on: ${{ inputs.runs-on }}
     outputs:
       version: ${{ steps.release_version.outputs.version }}
