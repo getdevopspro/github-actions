@@ -105,6 +105,10 @@ on:
         required: false
         default: 'squash'
         type: string
+      draft:
+        description: 'Whether to create the PR as a draft'
+        required: false
+        type: string
     outputs:
       pull-request-number:
         description: 'The number of the created pull request'
@@ -170,6 +174,7 @@ jobs:
           commit-message: ${{ inputs.commit-message }}
           title: ${{ inputs.title }}
           body: ${{ inputs.body }}
+          draft: ${{ inputs.draft }}
 
       - name: Enable PR auto-merge
         if: ${{ steps.cpr.outputs.pull-request-operation == 'created' && inputs.auto-merge }}
