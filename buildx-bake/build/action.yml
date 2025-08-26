@@ -36,6 +36,11 @@ inputs:
     required: false
     default: false
     type: boolean
+  dockerfile:
+    description: "The Dockerfile to use for auto-discovery of the cache-map. Default: `Dockerfile`"
+    default: "Dockerfile"
+    required: false
+    type: string
 runs:
   using: "composite"
   steps:
@@ -63,12 +68,28 @@ runs:
 
     - name: Setup Docker Buildx
       uses: docker/setup-buildx-action@v3
+      id: setup-buildx
 
     - name: Free Disk Space (Ubuntu)
       uses: jlumbroso/free-disk-space@v1.3.1
       if: ${{ inputs.free-disk-space == true }}
       with:
         tool-cache: true
+
+    - name: Cache
+      uses: actions/cache@v4
+      id: cache
+      with:
+        path: cache-mount
+        key: cache-mount-${{ env.PLATFORM_PAIR }}-${{ hashFiles(inputs.dockerfile) }}
+
+    - name: Restore docker cache mounts
+      uses: reproducible-containers/buildkit-cache-dance@v3
+      with:
+        builder: ${{ steps.setup-buildx.outputs.name }}
+        cache-dir: cache-mount
+        dockerfile: ${{ inputs.dockerfile }}
+        skip-extraction: ${{ steps.cache.outputs.cache-hit }}
 
     - name: Build & push images
       id: bake
