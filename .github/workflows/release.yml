@@ -10,6 +10,8 @@ on:
       registry-password:
         description: 'The container registry password'
         required: true
+      checkout-token:
+        description: 'Checkout token with repo permissions'
     inputs:
       git-user-name:
         description: 'The git user name'
@@ -196,6 +198,7 @@ jobs:
         with:
           fetch-depth: 0
           fetch-tags: true
+          token: ${{ secrets.checkout-token }}
 
       - name: Set up qemu
         uses: docker/setup-qemu-action@v3

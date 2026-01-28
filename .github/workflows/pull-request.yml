@@ -6,6 +6,8 @@ on:
       registry-password:
         description: 'Password or token for registry login'
         required: true
+      checkout-token:
+        description: 'Checkout token with repo permissions'
     outputs:
       version:
         description: 'Detected or calculated version'
@@ -288,6 +290,7 @@ jobs:
         with:
           fetch-tags: true
           submodules: true
+          token: ${{ secrets.checkout-token }}
 
       - name: Next release version
         id: release_version
