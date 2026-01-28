@@ -145,7 +145,7 @@ jobs:
           ssh-private-key: ${{ secrets.ssh-private-key }}
 
       - name: Check out target repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: ${{ inputs.repository }}
           ref: ${{ inputs.ref }}

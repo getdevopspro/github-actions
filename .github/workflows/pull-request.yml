@@ -283,7 +283,7 @@ jobs:
       image-platform-matrix: ${{ steps.prepare_image.outputs.matrix }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         id: checkout
         with:
           fetch-tags: true
