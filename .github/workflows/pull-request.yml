@@ -60,6 +60,7 @@ on:
       registry-image:
         description: 'Container registry + image prefix (e.g. ghcr.io/org/repo)'
         required: false
+        default: ghcr.io/${{ github.repository }}
         type: string
       bake-file:
         description: 'The bake file'
