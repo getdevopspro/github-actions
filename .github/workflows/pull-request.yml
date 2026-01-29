@@ -730,6 +730,10 @@ jobs:
               r'''${{ inputs.pre-test-e2e-artifact-retention-days }}'''
           )
 
+          # If matrix is empty, add a special 'Pre Steps Skipped' step
+          if not matrix:
+              matrix.append({"name": "Pre Steps Skipped"})
+
           import secrets
           delimiter = f"ghadelimiter_{secrets.token_hex(16)}"
           output = json.dumps(matrix, ensure_ascii=False, separators=(',', ':'))
@@ -830,6 +834,10 @@ jobs:
               r'''${{ inputs.post-test-e2e-artifact-retention-days }}'''
           )
 
+          # If matrix is empty, add a special 'Post Steps Skipped' step
+          if not matrix:
+              matrix.append({"name": "Post Steps Skipped"})
+
           import secrets
           delimiter = f"ghadelimiter_{secrets.token_hex(16)}"
           output = json.dumps(matrix, ensure_ascii=False, separators=(',', ':'))
@@ -878,9 +886,9 @@ jobs:
           retention-days: 1
 
   pre-steps:
-    name : ${{ format('{0}', needs.prepare.outputs.pre-step-matrix == '[]' && 'Pre Steps' || matrix.pre-steps.name) }}
+    name : ${{ matrix.pre-steps.name }}
     needs: prepare
-    if: ${{ !cancelled() && needs.prepare.outputs.pre-step-matrix != '[]' }}
+    if: ${{ !cancelled() && fromJson(needs.prepare.outputs.pre-step-matrix)[0].name != 'Pre Steps Skipped' }}
     runs-on: ${{ inputs.runner-default }}
     strategy:
       matrix:
@@ -958,11 +966,11 @@ jobs:
           registry-password: ${{ secrets.registry-password || secrets.GITHUB_TOKEN }}
 
   post-steps:
-    name : ${{ format('{0}', needs.prepare.outputs.post-step-matrix == '[]' && 'Post Steps' || matrix.post-steps.name) }}
+    name : ${{ matrix.post-steps.name }}
     needs:
       - prepare
       - image-push
-    if: ${{ !failure() && !cancelled() && needs.prepare.outputs.post-step-matrix != '[]' }}
+    if: ${{ !failure() && !cancelled() && fromJson(needs.prepare.outputs.post-step-matrix)[0].name != 'Post Steps Skipped' }}
     runs-on: ${{ inputs.runner-default }}
     strategy:
       matrix:
