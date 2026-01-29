@@ -602,14 +602,14 @@ jobs:
 
       - name: Next release version
         id: release_version
-        uses: getdevopspro/github-actions/release-version@v0.4.2
+        uses: getdevopspro/github-actions/release-version@v0.4.3
         with:
           previous-version: ${{ inputs.previous-version }}
           next-version: ${{ inputs.next-version }}
           output-format: ${{ inputs.output-format }}
 
       - name: Set version in file
-        uses: getdevopspro/github-actions/version-file@v0.4.2
+        uses: getdevopspro/github-actions/version-file@v0.4.3
         with:
           version: ${{ steps.release_version.outputs.version }}
           version-makefile: ${{ inputs.version-makefile }}
@@ -823,7 +823,7 @@ jobs:
 
       - name: Set image metadata and platform matrix
         id: prepare_image
-        uses: getdevopspro/github-actions/buildx-bake/prepare@v0.4.2
+        uses: getdevopspro/github-actions/buildx-bake/prepare@v0.4.3
         with:
           bake-target: ${{ inputs.bake-target }}
           registry-image: ${{ inputs.registry-image }}
@@ -890,7 +890,7 @@ jobs:
 
       - name: ${{ matrix.pre-steps.name }}
         id: command
-        uses: getdevopspro/github-actions/command@v0.4.2
+        uses: getdevopspro/github-actions/command@v0.4.3
         with:
           command: ${{ matrix.pre-steps.command }}
 
@@ -910,7 +910,7 @@ jobs:
         with:
           name: ${{ inputs.source-artifact-name }}
 
-      - uses: getdevopspro/github-actions/buildx-bake/build@v0.4.2
+      - uses: getdevopspro/github-actions/buildx-bake/build@v0.4.3
         with:
           bake-file: ${{ inputs.bake-file }}
           bake-target: ${{ inputs.bake-target }}
@@ -933,7 +933,7 @@ jobs:
         with:
           name: ${{ inputs.source-artifact-name }}
 
-      - uses: getdevopspro/github-actions/buildx-bake/merge@v0.4.2
+      - uses: getdevopspro/github-actions/buildx-bake/merge@v0.4.3
         with:
           registry-username: ${{ inputs.registry-username }}
           registry-password: ${{ secrets.registry-password || secrets.GITHUB_TOKEN }}
@@ -972,7 +972,7 @@ jobs:
 
       - name: ${{ matrix.post-steps.name }}
         id: command
-        uses: getdevopspro/github-actions/command@v0.4.2
+        uses: getdevopspro/github-actions/command@v0.4.3
         with:
           command: ${{ matrix.post-steps.command }}
           artifact-name: ${{ matrix.post-steps.artifact-name }}
