@@ -880,7 +880,7 @@ jobs:
   pre-steps:
     name: ${{ format('{0}', matrix.pre-steps.name || 'Pre-Build Steps') }}
     needs: prepare
-    if: ${{ !cancelled() && needs.prepare.outputs.pre-step-matrix != '' && toJson(fromJson(needs.prepare.outputs.pre-step-matrix)) != '[]' }}
+    if: ${{ !cancelled() && needs.prepare.outputs.pre-step-matrix != '' && needs.prepare.outputs.pre-step-matrix != '[]' }}
     runs-on: ${{ inputs.runner-default }}
     strategy:
       matrix:
@@ -918,7 +918,7 @@ jobs:
     needs:
       - prepare
       - pre-steps
-    if: ${{ !failure() && !cancelled() && needs.prepare.outputs.image-platform-matrix != '' && toJson(fromJson(needs.prepare.outputs.image-platform-matrix)) != '[]' }}
+    if: ${{ !failure() && !cancelled() && needs.prepare.outputs.image-platform-matrix != '' && needs.prepare.outputs.image-platform-matrix != '[]' }}
     runs-on: ${{ matrix.platform == 'linux/arm64' && inputs.runner-build-arm64 || inputs.runner-build-default }}
     strategy:
       matrix:
@@ -962,7 +962,7 @@ jobs:
     needs:
       - prepare
       - image-push
-    if: ${{ !failure() && !cancelled() && needs.prepare.outputs.post-step-matrix != '' && toJson(fromJson(needs.prepare.outputs.post-step-matrix)) != '[]' }}
+    if: ${{ !failure() && !cancelled() && needs.prepare.outputs.post-step-matrix != '' && needs.prepare.outputs.post-step-matrix != '[]' }}
     runs-on: ${{ inputs.runner-default }}
     strategy:
       matrix:
