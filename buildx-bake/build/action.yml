@@ -40,6 +40,12 @@ inputs:
 runs:
   using: "composite"
   steps:
+    - name: Convert registry-image to lowercase
+      shell: bash
+      id: lowercase_registry_image
+      run: |
+        echo "registry-image=${{ inputs.registry-image }}" | tr '[:upper:]' '[:lower:]' >> "$GITHUB_OUTPUT"
+
     - name: Prepare env
       shell: bash
       run: |
@@ -99,7 +105,7 @@ runs:
           cwd://${{ runner.temp }}/bake-meta.json
         targets: ${{ inputs.bake-target }}
         set: |
-          ${{ inputs.registry-image != '' && format('*.tags={0}', inputs.registry-image) || '' }}
+          ${{ steps.lowercase_registry_image.outputs.registry-image != '' && format('*.tags={0}', steps.lowercase_registry_image.outputs.registry-image) || '' }}
           *.platform=${{ matrix.platform }}
           *.output=type=image,push-by-digest=true,name-canonical=true,push=true
           ${{ inputs.bake-set }}

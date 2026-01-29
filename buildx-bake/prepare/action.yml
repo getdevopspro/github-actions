@@ -21,6 +21,12 @@ outputs:
 runs:
   using: "composite"
   steps:
+    - name: Convert registry-image to lowercase
+      shell: bash
+      id: lowercase_registry_image
+      run: |
+        echo "registry-image=${{ inputs.registry-image }}" | tr '[:upper:]' '[:lower:]' >> "$GITHUB_OUTPUT"
+
     - name: Create matrix
       id: platforms
       shell: bash
@@ -37,7 +43,7 @@ runs:
       id: meta
       uses: docker/metadata-action@v5
       with:
-        images: ${{ inputs.registry-image }}
+        images: ${{ steps.lowercase_registry_image.outputs.registry-image }}
         tags: ${{ inputs.meta-tags }}
         labels: ${{ inputs.meta-labels }}
 
