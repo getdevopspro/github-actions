@@ -57,11 +57,6 @@ on:
         description: 'Set version in chart named as input'
         required: false
         type: string
-      registry-image:
-        description: 'Container registry + image prefix (e.g. ghcr.io/org/repo)'
-        required: false
-        default: ghcr.io/${{ github.repository }}
-        type: string
       bake-file:
         description: 'The bake file'
         required: false
@@ -80,9 +75,20 @@ on:
         description: 'The labels to add to the image'
         required: false
         type: string
+      registry:
+        description: 'The container registry'
+        required: false
+        default: 'ghcr.io'
+        type: string
+      registry-image:
+        description: 'Container registry + image prefix (e.g. ghcr.io/org/repo)'
+        required: false
+        default: ghcr.io/${{ github.repository }}
+        type: string
       registry-username:
-        description: 'Username for registry login'
-        required: true
+        description: 'The container registry username'
+        required: false
+        default: ${{ github.actor }}
         type: string
       runner-default:
         description: 'Default runner'
@@ -99,11 +105,6 @@ on:
         required: false
         type: string
         default: 'ubuntu-22.04'
-      registry:
-        description: 'Docker registry domain'
-        required: false
-        type: string
-        default: 'ghcr.io'
       free-disk-space:
         description: 'Free disk space before build'
         required: false
