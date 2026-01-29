@@ -78,7 +78,7 @@ jobs:
         with:
           fetch-depth: 0
           fetch-tags: true
-          token: ${{ secrets.checkout-token }}
+          token: ${{ secrets.checkout-token || '' }}
 
       - id: release_version
         name: next release version

@@ -199,7 +199,7 @@ jobs:
         with:
           fetch-depth: 0
           fetch-tags: true
-          token: ${{ secrets.checkout-token }}
+          token: ${{ secrets.checkout-token || '' }}
 
       - name: Set up qemu
         uses: docker/setup-qemu-action@v3
