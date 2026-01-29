@@ -730,6 +730,13 @@ jobs:
               r'''${{ inputs.pre-test-e2e-artifact-retention-days }}'''
           )
 
+          # If matrix is empty, add a special 'Pre-Build Steps' item
+          if not matrix:
+              matrix.append({
+                      "name": "Pre-Build Steps",
+                      "command": "",
+                  })
+
           import secrets
           delimiter = f"ghadelimiter_{secrets.token_hex(16)}"
           output = json.dumps(matrix, ensure_ascii=False, separators=(',', ':'))
@@ -830,6 +837,13 @@ jobs:
               r'''${{ inputs.post-test-e2e-artifact-retention-days }}'''
           )
 
+          # If matrix is empty, add a special 'Post-Build Steps' item
+          if not matrix:
+              matrix.append({
+                      "name": "Post-Build Steps",
+                      "command": "",
+                  })
+
           import secrets
           delimiter = f"ghadelimiter_{secrets.token_hex(16)}"
           output = json.dumps(matrix, ensure_ascii=False, separators=(',', ':'))
@@ -878,9 +892,9 @@ jobs:
           retention-days: 1
 
   pre-steps:
-    name: ${{ format('{0}', matrix.pre-steps.name || 'Pre-Build Steps') }}
+    name: ${{ matrix.pre-steps.name }}
     needs: prepare
-    if: ${{ !cancelled() && needs.prepare.outputs.pre-step-matrix != '' && needs.prepare.outputs.pre-step-matrix != '[]' }}
+    if: ${{ !cancelled() && fromJson(needs.prepare.outputs.pre-step-matrix).command != '' }}
     runs-on: ${{ inputs.runner-default }}
     strategy:
       matrix:
@@ -958,11 +972,11 @@ jobs:
           registry-password: ${{ secrets.registry-password || secrets.GITHUB_TOKEN }}
 
   post-steps:
-    name: ${{ format('{0}', matrix.post-steps.name || 'Post-Build Steps') }}
+    name: ${{ matrix.post-steps.name }}
     needs:
       - prepare
       - image-push
-    if: ${{ !failure() && !cancelled() && needs.prepare.outputs.post-step-matrix != '' && needs.prepare.outputs.post-step-matrix != '[]' }}
+    if: ${{ !failure() && !cancelled() && fromJson(needs.prepare.outputs.post-step-matrix).command != '' }}
     runs-on: ${{ inputs.runner-default }}
     strategy:
       matrix:
