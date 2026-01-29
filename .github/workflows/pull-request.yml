@@ -716,12 +716,15 @@ jobs:
               r'''${{ inputs.pre-test-e2e-artifact-retention-days }}'''
           )
 
+          import secrets
+          delimiter = f"ghadelimiter_{secrets.token_hex(16)}"
+          output = json.dumps(matrix, ensure_ascii=False, separators=(',', ':'))
           with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
-              f.write(f"matrix={json.dumps(matrix, ensure_ascii=True, separators=(',', ':'))}\n")
+              f.write(f"matrix<<{delimiter}\n{output}\n{delimiter}\n")
 
       - name: Show pre-steps matrix
         shell: bash
-        run: echo "${{ steps.set_pre_matrix.outputs.matrix }}"
+        run: echo '${{ toJSON(steps.set_pre_matrix.outputs.matrix) }}'
 
       - name: Set post-steps matrix
         id: set_post_matrix
@@ -814,12 +817,15 @@ jobs:
               r'''${{ inputs.post-test-e2e-artifact-retention-days }}'''
           )
 
+          import secrets
+          delimiter = f"ghadelimiter_{secrets.token_hex(16)}"
+          output = json.dumps(matrix, ensure_ascii=False, separators=(',', ':'))
           with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
-              f.write(f"matrix={json.dumps(matrix, ensure_ascii=True, separators=(',', ':'))}\n")
+              f.write(f"matrix<<{delimiter}\n{output}\n{delimiter}\n")
 
       - name: Show post-steps matrix
         shell: bash
-        run: echo "${{ steps.set_post_matrix.outputs.matrix }}"
+        run: echo '${{ toJSON(steps.set_post_matrix.outputs.matrix) }}'
 
       - name: Set image metadata and platform matrix
         id: prepare_image
