@@ -111,15 +111,7 @@ on:
         default: false
         type: boolean
       prepare-command:
-        description: 'The command to run for preparing the build'
-        required: false
-        type: string
-      lint-command:
-        description: 'The command to run for linting'
-        required: false
-        type: string
-      checks-command:
-        description: 'The command to run for checks'
+        description: 'The prepare command to run for preparing the build (pre-steps)'
         required: false
         type: string
       just-install:
@@ -132,138 +124,451 @@ on:
         required: false
         default: '1.35.0'
         type: string
-      test-command:
-        description: 'The command to run for testing'
+      pre-checks-name:
+        description: 'Name of the pre-checks step'
         required: false
         type: string
-      test-artifact-name:
-        description: 'Name of the artifact to upload for test command'
+        default: 'Checks (pre-steps)'
+      pre-checks-command:
+        description: 'The checks command (pre-steps)'
         required: false
         type: string
-      test-artifact-path:
-        description: 'Path to the artifact to upload for test command'
+      pre-checks-artifact-name:
+        description: 'Name of the artifact to upload for checks command (pre-steps)'
         required: false
         type: string
-      test-artifact-overwrite:
-        description: 'Whether to overwrite the artifact if it already exists for test command'
+      pre-checks-artifact-path:
+        description: 'Path to the artifact to upload for checks command (pre-steps)'
+        required: false
+        type: string
+      pre-checks-artifact-overwrite:
+        description: 'Whether to overwrite the artifact if it already exists for checks command (pre-steps)'
         required: false
         type: boolean
         default: false
-      test-artifact-if-no-files-found:
-        description: 'Action to take if no files are found to upload for test command'
+      pre-checks-artifact-if-no-files-found:
+        description: 'Action to take if no files are found to upload for checks command (pre-steps)'
         required: false
         type: string
         default: 'warn'
-      test-artifact-retention-days:
-        description: 'Number of days to retain the artifact for test command'
+      pre-checks-artifact-retention-days:
+        description: 'Number of days to retain the artifact for checks command (pre-steps)'
         required: false
         type: number
         default: 30
-      test-unit-command:
-        description: 'The command to run for unit testing'
+      pre-lint-name:
+        description: 'Name of the pre-lint step'
         required: false
         type: string
-      test-unit-artifact-name:
-        description: 'Name of the artifact to upload for unit test command'
+        default: 'Lint (pre-steps)'
+      pre-lint-command:
+        description: 'The lint command (pre-steps)'
         required: false
         type: string
-      test-unit-artifact-path:
-        description: 'Path to the artifact to upload for unit test command'
+      pre-lint-artifact-name:
+        description: 'Name of the artifact to upload for lint command (pre-steps)'
         required: false
         type: string
-      test-unit-artifact-overwrite:
-        description: 'Whether to overwrite the artifact if it already exists for unit test command'
+      pre-lint-artifact-path:
+        description: 'Path to the artifact to upload for lint command (pre-steps)'
+        required: false
+        type: string
+      pre-lint-artifact-overwrite:
+        description: 'Whether to overwrite the artifact if it already exists for lint command (pre-steps)'
         required: false
         type: boolean
         default: false
-      test-unit-if-no-files-found:
-        description: 'Action to take if no files are found to upload for unit test command'
+      pre-lint-artifact-if-no-files-found:
+        description: 'Action to take if no files are found to upload for lint command (pre-steps)'
         required: false
         type: string
         default: 'warn'
-      test-unit-retention-days:
-        description: 'Number of days to retain the artifact for unit test command'
+      pre-lint-artifact-retention-days:
+        description: 'Number of days to retain the artifact for lint command (pre-steps)'
         required: false
         type: number
         default: 30
-      test-integration-command:
-        description: 'The command to run for integration testing'
+      pre-test-name:
+        description: 'Name of the pre-test step'
         required: false
         type: string
-      test-integration-artifact-name:
-        description: 'Name of the artifact to upload for integration test command'
+        default: 'Test (pre-steps)'
+      pre-test-command:
+        description: 'The test command (pre-steps)'
         required: false
         type: string
-      test-integration-artifact-path:
-        description: 'Path to the artifact to upload for integration test command'
+      pre-test-artifact-name:
+        description: 'Name of the artifact to upload for test command (pre-steps)'
         required: false
         type: string
-      test-integration-artifact-overwrite:
-        description: 'Whether to overwrite the artifact if it already exists for integration test command'
+      pre-test-artifact-path:
+        description: 'Path to the artifact to upload for test command (pre-steps)'
+        required: false
+        type: string
+      pre-test-artifact-overwrite:
+        description: 'Whether to overwrite the artifact if it already exists for test command (pre-steps)'
         required: false
         type: boolean
         default: false
-      test-integration-if-no-files-found:
-        description: 'Action to take if no files are found to upload for integration test command'
+      pre-test-artifact-if-no-files-found:
+        description: 'Action to take if no files are found to upload for test command (pre-steps)'
         required: false
         type: string
         default: 'warn'
-      test-integration-retention-days:
-        description: 'Number of days to retain the artifact for integration test command'
+      pre-test-artifact-retention-days:
+        description: 'Number of days to retain the artifact for test command (pre-steps)'
         required: false
         type: number
         default: 30
-      test-e2e-command:
-        description: 'The command to run for end-to-end testing'
+      pre-test-unit-name:
+        description: 'Name of the pre-test-unit step'
         required: false
         type: string
-      test-e2e-artifact-name:
-        description: 'Name of the artifact to upload for e2e test command'
+        default: 'Unit Test (pre-steps)'
+      pre-test-unit-command:
+        description: 'The command to run for unit testing (pre-steps)'
         required: false
         type: string
-      test-e2e-artifact-path:
-        description: 'Path to the artifact to upload for e2e test command'
+      pre-test-unit-artifact-name:
+        description: 'Name of the artifact to upload for unit test command (pre-steps)'
         required: false
         type: string
-      test-e2e-artifact-overwrite:
+      pre-test-unit-artifact-path:
+        description: 'Path to the artifact to upload for unit test command (pre-steps)'
+        required: false
+        type: string
+      pre-test-unit-artifact-overwrite:
+        description: 'Whether to overwrite the artifact if it already exists for unit test command (pre-steps)'
+        required: false
+        type: boolean
+        default: false
+      pre-test-unit-artifact-if-no-files-found:
+        description: 'Action to take if no files are found to upload for unit test command (pre-steps)'
+        required: false
+        type: string
+        default: 'warn'
+      pre-test-unit-artifact-retention-days:
+        description: 'Number of days to retain the artifact for unit test command (pre-steps)'
+        required: false
+        type: number
+        default: 30
+      pre-test-coverage-name:
+        description: 'Name of the pre-test-coverage step'
+        required: false
+        type: string
+        default: 'Test Coverage (pre-steps)'
+      pre-test-coverage-command:
+        description: 'The command to run for test coverage (pre-steps)'
+        required: false
+        type: string
+      pre-test-coverage-artifact-name:
+        description: 'Name of the artifact to upload for test coverage command (pre-steps)'
+        required: false
+        type: string
+      pre-test-coverage-artifact-path:
+        description: 'Path to the artifact to upload for test coverage command (pre-steps)'
+        required: false
+        type: string
+      pre-test-coverage-artifact-overwrite:
+        description: 'Whether to overwrite the artifact if it already exists for test coverage command (pre-steps)'
+        required: false
+        type: boolean
+        default: false
+      pre-test-coverage-artifact-if-no-files-found:
+        description: 'Action to take if no files are found to upload for test coverage command (pre-steps)'
+        required: false
+        type: string
+        default: 'warn'
+      pre-test-coverage-artifact-retention-days:
+        description: 'Number of days to retain the artifact for test coverage command (pre-steps)'
+        required: false
+        type: number
+        default: 30
+      pre-test-integration-name:
+        description: 'Name of the pre-test-integration step'
+        required: false
+        type: string
+        default: 'Integration Test (pre-steps)'
+      pre-test-integration-command:
+        description: 'The command to run for integration testing (pre-steps)'
+        required: false
+        type: string
+      pre-test-integration-artifact-name:
+        description: 'Name of the artifact to upload for integration test command (pre-steps)'
+        required: false
+        type: string
+      pre-test-integration-artifact-path:
+        description: 'Path to the artifact to upload for integration test command (pre-steps)'
+        required: false
+        type: string
+      pre-test-integration-artifact-overwrite:
+        description: 'Whether to overwrite the artifact if it already exists for integration test command (pre-steps)'
+        required: false
+        type: boolean
+        default: false
+      pre-test-integration-artifact-if-no-files-found:
+        description: 'Action to take if no files are found to upload for integration test command (pre-steps)'
+        required: false
+        type: string
+        default: 'warn'
+      pre-test-integration-artifact-retention-days:
+        description: 'Number of days to retain the artifact for integration test command (pre-steps)'
+        required: false
+        type: number
+        default: 30
+      pre-test-e2e-name:
+        description: 'Name of the pre-test-e2e step'
+        required: false
+        type: string
+        default: 'E2E Test (pre-steps)'
+      pre-test-e2e-command:
+        description: 'The command to run for end-to-end testing (pre-steps)'
+        required: false
+        type: string
+      pre-test-e2e-artifact-name:
+        description: 'Name of the artifact to upload for e2e test command (pre-steps)'
+        required: false
+        type: string
+      pre-test-e2e-artifact-path:
+        description: 'Path to the artifact to upload for e2e test command (pre-steps)'
+        required: false
+        type: string
+      pre-test-e2e-artifact-overwrite:
         description: 'Whether to overwrite the artifact if it already exists for e2e test command'
         required: false
         type: boolean
         default: false
-      test-e2e-if-no-files-found:
-        description: 'Action to take if no files are found to upload for e2e test command'
+      pre-test-e2e-artifact-if-no-files-found:
+        description: 'Action to take if no files are found to upload for e2e test command (pre-steps)'
         required: false
         type: string
         default: 'warn'
-      test-e2e-retention-days:
-        description: 'Number of days to retain the artifact for e2e test command'
+      pre-test-e2e-artifact-retention-days:
+        description: 'Number of days to retain the artifact for e2e test command (pre-steps)'
         required: false
         type: number
         default: 30
-      test-coverage-command:
-        description: 'The command to run for test coverage'
+      post-checks-name:
+        description: 'Name of the post-checks step'
         required: false
         type: string
-      test-coverage-artifact-name:
-        description: 'Name of the artifact to upload for test coverage command'
+        default: 'Checks (post-steps)'
+      post-checks-command:
+        description: 'The checks command (post-steps)'
         required: false
         type: string
-      test-coverage-artifact-path:
-        description: 'Path to the artifact to upload for test coverage command'
+      post-checks-artifact-name:
+        description: 'Name of the artifact to upload for checks command (post-steps)'
         required: false
         type: string
-      test-coverage-artifact-overwrite:
-        description: 'Whether to overwrite the artifact if it already exists for test coverage command'
+      post-checks-artifact-path:
+        description: 'Path to the artifact to upload for checks command (post-steps)'
+        required: false
+        type: string
+      post-checks-artifact-overwrite:
+        description: 'Whether to overwrite the artifact if it already exists for checks command (post-steps)'
         required: false
         type: boolean
         default: false
-      test-coverage-if-no-files-found:
-        description: 'Action to take if no files are found to upload for test coverage command'
+      post-checks-artifact-if-no-files-found:
+        description: 'Action to take if no files are found to upload for checks command (post-steps)'
         required: false
         type: string
         default: 'warn'
-      test-coverage-retention-days:
-        description: 'Number of days to retain the artifact for test coverage command'
+      post-checks-artifact-retention-days:
+        description: 'Number of days to retain the artifact for checks command (post-steps)'
+        required: false
+        type: number
+        default: 30
+      post-lint-name:
+        description: 'Name of the post-lint step'
+        required: false
+        type: string
+        default: 'Lint (post-steps)'
+      post-lint-command:
+        description: 'The lint command (post-steps)'
+        required: false
+        type: string
+      post-lint-artifact-name:
+        description: 'Name of the artifact to upload for lint command (post-steps)'
+        required: false
+        type: string
+      post-lint-artifact-path:
+        description: 'Path to the artifact to upload for lint command (post-steps)'
+        required: false
+        type: string
+      post-lint-artifact-overwrite:
+        description: 'Whether to overwrite the artifact if it already exists for lint command (post-steps)'
+        required: false
+        type: boolean
+        default: false
+      post-lint-artifact-if-no-files-found:
+        description: 'Action to take if no files are found to upload for lint command (post-steps)'
+        required: false
+        type: string
+        default: 'warn'
+      post-lint-artifact-retention-days:
+        description: 'Number of days to retain the artifact for lint command (post-steps)'
+        required: false
+        type: number
+        default: 30
+      post-test-name:
+        description: 'Name of the post-test step'
+        required: false
+        type: string
+        default: 'Test (post-steps)'
+      post-test-command:
+        description: 'The test command (post-steps)'
+        required: false
+        type: string
+      post-test-artifact-name:
+        description: 'Name of the artifact to upload for test command (post-steps)'
+        required: false
+        type: string
+      post-test-artifact-path:
+        description: 'Path to the artifact to upload for test command (post-steps)'
+        required: false
+        type: string
+      post-test-artifact-overwrite:
+        description: 'Whether to overwrite the artifact if it already exists for test command (post-steps)'
+        required: false
+        type: boolean
+        default: false
+      post-test-artifact-if-no-files-found:
+        description: 'Action to take if no files are found to upload for test command (post-steps)'
+        required: false
+        type: string
+        default: 'warn'
+      post-test-artifact-retention-days:
+        description: 'Number of days to retain the artifact for test command (post-steps)'
+        required: false
+        type: number
+        default: 30
+      post-test-unit-name:
+        description: 'Name of the post-test-unit step'
+        required: false
+        type: string
+        default: 'Unit Test (post-steps)'
+      post-test-unit-command:
+        description: 'The command to run for unit testing (post-steps)'
+        required: false
+        type: string
+      post-test-unit-artifact-name:
+        description: 'Name of the artifact to upload for unit test command (post-steps)'
+        required: false
+        type: string
+      post-test-unit-artifact-path:
+        description: 'Path to the artifact to upload for unit test command (post-steps)'
+        required: false
+        type: string
+      post-test-unit-artifact-overwrite:
+        description: 'Whether to overwrite the artifact if it already exists for unit test command (post-steps)'
+        required: false
+        type: boolean
+        default: false
+      post-test-unit-artifact-if-no-files-found:
+        description: 'Action to take if no files are found to upload for unit test command (post-steps)'
+        required: false
+        type: string
+        default: 'warn'
+      post-test-unit-artifact-retention-days:
+        description: 'Number of days to retain the artifact for unit test command (post-steps)'
+        required: false
+        type: number
+        default: 30
+      post-test-coverage-name:
+        description: 'Name of the post-test-coverage step'
+        required: false
+        type: string
+        default: 'Test Coverage (post-steps)'
+      post-test-coverage-command:
+        description: 'The command to run for test coverage (post-steps)'
+        required: false
+        type: string
+      post-test-coverage-artifact-name:
+        description: 'Name of the artifact to upload for test coverage command (post-steps)'
+        required: false
+        type: string
+      post-test-coverage-artifact-path:
+        description: 'Path to the artifact to upload for test coverage command (post-steps)'
+        required: false
+        type: string
+      post-test-coverage-artifact-overwrite:
+        description: 'Whether to overwrite the artifact if it already exists for test coverage command (post-steps)'
+        required: false
+        type: boolean
+        default: false
+      post-test-coverage-artifact-if-no-files-found:
+        description: 'Action to take if no files are found to upload for test coverage command (post-steps)'
+        required: false
+        type: string
+        default: 'warn'
+      post-test-coverage-artifact-retention-days:
+        description: 'Number of days to retain the artifact for test coverage command (post-steps)'
+        required: false
+        type: number
+        default: 30
+      post-test-integration-name:
+        description: 'Name of the post-test-integration step'
+        required: false
+        type: string
+        default: 'Integration Test (post-steps)'
+      post-test-integration-command:
+        description: 'The command to run for integration testing (post-steps)'
+        required: false
+        type: string
+      post-test-integration-artifact-name:
+        description: 'Name of the artifact to upload for integration test command (post-steps)'
+        required: false
+        type: string
+      post-test-integration-artifact-path:
+        description: 'Path to the artifact to upload for integration test command (post-steps)'
+        required: false
+        type: string
+      post-test-integration-artifact-overwrite:
+        description: 'Whether to overwrite the artifact if it already exists for integration test command (post-steps)'
+        required: false
+        type: boolean
+        default: false
+      post-test-integration-artifact-if-no-files-found:
+        description: 'Action to take if no files are found to upload for integration test command (post-steps)'
+        required: false
+        type: string
+        default: 'warn'
+      post-test-integration-artifact-retention-days:
+        description: 'Number of days to retain the artifact for integration test command (post-steps)'
+        required: false
+        type: number
+        default: 30
+      post-test-e2e-name:
+        description: 'Name of the post-test-e2e step'
+        required: false
+        type: string
+        default: 'E2E Test (post-steps)'
+      post-test-e2e-command:
+        description: 'The command to run for end-to-end testing (post-steps)'
+        required: false
+        type: string
+      post-test-e2e-artifact-name:
+        description: 'Name of the artifact to upload for e2e test command (post-steps)'
+        required: false
+        type: string
+      post-test-e2e-artifact-path:
+        description: 'Path to the artifact to upload for e2e test command (post-steps)'
+        required: false
+        type: string
+      post-test-e2e-artifact-overwrite:
+        description: 'Whether to overwrite the artifact if it already exists for e2e test command'
+        required: false
+        type: boolean
+        default: false
+      post-test-e2e-artifact-if-no-files-found:
+        description: 'Action to take if no files are found to upload for e2e test command (post-steps)'
+        required: false
+        type: string
+        default: 'warn'
+      post-test-e2e-artifact-retention-days:
+        description: 'Number of days to retain the artifact for e2e test command (post-steps)'
         required: false
         type: number
         default: 30
@@ -326,14 +631,38 @@ jobs:
         run: |
           MATRIX=[]
           function jq_add_step {
-            MATRIX=$(echo $MATRIX | jq -c --arg name "$1" --arg cmd "$2" \
-              '. + [{"name": $name, "command": $cmd}]')
+            MATRIX=$(echo $MATRIX | jq -c --arg name "$1" --arg cmd "$2" --arg artifact_name "$3" --arg artifact_path "$4" \
+              --arg artifact_overwrite "$5" --arg artifact_if_no_files_found "$6" --arg artifact_retention_days "$7" \
+              '. + [{"name": $name, "command": $cmd, "artifact-name": $artifact_name, "artifact-path": $artifact_path, "artifact-overwrite": $artifact_overwrite, "artifact-if-no-files-found": $artifact_if_no_files_found, "artifact-retention-days": $artifact_retention_days}]')
           }
-          if [[ -n '${{ inputs.lint-command }}' ]]; then
-            jq_add_step "Lint" '${{ inputs.lint-command }}'
+          if [[ -n '${{ inputs.pre-checks-command }}' ]]; then
+            jq_add_step '${{ inputs.pre-checks-name }}' '${{ inputs.pre-checks-command }}' '${{ inputs.pre-checks-artifact-name }}' '${{ inputs.pre-checks-artifact-path }}' \
+              '${{ inputs.pre-checks-artifact-overwrite }}' '${{ inputs.pre-checks-artifact-if-no-files-found }}' '${{ inputs.pre-checks-artifact-retention-days }}'
           fi
-          if [[ -n '${{ inputs.checks-command }}' ]]; then
-            jq_add_step "Checks" '${{ inputs.checks-command }}'
+          if [[ -n '${{ inputs.pre-lint-command }}' ]]; then
+            jq_add_step '${{ inputs.pre-lint-name }}' '${{ inputs.pre-lint-command }}' '${{ inputs.pre-lint-artifact-name }}' '${{ inputs.pre-lint-artifact-path }}' \
+              '${{ inputs.pre-lint-artifact-overwrite }}' '${{ inputs.pre-lint-artifact-if-no-files-found }}' '${{ inputs.pre-lint-artifact-retention-days }}'
+          fi
+          if [[ -n '${{ inputs.pre-test-command }}' ]]; then
+            jq_add_step '${{ inputs.pre-test-name }}' '${{ inputs.pre-test-command }}' '${{ inputs.pre-test-artifact-name }}' '${{ inputs.pre-test-artifact-path }}' \
+              '${{ inputs.pre-test-artifact-overwrite }}' '${{ inputs.pre-test-artifact-if-no-files-found }}' '${{ inputs.pre-test-artifact-retention-days }}'
+          fi
+
+          if [[ -n '${{ inputs.pre-test-unit-command }}' ]]; then
+            jq_add_step '${{ inputs.pre-test-unit-name }}' '${{ inputs.pre-test-unit-command }}' '${{ inputs.pre-test-unit-artifact-name }}' '${{ inputs.pre-test-unit-artifact-path }}' \
+              '${{ inputs.pre-test-unit-artifact-overwrite }}' '${{ inputs.pre-test-unit-artifact-if-no-files-found }}' '${{ inputs.pre-test-unit-artifact-retention-days }}'
+          fi
+          if [[ -n '${{ inputs.pre-test-coverage-command }}' ]]; then
+            jq_add_step '${{ inputs.pre-test-coverage-name }}' '${{ inputs.pre-test-coverage-command }}' '${{ inputs.pre-test-coverage-artifact-name }}' '${{ inputs.pre-test-coverage-artifact-path }}' \
+              '${{ inputs.pre-test-coverage-artifact-overwrite }}' '${{ inputs.pre-test-coverage-artifact-if-no-files-found }}' '${{ inputs.pre-test-coverage-artifact-retention-days }}'
+          fi
+          if [[ -n '${{ inputs.pre-test-integration-command }}' ]]; then
+            jq_add_step '${{ inputs.pre-test-integration-name }}' '${{ inputs.pre-test-integration-command }}' '${{ inputs.pre-test-integration-artifact-name }}' '${{ inputs.pre-test-integration-artifact-path }}' \
+              '${{ inputs.pre-test-integration-artifact-overwrite }}' '${{ inputs.pre-test-integration-artifact-if-no-files-found }}' '${{ inputs.pre-test-integration-artifact-retention-days }}'
+          fi
+          if [[ -n '${{ inputs.pre-test-e2e-command }}' ]]; then
+            jq_add_step '${{ inputs.pre-test-e2e-name }}' '${{ inputs.pre-test-e2e-command }}' '${{ inputs.pre-test-e2e-artifact-name }}' '${{ inputs.pre-test-e2e-artifact-path }}' \
+              '${{ inputs.pre-test-e2e-artifact-overwrite }}' '${{ inputs.pre-test-e2e-artifact-if-no-files-found }}' '${{ inputs.pre-test-e2e-artifact-retention-days }}'
           fi
           echo "matrix=$MATRIX" >>${GITHUB_OUTPUT}
 
@@ -351,30 +680,34 @@ jobs:
               --arg artifact_overwrite "$5" --arg artifact_if_no_files_found "$6" --arg artifact_retention_days "$7" \
               '. + [{"name": $name, "command": $cmd, "artifact-name": $artifact_name, "artifact-path": $artifact_path, "artifact-overwrite": $artifact_overwrite, "artifact-if-no-files-found": $artifact_if_no_files_found, "artifact-retention-days": $artifact_retention_days}]')
           }
-          if [[ -n '${{ inputs.test-command }}' ]]; then
-            jq_add_step "Test" '${{ inputs.test-command }}' '${{ inputs.test-artifact-name }}' '${{ inputs.test-artifact-path }}' \
-              '${{ inputs.test-artifact-overwrite }}' '${{ inputs.test-artifact-if-no-files-found }}' '${{ inputs.test-artifact-retention-days }}'
+          if [[ -n '${{ inputs.post-checks-command }}' ]]; then
+            jq_add_step '${{ inputs.post-checks-name }}' '${{ inputs.post-checks-command }}' '${{ inputs.post-checks-artifact-name }}' '${{ inputs.post-checks-artifact-path }}' \
+              '${{ inputs.post-checks-artifact-overwrite }}' '${{ inputs.post-checks-artifact-if-no-files-found }}' '${{ inputs.post-checks-artifact-retention-days }}'
+          fi
+          if [[ -n '${{ inputs.post-lint-command }}' ]]; then
+            jq_add_step '${{ inputs.post-lint-name }}' '${{ inputs.post-lint-command }}' '${{ inputs.post-lint-artifact-name }}' '${{ inputs.post-lint-artifact-path }}' \
+              '${{ inputs.post-lint-artifact-overwrite }}' '${{ inputs.post-lint-artifact-if-no-files-found }}' '${{ inputs.post-lint-artifact-retention-days }}'
+          fi
+          if [[ -n '${{ inputs.post-test-command }}' ]]; then
+            jq_add_step '${{ inputs.post-test-name }}' '${{ inputs.post-test-command }}' '${{ inputs.post-test-artifact-name }}' '${{ inputs.post-test-artifact-path }}' \
+              '${{ inputs.post-test-artifact-overwrite }}' '${{ inputs.post-test-artifact-if-no-files-found }}' '${{ inputs.post-test-artifact-retention-days }}'
           fi
 
-          if [[ -n '${{ inputs.test-unit-command }}' ]]; then
-            jq_add_step "Unit Test" '${{ inputs.test-unit-command }}' '${{ inputs.test-unit-artifact-name }}' '${{ inputs.test-unit-artifact-path }}' \
-              '${{ inputs.test-unit-artifact-overwrite }}' '${{ inputs.test-unit-if-no-files-found }}' '${{ inputs.test-unit-retention-days }}'
+          if [[ -n '${{ inputs.post-test-unit-command }}' ]]; then
+            jq_add_step '${{ inputs.post-test-unit-name }}' '${{ inputs.post-test-unit-command }}' '${{ inputs.post-test-unit-artifact-name }}' '${{ inputs.post-test-unit-artifact-path }}' \
+              '${{ inputs.post-test-unit-artifact-overwrite }}' '${{ inputs.post-test-unit-artifact-if-no-files-found }}' '${{ inputs.post-test-unit-artifact-retention-days }}'
           fi
-          if [[ -n '${{ inputs.test-integration-command }}' ]]; then
-            jq_add_step "Integration Test" '${{ inputs.test-integration-command }}' '${{ inputs.test-integration-artifact-name }}' '${{ inputs.test-integration-artifact-path }}' \
-              '${{ inputs.test-integration-artifact-overwrite }}' '${{ inputs.test-integration-if-no-files-found }}' '${{ inputs.test-integration-retention-days }}'
+          if [[ -n '${{ inputs.post-test-coverage-command }}' ]]; then
+            jq_add_step '${{ inputs.post-test-coverage-name }}' '${{ inputs.post-test-coverage-command }}' '${{ inputs.post-test-coverage-artifact-name }}' '${{ inputs.post-test-coverage-artifact-path }}' \
+              '${{ inputs.post-test-coverage-artifact-overwrite }}' '${{ inputs.post-test-coverage-artifact-if-no-files-found }}' '${{ inputs.post-test-coverage-artifact-retention-days }}'
           fi
-          if [[ -n '${{ inputs.test-e2e-command }}' ]]; then
-            jq_add_step "E2E Test" '${{ inputs.test-e2e-command }}' '${{ inputs.test-e2e-artifact-name }}' '${{ inputs.test-e2e-artifact-path }}' \
-              '${{ inputs.test-e2e-artifact-overwrite }}' '${{ inputs.test-e2e-if-no-files-found }}' '${{ inputs.test-e2e-retention-days }}'
+          if [[ -n '${{ inputs.post-test-integration-command }}' ]]; then
+            jq_add_step '${{ inputs.post-test-integration-name }}' '${{ inputs.post-test-integration-command }}' '${{ inputs.post-test-integration-artifact-name }}' '${{ inputs.post-test-integration-artifact-path }}' \
+              '${{ inputs.post-test-integration-artifact-overwrite }}' '${{ inputs.post-test-integration-artifact-if-no-files-found }}' '${{ inputs.post-test-integration-artifact-retention-days }}'
           fi
-          if [[ -n '${{ inputs.test-coverage-command }}' ]]; then
-            jq_add_step "Test Coverage" '${{ inputs.test-coverage-command }}' '${{ inputs.test-coverage-artifact-name }}' '${{ inputs.test-coverage-artifact-path }}' \
-              '${{ inputs.test-coverage-artifact-overwrite }}' '${{ inputs.test-coverage-if-no-files-found }}' '${{ inputs.test-coverage-retention-days }}'
-          fi
-          if [[ -n '${{ inputs.test-checks-command }}' ]]; then
-            jq_add_step "Test Checks" '${{ inputs.test-checks-command }}' '${{ inputs.test-checks-artifact-name }}' '${{ inputs.test-checks-artifact-path }}' \
-              '${{ inputs.test-checks-artifact-overwrite }}' '${{ inputs.test-checks-if-no-files-found }}' '${{ inputs.test-checks-retention-days }}'
+          if [[ -n '${{ inputs.post-test-e2e-command }}' ]]; then
+            jq_add_step '${{ inputs.post-test-e2e-name }}' '${{ inputs.post-test-e2e-command }}' '${{ inputs.post-test-e2e-artifact-name }}' '${{ inputs.post-test-e2e-artifact-path }}' \
+              '${{ inputs.post-test-e2e-artifact-overwrite }}' '${{ inputs.post-test-e2e-artifact-if-no-files-found }}' '${{ inputs.post-test-e2e-artifact-retention-days }}'
           fi
           echo "matrix=$MATRIX" >>${GITHUB_OUTPUT}
 
