@@ -894,7 +894,7 @@ jobs:
   pre-steps:
     name: ${{ matrix.pre-steps.name }}
     needs: prepare
-    if: ${{ !cancelled() && matrix.pre-steps.command != '' }}
+    if: ${{ !cancelled() && !contains(fromJson(needs.prepare.outputs.pre-step-matrix)[0].command, '') && !contains(fromJson(needs.prepare.outputs.pre-step-matrix)[0].name, 'Pre-Build Steps') }}
     runs-on: ${{ inputs.runner-default }}
     strategy:
       matrix:
@@ -976,7 +976,7 @@ jobs:
     needs:
       - prepare
       - image-push
-    if: ${{ !failure() && !cancelled() && matrix.post-steps.command != '' }}
+    if: ${{ !failure() && !cancelled() && !contains(fromJson(needs.prepare.outputs.post-step-matrix)[0].command, '') && !contains(fromJson(needs.prepare.outputs.post-step-matrix)[0].name, 'Post-Build Steps') }}
     runs-on: ${{ inputs.runner-default }}
     strategy:
       matrix:
