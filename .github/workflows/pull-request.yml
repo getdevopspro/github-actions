@@ -722,9 +722,8 @@ jobs:
           with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
               f.write(f"matrix<<{delimiter}\n{output}\n{delimiter}\n")
 
-      - name: Show pre-steps matrix
-        shell: bash
-        run: echo '${{ toJSON(steps.set_pre_matrix.outputs.matrix) }}'
+          print("Pre-steps matrix:")
+          print(json.dumps(matrix, indent=2))
 
       - name: Set post-steps matrix
         id: set_post_matrix
@@ -823,9 +822,8 @@ jobs:
           with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
               f.write(f"matrix<<{delimiter}\n{output}\n{delimiter}\n")
 
-      - name: Show post-steps matrix
-        shell: bash
-        run: echo '${{ toJSON(steps.set_post_matrix.outputs.matrix) }}'
+          print("Post-steps matrix:")
+          print(json.dumps(matrix, indent=2))
 
       - name: Set image metadata and platform matrix
         id: prepare_image
