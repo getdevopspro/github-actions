@@ -878,7 +878,7 @@ jobs:
           retention-days: 1
 
   pre-steps:
-    name:  ${{ case(needs.prepare.outputs.pre-step-matrix == '[]', 'Pre Steps', matrix.pre-steps.name }}
+    name : ${{ format('{0}', needs.prepare.outputs.pre-step-matrix == '[]' && 'Pre Steps' || matrix.pre-steps.name) }}
     needs: prepare
     if: ${{ !cancelled() && needs.prepare.outputs.pre-step-matrix != '[]' }}
     runs-on: ${{ inputs.runner-default }}
@@ -958,7 +958,7 @@ jobs:
           registry-password: ${{ secrets.registry-password || secrets.GITHUB_TOKEN }}
 
   post-steps:
-    name: ${{ case(needs.prepare.outputs.post-step-matrix == '[]', 'Post Steps', matrix.post-steps.name }}
+    name : ${{ format('{0}', needs.prepare.outputs.post-step-matrix == '[]' && 'Post Steps' || matrix.post-steps.name) }}
     needs:
       - prepare
       - image-push
