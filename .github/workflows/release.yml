@@ -193,6 +193,7 @@ jobs:
     runs-on: ${{ inputs.runs-on }}
     outputs:
       version: ${{ steps.release_version.outputs.version }}
+      commit-sha: ${{ steps.determine_sha.outputs.sha }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -200,6 +201,14 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
           token: ${{ secrets.checkout-token || secrets.GITHUB_TOKEN }}
+
+      - name: Determine commit SHA
+        id: determine_sha
+        shell: bash
+        run: |
+          SHA=$(git rev-parse HEAD)
+          echo "sha=${SHA}" >> "$GITHUB_OUTPUT"
+          echo "Using commit SHA: ${SHA}"
 
       - name: Set up qemu
         uses: docker/setup-qemu-action@v3
@@ -285,6 +294,7 @@ jobs:
             type=sha,event=push
             type=ref,event=branch
             type=ref,event=pr
+            type=raw,${{ steps.determine_sha.outputs.sha }}
             ${{ inputs.meta-tags }}
 
       - name: Run test command
