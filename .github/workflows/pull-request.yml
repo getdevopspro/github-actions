@@ -291,7 +291,7 @@ jobs:
         with:
           fetch-tags: true
           submodules: true
-          token: ${{ secrets.checkout-token || '' }}
+          token: ${{ secrets.checkout-token || secrets.GITHUB_TOKEN }}
 
       - name: Next release version
         id: release_version
