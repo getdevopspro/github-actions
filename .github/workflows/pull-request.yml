@@ -588,6 +588,7 @@ jobs:
     runs-on: ${{ inputs.runner-default }}
     outputs:
       version: ${{ steps.set_version.outputs.version }}
+      commit-sha: ${{ steps.determine_sha.outputs.sha }}
       pre-step-matrix: ${{ steps.set_pre_matrix.outputs.matrix }}
       post-step-matrix: ${{ steps.set_post_matrix.outputs.matrix }}
       image-platform-matrix: ${{ steps.prepare_image.outputs.matrix }}
@@ -599,6 +600,19 @@ jobs:
           fetch-tags: true
           submodules: true
           token: ${{ secrets.checkout-token || secrets.GITHUB_TOKEN }}
+
+      - name: Determine commit SHA
+        id: determine_sha
+        shell: bash
+        run: |
+          if [ -n "${{ github.event.pull_request.head.sha }}" ]; then
+            SHA="${{ github.event.pull_request.head.sha }}"
+            echo "Using PR HEAD SHA: ${SHA}"
+          else
+            SHA=$(git rev-parse HEAD)
+            echo "Using current HEAD SHA: ${SHA}"
+          fi
+          echo "sha=${SHA}" >> "$GITHUB_OUTPUT"
 
       - name: Next release version
         id: release_version
@@ -841,6 +855,7 @@ jobs:
             type=ref,event=tag
             type=raw,${{ steps.checkout.outputs.ref }}
             type=raw,${{ steps.checkout.outputs.commit }}
+            type=raw,${{ steps.determine_sha.outputs.sha }}
             ${{ inputs.meta-tags }}
 
       - name: Show image build matrix
