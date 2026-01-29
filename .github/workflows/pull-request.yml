@@ -442,7 +442,7 @@ jobs:
         with:
           registry: ${{ inputs.registry }}
           username: ${{ inputs.registry-username }}
-          password: ${{ secrets.registry-password }}
+          password: ${{ secrets.registry-password || secrets.GITHUB_TOKEN }}
 
       - name: Setup QEMU
         uses: docker/setup-qemu-action@v3
@@ -476,7 +476,7 @@ jobs:
           registry: ${{ inputs.registry }}
           registry-image: ${{ inputs.registry-image }}
           registry-username: ${{ inputs.registry-username }}
-          registry-password: ${{ secrets.registry-password }}
+          registry-password: ${{ secrets.registry-password || secrets.GITHUB_TOKEN }}
           free-disk-space: ${{ inputs.free-disk-space }}
 
   image-push:
@@ -495,7 +495,7 @@ jobs:
       - uses: getdevopspro/github-actions/buildx-bake/merge@v0.3.28
         with:
           registry-username: ${{ inputs.registry-username }}
-          registry-password: ${{ secrets.registry-password }}
+          registry-password: ${{ secrets.registry-password || secrets.GITHUB_TOKEN }}
 
   post-steps:
     name: Post-Build Steps
@@ -524,7 +524,7 @@ jobs:
         with:
           registry: ${{ inputs.registry }}
           username: ${{ inputs.registry-username }}
-          password: ${{ secrets.registry-password }}
+          password: ${{ secrets.registry-password || secrets.GITHUB_TOKEN }}
 
       - name: Setup QEMU
         uses: docker/setup-qemu-action@v3

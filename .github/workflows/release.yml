@@ -272,7 +272,7 @@ jobs:
           registry-image: ${{ inputs.registry-image }}
           registry: ${{ inputs.registry }}
           registry-username: ${{ inputs.registry-username }}
-          registry-password: ${{ secrets.registry-password }}
+          registry-password: ${{ secrets.registry-password || secrets.GITHUB_TOKEN }}
           meta-labels:
             manifest:org.opencontainers.image.version=${{ steps.release_version.outputs.version }}
             ${{ inputs.meta-labels }}
