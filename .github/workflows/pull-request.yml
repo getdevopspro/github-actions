@@ -753,7 +753,7 @@ jobs:
           retention-days: 1
 
   pre-steps:
-    name: Pre-Build Steps
+    name: ${{ matrix.pre-steps.name || 'Pre-Build Steps' }}
     needs: prepare
     if: ${{ !cancelled() && needs.prepare.outputs.pre-step-matrix != '' && toJson(fromJson(needs.prepare.outputs.pre-step-matrix)) != '[]' }}
     runs-on: ${{ inputs.runner-default }}
@@ -833,7 +833,7 @@ jobs:
           registry-password: ${{ secrets.registry-password || secrets.GITHUB_TOKEN }}
 
   post-steps:
-    name: Post-Build Steps
+    name: ${{ matrix.post-steps.name || 'Post-Build Steps' }}
     needs:
       - prepare
       - image-push
