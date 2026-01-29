@@ -12,6 +12,7 @@ on:
         required: true
       checkout-token:
         description: 'Checkout token with repo permissions'
+        required: false
     inputs:
       git-user-name:
         description: 'The git user name'
