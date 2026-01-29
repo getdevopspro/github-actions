@@ -9,7 +9,7 @@ on:
     secrets:
       registry-password:
         description: 'The container registry password'
-        required: true
+        required: false
       checkout-token:
         description: 'Checkout token with repo permissions'
         required: false
