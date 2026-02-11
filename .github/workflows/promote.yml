@@ -64,6 +64,11 @@ on:
         required: false
         default: ""
         type: string
+      push-git:
+        description: 'Push git changes'
+        required: false
+        default: true
+        type: boolean
 
 permissions:
   contents: write
@@ -105,8 +110,10 @@ jobs:
           echo "run make target: ${{ inputs.make-target-pre-push }}"
           make ${{ inputs.make-target-pre-push }}
 
-      - name: push git version
+      - name: Push git version
         uses: getdevopspro/github-actions/release-git-push@v0.4.16
+        if: inputs.push-git
+        id: git_push
         with:
           version: ${{ steps.release_version.outputs.version }}
           git-user-name: ${{ inputs.git-user-name }}
