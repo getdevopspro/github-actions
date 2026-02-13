@@ -87,13 +87,13 @@ jobs:
 
       - id: release_version
         name: next release version
-        uses: getdevopspro/github-actions/release-version@v0.4.17
+        uses: getdevopspro/github-actions/release-version@v0.4.18
         with:
           previous-version: ${{ inputs.previous-version }}
           next-version: ${{ inputs.next-version }}
 
       - name: set version in file
-        uses: getdevopspro/github-actions/version-file@v0.4.17
+        uses: getdevopspro/github-actions/version-file@v0.4.18
         with:
           version: ${{ steps.release_version.outputs.version }}
           version-makefile: ${{ inputs.version-makefile }}
@@ -111,7 +111,7 @@ jobs:
           make ${{ inputs.make-target-pre-push }}
 
       - name: Push git version
-        uses: getdevopspro/github-actions/release-git-push@v0.4.17
+        uses: getdevopspro/github-actions/release-git-push@v0.4.18
         if: inputs.push-git
         id: git_push
         with:
