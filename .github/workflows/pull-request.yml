@@ -133,6 +133,16 @@ on:
         description: 'The checks command (pre-steps)'
         required: false
         type: string
+      pre-checks-docker-login:
+        description: 'Login to Docker registry for pre-checks'
+        required: false
+        default: false
+        type: boolean
+      pre-checks-qemu-install:
+        description: 'Setup QEMU for pre-checks'
+        required: false
+        default: false
+        type: boolean
       pre-checks-artifact-name:
         description: 'Name of the artifact to upload for checks command (pre-steps)'
         required: false
@@ -165,6 +175,16 @@ on:
         description: 'The lint command (pre-steps)'
         required: false
         type: string
+      pre-lint-docker-login:
+        description: 'Login to Docker registry for pre-lint'
+        required: false
+        default: false
+        type: boolean
+      pre-lint-qemu-install:
+        description: 'Setup QEMU for pre-lint'
+        required: false
+        default: false
+        type: boolean
       pre-lint-artifact-name:
         description: 'Name of the artifact to upload for lint command (pre-steps)'
         required: false
@@ -197,6 +217,16 @@ on:
         description: 'The test command (pre-steps)'
         required: false
         type: string
+      pre-test-docker-login:
+        description: 'Login to Docker registry for pre-test'
+        required: false
+        default: false
+        type: boolean
+      pre-test-qemu-install:
+        description: 'Setup QEMU for pre-test'
+        required: false
+        default: false
+        type: boolean
       pre-test-artifact-name:
         description: 'Name of the artifact to upload for test command (pre-steps)'
         required: false
@@ -229,6 +259,16 @@ on:
         description: 'The command to run for unit testing (pre-steps)'
         required: false
         type: string
+      pre-test-unit-docker-login:
+        description: 'Login to Docker registry for pre-test-unit'
+        required: false
+        default: false
+        type: boolean
+      pre-test-unit-qemu-install:
+        description: 'Setup QEMU for pre-test-unit'
+        required: false
+        default: false
+        type: boolean
       pre-test-unit-artifact-name:
         description: 'Name of the artifact to upload for unit test command (pre-steps)'
         required: false
@@ -261,6 +301,16 @@ on:
         description: 'The command to run for test coverage (pre-steps)'
         required: false
         type: string
+      pre-test-coverage-docker-login:
+        description: 'Login to Docker registry for pre-test-coverage'
+        required: false
+        default: false
+        type: boolean
+      pre-test-coverage-qemu-install:
+        description: 'Setup QEMU for pre-test-coverage'
+        required: false
+        default: false
+        type: boolean
       pre-test-coverage-artifact-name:
         description: 'Name of the artifact to upload for test coverage command (pre-steps)'
         required: false
@@ -293,6 +343,16 @@ on:
         description: 'The command to run for integration testing (pre-steps)'
         required: false
         type: string
+      pre-test-integration-docker-login:
+        description: 'Login to Docker registry for pre-test-integration'
+        required: false
+        default: false
+        type: boolean
+      pre-test-integration-qemu-install:
+        description: 'Setup QEMU for pre-test-integration'
+        required: false
+        default: false
+        type: boolean
       pre-test-integration-artifact-name:
         description: 'Name of the artifact to upload for integration test command (pre-steps)'
         required: false
@@ -325,6 +385,16 @@ on:
         description: 'The command to run for end-to-end testing (pre-steps)'
         required: false
         type: string
+      pre-test-e2e-docker-login:
+        description: 'Login to Docker registry for pre-test-e2e'
+        required: false
+        default: false
+        type: boolean
+      pre-test-e2e-qemu-install:
+        description: 'Setup QEMU for pre-test-e2e'
+        required: false
+        default: false
+        type: boolean
       pre-test-e2e-artifact-name:
         description: 'Name of the artifact to upload for e2e test command (pre-steps)'
         required: false
@@ -357,6 +427,16 @@ on:
         description: 'The checks command (post-steps)'
         required: false
         type: string
+      post-checks-docker-login:
+        description: 'Login to Docker registry for post-checks'
+        required: false
+        default: false
+        type: boolean
+      post-checks-qemu-install:
+        description: 'Setup QEMU for post-checks'
+        required: false
+        default: false
+        type: boolean
       post-checks-artifact-name:
         description: 'Name of the artifact to upload for checks command (post-steps)'
         required: false
@@ -389,6 +469,16 @@ on:
         description: 'The lint command (post-steps)'
         required: false
         type: string
+      post-lint-docker-login:
+        description: 'Login to Docker registry for post-lint'
+        required: false
+        default: false
+        type: boolean
+      post-lint-qemu-install:
+        description: 'Setup QEMU for post-lint'
+        required: false
+        default: false
+        type: boolean
       post-lint-artifact-name:
         description: 'Name of the artifact to upload for lint command (post-steps)'
         required: false
@@ -421,6 +511,16 @@ on:
         description: 'The test command (post-steps)'
         required: false
         type: string
+      post-test-docker-login:
+        description: 'Login to Docker registry for post-test'
+        required: false
+        default: false
+        type: boolean
+      post-test-qemu-install:
+        description: 'Setup QEMU for post-test'
+        required: false
+        default: false
+        type: boolean
       post-test-artifact-name:
         description: 'Name of the artifact to upload for test command (post-steps)'
         required: false
@@ -453,6 +553,16 @@ on:
         description: 'The command to run for unit testing (post-steps)'
         required: false
         type: string
+      post-test-unit-docker-login:
+        description: 'Login to Docker registry for post-test-unit'
+        required: false
+        default: false
+        type: boolean
+      post-test-unit-qemu-install:
+        description: 'Setup QEMU for post-test-unit'
+        required: false
+        default: false
+        type: boolean
       post-test-unit-artifact-name:
         description: 'Name of the artifact to upload for unit test command (post-steps)'
         required: false
@@ -485,6 +595,16 @@ on:
         description: 'The command to run for test coverage (post-steps)'
         required: false
         type: string
+      post-test-coverage-docker-login:
+        description: 'Login to Docker registry for post-test-coverage'
+        required: false
+        default: false
+        type: boolean
+      post-test-coverage-qemu-install:
+        description: 'Setup QEMU for post-test-coverage'
+        required: false
+        default: false
+        type: boolean
       post-test-coverage-artifact-name:
         description: 'Name of the artifact to upload for test coverage command (post-steps)'
         required: false
@@ -517,6 +637,16 @@ on:
         description: 'The command to run for integration testing (post-steps)'
         required: false
         type: string
+      post-test-integration-docker-login:
+        description: 'Login to Docker registry for post-test-integration'
+        required: false
+        default: false
+        type: boolean
+      post-test-integration-qemu-install:
+        description: 'Setup QEMU for post-test-integration'
+        required: false
+        default: false
+        type: boolean
       post-test-integration-artifact-name:
         description: 'Name of the artifact to upload for integration test command (post-steps)'
         required: false
@@ -549,6 +679,16 @@ on:
         description: 'The command to run for end-to-end testing (post-steps)'
         required: false
         type: string
+      post-test-e2e-docker-login:
+        description: 'Login to Docker registry for post-test-e2e'
+        required: false
+        default: false
+        type: boolean
+      post-test-e2e-qemu-install:
+        description: 'Setup QEMU for post-test-e2e'
+        required: false
+        default: false
+        type: boolean
       post-test-e2e-artifact-name:
         description: 'Name of the artifact to upload for e2e test command (post-steps)'
         required: false
@@ -664,11 +804,13 @@ jobs:
 
           matrix = []
 
-          def add_step(name, command, artifact_name, artifact_path, artifact_overwrite, artifact_if_no_files_found, artifact_retention_days):
+          def add_step(name, command, docker_login, qemu_install, artifact_name, artifact_path, artifact_overwrite, artifact_if_no_files_found, artifact_retention_days):
               if command:
                   matrix.append({
                       "name": name,
                       "command": command,
+                      "docker-login": docker_login,
+                      "qemu-install": qemu_install,
                       "artifact-name": artifact_name,
                       "artifact-path": artifact_path,
                       "artifact-overwrite": artifact_overwrite,
@@ -679,6 +821,8 @@ jobs:
           add_step(
               r'''${{ inputs.pre-checks-name }}''',
               r'''${{ inputs.pre-checks-command }}''',
+              r'''${{ inputs.pre-checks-docker-login }}''',
+              r'''${{ inputs.pre-checks-qemu-install }}''',
               r'''${{ inputs.pre-checks-artifact-name }}''',
               r'''${{ inputs.pre-checks-artifact-path }}''',
               r'''${{ inputs.pre-checks-artifact-overwrite }}''',
@@ -689,6 +833,8 @@ jobs:
           add_step(
               r'''${{ inputs.pre-lint-name }}''',
               r'''${{ inputs.pre-lint-command }}''',
+              r'''${{ inputs.pre-lint-docker-login }}''',
+              r'''${{ inputs.pre-lint-qemu-install }}''',
               r'''${{ inputs.pre-lint-artifact-name }}''',
               r'''${{ inputs.pre-lint-artifact-path }}''',
               r'''${{ inputs.pre-lint-artifact-overwrite }}''',
@@ -699,6 +845,8 @@ jobs:
           add_step(
               r'''${{ inputs.pre-test-name }}''',
               r'''${{ inputs.pre-test-command }}''',
+              r'''${{ inputs.pre-test-docker-login }}''',
+              r'''${{ inputs.pre-test-qemu-install }}''',
               r'''${{ inputs.pre-test-artifact-name }}''',
               r'''${{ inputs.pre-test-artifact-path }}''',
               r'''${{ inputs.pre-test-artifact-overwrite }}''',
@@ -709,6 +857,8 @@ jobs:
           add_step(
               r'''${{ inputs.pre-test-unit-name }}''',
               r'''${{ inputs.pre-test-unit-command }}''',
+              r'''${{ inputs.pre-test-unit-docker-login }}''',
+              r'''${{ inputs.pre-test-unit-qemu-install }}''',
               r'''${{ inputs.pre-test-unit-artifact-name }}''',
               r'''${{ inputs.pre-test-unit-artifact-path }}''',
               r'''${{ inputs.pre-test-unit-artifact-overwrite }}''',
@@ -719,6 +869,8 @@ jobs:
           add_step(
               r'''${{ inputs.pre-test-coverage-name }}''',
               r'''${{ inputs.pre-test-coverage-command }}''',
+              r'''${{ inputs.pre-test-coverage-docker-login }}''',
+              r'''${{ inputs.pre-test-coverage-qemu-install }}''',
               r'''${{ inputs.pre-test-coverage-artifact-name }}''',
               r'''${{ inputs.pre-test-coverage-artifact-path }}''',
               r'''${{ inputs.pre-test-coverage-artifact-overwrite }}''',
@@ -729,6 +881,8 @@ jobs:
           add_step(
               r'''${{ inputs.pre-test-integration-name }}''',
               r'''${{ inputs.pre-test-integration-command }}''',
+              r'''${{ inputs.pre-test-integration-docker-login }}''',
+              r'''${{ inputs.pre-test-integration-qemu-install }}''',
               r'''${{ inputs.pre-test-integration-artifact-name }}''',
               r'''${{ inputs.pre-test-integration-artifact-path }}''',
               r'''${{ inputs.pre-test-integration-artifact-overwrite }}''',
@@ -739,6 +893,8 @@ jobs:
           add_step(
               r'''${{ inputs.pre-test-e2e-name }}''',
               r'''${{ inputs.pre-test-e2e-command }}''',
+              r'''${{ inputs.pre-test-e2e-docker-login }}''',
+              r'''${{ inputs.pre-test-e2e-qemu-install }}''',
               r'''${{ inputs.pre-test-e2e-artifact-name }}''',
               r'''${{ inputs.pre-test-e2e-artifact-path }}''',
               r'''${{ inputs.pre-test-e2e-artifact-overwrite }}''',
@@ -764,11 +920,13 @@ jobs:
 
           matrix = []
 
-          def add_step(name, command, artifact_name, artifact_path, artifact_overwrite, artifact_if_no_files_found, artifact_retention_days):
+          def add_step(name, command, docker_login, qemu_install, artifact_name, artifact_path, artifact_overwrite, artifact_if_no_files_found, artifact_retention_days):
               if command:
                   matrix.append({
                       "name": name,
                       "command": command,
+                      "docker-login": docker_login,
+                      "qemu-install": qemu_install,
                       "artifact-name": artifact_name,
                       "artifact-path": artifact_path,
                       "artifact-overwrite": artifact_overwrite,
@@ -779,6 +937,8 @@ jobs:
           add_step(
               r'''${{ inputs.post-checks-name }}''',
               r'''${{ inputs.post-checks-command }}''',
+              r'''${{ inputs.post-checks-docker-login }}''',
+              r'''${{ inputs.post-checks-qemu-install }}''',
               r'''${{ inputs.post-checks-artifact-name }}''',
               r'''${{ inputs.post-checks-artifact-path }}''',
               r'''${{ inputs.post-checks-artifact-overwrite }}''',
@@ -789,6 +949,8 @@ jobs:
           add_step(
               r'''${{ inputs.post-lint-name }}''',
               r'''${{ inputs.post-lint-command }}''',
+              r'''${{ inputs.post-lint-docker-login }}''',
+              r'''${{ inputs.post-lint-qemu-install }}''',
               r'''${{ inputs.post-lint-artifact-name }}''',
               r'''${{ inputs.post-lint-artifact-path }}''',
               r'''${{ inputs.post-lint-artifact-overwrite }}''',
@@ -799,6 +961,8 @@ jobs:
           add_step(
               r'''${{ inputs.post-test-name }}''',
               r'''${{ inputs.post-test-command }}''',
+              r'''${{ inputs.post-test-docker-login }}''',
+              r'''${{ inputs.post-test-qemu-install }}''',
               r'''${{ inputs.post-test-artifact-name }}''',
               r'''${{ inputs.post-test-artifact-path }}''',
               r'''${{ inputs.post-test-artifact-overwrite }}''',
@@ -809,6 +973,8 @@ jobs:
           add_step(
               r'''${{ inputs.post-test-unit-name }}''',
               r'''${{ inputs.post-test-unit-command }}''',
+              r'''${{ inputs.post-test-unit-docker-login }}''',
+              r'''${{ inputs.post-test-unit-qemu-install }}''',
               r'''${{ inputs.post-test-unit-artifact-name }}''',
               r'''${{ inputs.post-test-unit-artifact-path }}''',
               r'''${{ inputs.post-test-unit-artifact-overwrite }}''',
@@ -819,6 +985,8 @@ jobs:
           add_step(
               r'''${{ inputs.post-test-coverage-name }}''',
               r'''${{ inputs.post-test-coverage-command }}''',
+              r'''${{ inputs.post-test-coverage-docker-login }}''',
+              r'''${{ inputs.post-test-coverage-qemu-install }}''',
               r'''${{ inputs.post-test-coverage-artifact-name }}''',
               r'''${{ inputs.post-test-coverage-artifact-path }}''',
               r'''${{ inputs.post-test-coverage-artifact-overwrite }}''',
@@ -829,6 +997,8 @@ jobs:
           add_step(
               r'''${{ inputs.post-test-integration-name }}''',
               r'''${{ inputs.post-test-integration-command }}''',
+              r'''${{ inputs.post-test-integration-docker-login }}''',
+              r'''${{ inputs.post-test-integration-qemu-install }}''',
               r'''${{ inputs.post-test-integration-artifact-name }}''',
               r'''${{ inputs.post-test-integration-artifact-path }}''',
               r'''${{ inputs.post-test-integration-artifact-overwrite }}''',
@@ -839,6 +1009,8 @@ jobs:
           add_step(
               r'''${{ inputs.post-test-e2e-name }}''',
               r'''${{ inputs.post-test-e2e-command }}''',
+              r'''${{ inputs.post-test-e2e-docker-login }}''',
+              r'''${{ inputs.post-test-e2e-qemu-install }}''',
               r'''${{ inputs.post-test-e2e-artifact-name }}''',
               r'''${{ inputs.post-test-e2e-artifact-path }}''',
               r'''${{ inputs.post-test-e2e-artifact-overwrite }}''',
@@ -914,6 +1086,7 @@ jobs:
           just-version: ${{ inputs.just-version }}
 
       - name: Login to registry
+        if: matrix.pre-steps.docker-login == 'true'
         uses: docker/login-action@v3
         with:
           registry: ${{ inputs.registry }}
@@ -921,6 +1094,7 @@ jobs:
           password: ${{ secrets.registry-password || secrets.GITHUB_TOKEN }}
 
       - name: Setup QEMU
+        if: matrix.pre-steps.qemu-install == 'true'
         uses: docker/setup-qemu-action@v3
 
       - name: ${{ matrix.pre-steps.name }}
@@ -996,6 +1170,7 @@ jobs:
           just-version: ${{ inputs.just-version }}
 
       - name: Login to registry
+        if: matrix.post-steps.docker-login == 'true'
         uses: docker/login-action@v3
         with:
           registry: ${{ inputs.registry }}
@@ -1003,6 +1178,7 @@ jobs:
           password: ${{ secrets.registry-password || secrets.GITHUB_TOKEN }}
 
       - name: Setup QEMU
+        if: matrix.post-steps.qemu-install == 'true'
         uses: docker/setup-qemu-action@v3
 
       - name: ${{ matrix.post-steps.name }}
