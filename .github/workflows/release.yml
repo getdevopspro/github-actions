@@ -182,6 +182,21 @@ on:
         required: false
         default: false
         type: boolean
+      fetch-depth:
+        description: 'Number of commits to fetch. 0 indicates all history for all branches and tags'
+        required: false
+        type: number
+        default: 0
+      fetch-tags:
+        description: 'Whether to fetch tags'
+        required: false
+        type: boolean
+        default: true
+      submodules:
+        description: 'Whether to checkout submodules: true, false, or recursive'
+        required: false
+        type: boolean
+        default: true
 
 permissions:
   contents: write
@@ -198,8 +213,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
-          fetch-depth: 0
-          fetch-tags: true
+          fetch-depth: ${{ inputs.fetch-depth }}
+          fetch-tags: ${{ inputs.fetch-tags }}
+          submodules: ${{ inputs.submodules }}
           token: ${{ secrets.checkout-token || secrets.GITHUB_TOKEN }}
 
       - name: Determine commit SHA

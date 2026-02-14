@@ -23,11 +23,21 @@ on:
         required: false
         default: true
         type: boolean
-      submodules:
-        description: 'Whether to enable submodules'
+      fetch-depth:
+        description: 'Number of commits to fetch. 0 indicates all history for all branches and tags'
         required: false
-        default: false
+        type: number
+        default: 0
+      fetch-tags:
+        description: 'Whether to fetch tags'
+        required: true
         type: boolean
+        default: true
+      submodules:
+        description: 'Whether to checkout submodules: true, false, or recursive'
+        required: true
+        type: boolean
+        default: true
       github-server-url:
         description: 'Git server URL (e.g., https://github.com)'
         required: false
@@ -147,12 +157,14 @@ jobs:
       - name: Check out target repo
         uses: actions/checkout@v6
         with:
-          repository: ${{ inputs.repository }}
-          ref: ${{ inputs.ref }}
-          token: ${{ secrets.token }}
-          lfs: ${{ inputs.lfs }}
-          submodules: ${{ inputs.submodules }}
+          fetch-depth: ${{ inputs.fetch-depth }}
+          fetch-tags: ${{ inputs.fetch-tags }}
           github-server-url: ${{ inputs.github-server-url }}
+          lfs: ${{ inputs.lfs }}
+          ref: ${{ inputs.ref }}
+          repository: ${{ inputs.repository }}
+          submodules: ${{ inputs.submodules }}
+          token: ${{ secrets.token }}
 
       - name: Run deps sync
         shell: bash
