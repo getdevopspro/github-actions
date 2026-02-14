@@ -584,12 +584,12 @@ on:
         default: 0
       fetch-tags:
         description: 'Whether to fetch tags'
-        required: true
+        required: false
         type: boolean
         default: true
       submodules:
         description: 'Whether to checkout submodules: true, false, or recursive'
-        required: true
+        required: false
         type: boolean
         default: true
 
