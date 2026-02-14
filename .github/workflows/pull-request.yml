@@ -136,7 +136,7 @@ on:
       pre-checks-docker-login:
         description: 'Login to Docker registry for pre-checks'
         required: false
-        default: false
+        default: true
         type: boolean
       pre-checks-qemu-install:
         description: 'Setup QEMU for pre-checks'
@@ -178,7 +178,7 @@ on:
       pre-lint-docker-login:
         description: 'Login to Docker registry for pre-lint'
         required: false
-        default: false
+        default: true
         type: boolean
       pre-lint-qemu-install:
         description: 'Setup QEMU for pre-lint'
@@ -220,7 +220,7 @@ on:
       pre-test-docker-login:
         description: 'Login to Docker registry for pre-test'
         required: false
-        default: false
+        default: true
         type: boolean
       pre-test-qemu-install:
         description: 'Setup QEMU for pre-test'
@@ -262,7 +262,7 @@ on:
       pre-test-unit-docker-login:
         description: 'Login to Docker registry for pre-test-unit'
         required: false
-        default: false
+        default: true
         type: boolean
       pre-test-unit-qemu-install:
         description: 'Setup QEMU for pre-test-unit'
@@ -304,7 +304,7 @@ on:
       pre-test-coverage-docker-login:
         description: 'Login to Docker registry for pre-test-coverage'
         required: false
-        default: false
+        default: true
         type: boolean
       pre-test-coverage-qemu-install:
         description: 'Setup QEMU for pre-test-coverage'
@@ -346,7 +346,7 @@ on:
       pre-test-integration-docker-login:
         description: 'Login to Docker registry for pre-test-integration'
         required: false
-        default: false
+        default: true
         type: boolean
       pre-test-integration-qemu-install:
         description: 'Setup QEMU for pre-test-integration'
@@ -388,7 +388,7 @@ on:
       pre-test-e2e-docker-login:
         description: 'Login to Docker registry for pre-test-e2e'
         required: false
-        default: false
+        default: true
         type: boolean
       pre-test-e2e-qemu-install:
         description: 'Setup QEMU for pre-test-e2e'
@@ -430,7 +430,7 @@ on:
       post-checks-docker-login:
         description: 'Login to Docker registry for post-checks'
         required: false
-        default: false
+        default: true
         type: boolean
       post-checks-qemu-install:
         description: 'Setup QEMU for post-checks'
@@ -472,7 +472,7 @@ on:
       post-lint-docker-login:
         description: 'Login to Docker registry for post-lint'
         required: false
-        default: false
+        default: true
         type: boolean
       post-lint-qemu-install:
         description: 'Setup QEMU for post-lint'
@@ -514,7 +514,7 @@ on:
       post-test-docker-login:
         description: 'Login to Docker registry for post-test'
         required: false
-        default: false
+        default: true
         type: boolean
       post-test-qemu-install:
         description: 'Setup QEMU for post-test'
@@ -556,7 +556,7 @@ on:
       post-test-unit-docker-login:
         description: 'Login to Docker registry for post-test-unit'
         required: false
-        default: false
+        default: true
         type: boolean
       post-test-unit-qemu-install:
         description: 'Setup QEMU for post-test-unit'
@@ -598,7 +598,7 @@ on:
       post-test-coverage-docker-login:
         description: 'Login to Docker registry for post-test-coverage'
         required: false
-        default: false
+        default: true
         type: boolean
       post-test-coverage-qemu-install:
         description: 'Setup QEMU for post-test-coverage'
@@ -640,7 +640,7 @@ on:
       post-test-integration-docker-login:
         description: 'Login to Docker registry for post-test-integration'
         required: false
-        default: false
+        default: true
         type: boolean
       post-test-integration-qemu-install:
         description: 'Setup QEMU for post-test-integration'
@@ -682,7 +682,7 @@ on:
       post-test-e2e-docker-login:
         description: 'Login to Docker registry for post-test-e2e'
         required: false
-        default: false
+        default: true
         type: boolean
       post-test-e2e-qemu-install:
         description: 'Setup QEMU for post-test-e2e'
