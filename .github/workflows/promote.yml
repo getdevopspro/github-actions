@@ -21,15 +21,20 @@ on:
         description: 'The files to add to git'
         required: false
         type: string
-      previous-version:
+      version-previous:
         description: 'The strategy to detect the previous version: auto, from-tag, from-file or manual'
         required: false
         default: 'auto'
         type: string
-      next-version:
+      version-next:
         description: 'The strategy to calculate the next version: auto, semantic, from-file, increment or manual'
         required: false
         default: 'auto'
+        type: string
+      version-output-format:
+        description: 'The output format of the next version'
+        required: false
+        default: '{{.Major}}.{{.Minor}}.{{.Patch}}'
         type: string
       version-file:
         description: 'Set version in file named as input'
@@ -105,8 +110,9 @@ jobs:
         name: next release version
         uses: getdevopspro/github-actions/release-version@v2.0.0
         with:
-          previous-version: ${{ inputs.previous-version }}
-          next-version: ${{ inputs.next-version }}
+          previous-version: ${{ inputs.version-previous }}
+          next-version: ${{ inputs.version-next }}
+          output-format: ${{ version-output-format }}
 
       - name: set version in file
         uses: getdevopspro/github-actions/version-file@v2.0.0

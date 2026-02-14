@@ -1,15 +1,15 @@
 name: Release Version
 description: Set release version
 inputs:
-  previous-version:
+  version-previous:
     description: 'The strategy to detect the previous version: auto, from-tag, from-file or manual'
     required: false
     default: 'auto'
-  next-version:
+  version-next:
     description: 'The strategy to calculate the next version: auto, semantic, from-file, increment or manual'
     required: false
     default: 'auto'
-  output-format:
+  version-output-format:
     description: 'The output format of the next version'
     required: false
     default: '{{.Major}}.{{.Minor}}.{{.Patch}}'
@@ -28,7 +28,7 @@ runs:
       id: release_version
       uses: jenkins-x-plugins/jx-release-version@v2.7.8
       with:
-        previous-version: ${{ inputs.previous-version }}
-        next-version: ${{ inputs.next-version }}
-        output-format: ${{ inputs.output-format }}
+        previous-version: ${{ inputs.version-previous }}
+        next-version: ${{ inputs.version-next }}
+        output-format: ${{ version-output-format }}
         tag: ${{ inputs.tag }}
