@@ -1,4 +1,4 @@
-VERSION ?= 4.0.8
+VERSION ?= 5.0.0
 WORKFLOW_FILES := .github/workflows/build.yml .github/workflows/promote.yml .github/workflows/release.yml
 ifneq (,$(findstring xterm,${TERM}))
 	RED          := $(shell tput -Txterm setaf 1)
