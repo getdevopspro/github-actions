@@ -132,14 +132,14 @@ jobs:
 
       - id: release_version
         name: next release version
-        uses: getdevopspro/github-actions/release-version@v6.0.1
+        uses: getdevopspro/github-actions/release-version@v6.0.2
         with:
           version-previous: ${{ inputs.version-previous }}
           version-next: ${{ inputs.version-next }}
           version-output-format: ${{ inputs.version-output-format }}
 
       - name: set version in file
-        uses: getdevopspro/github-actions/version-file@v6.0.1
+        uses: getdevopspro/github-actions/version-file@v6.0.2
         with:
           version: ${{ steps.release_version.outputs.version }}
           version-makefile: ${{ inputs.version-makefile }}
@@ -151,7 +151,7 @@ jobs:
 
       - name: promote container images
         if: inputs.image-digests != ''
-        uses: getdevopspro/github-actions/buildx-bake/promote@v6.0.1
+        uses: getdevopspro/github-actions/buildx-bake/promote@v6.0.2
         with:
           version: ${{ steps.release_version.outputs.version }}
           image-digests: ${{ inputs.image-digests }}
@@ -168,7 +168,7 @@ jobs:
           make ${{ inputs.make-target-pre-push }}
 
       - name: push git version
-        uses: getdevopspro/github-actions/release-git-push@v6.0.1
+        uses: getdevopspro/github-actions/release-git-push@v6.0.2
         if: inputs.push-git
         id: git_push
         with:
