@@ -13,6 +13,9 @@ on:
       version:
         description: 'Detected or calculated version'
         value: ${{ jobs.prepare.outputs.version }}
+      commit-sha:
+        description: 'The commit SHA being built'
+        value: ${{ jobs.prepare.outputs.commit-sha }}
       image-digests:
         description: 'JSON with all merged image manifest digests'
         value: ${{ jobs.merge.outputs.image-digests }}
