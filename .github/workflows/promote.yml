@@ -92,6 +92,11 @@ on:
         required: false
         type: boolean
         default: true
+      registry:
+        description: 'The container registry'
+        required: false
+        default: 'ghcr.io'
+        type: string
       registry-username:
         description: 'The container registry username'
         required: false
@@ -150,6 +155,7 @@ jobs:
         with:
           version: ${{ steps.release_version.outputs.version }}
           image-digests: ${{ inputs.image-digests }}
+          registry: ${{ inputs.registry }}
           registry-username: ${{ inputs.registry-username }}
           registry-password: ${{ secrets.registry-password || secrets.GITHUB_TOKEN }}
           additional-tags: ${{ inputs.image-additional-tags }}
