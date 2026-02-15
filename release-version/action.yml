@@ -13,7 +13,7 @@ inputs:
     description: 'The output format of the next version'
     required: false
     default: '{{.Major}}.{{.Minor}}.{{.Patch}}'
-  tag:
+  version-tag:
     description: 'If enabled, a new tag will be created'
     required: false
     default: 'false'
@@ -31,4 +31,4 @@ runs:
         previous-version: ${{ inputs.version-previous }}
         next-version: ${{ inputs.version-next }}
         output-format: ${{ inputs.version-output-format }}
-        tag: ${{ inputs.tag }}
+        tag: ${{ inputs.version-tag }}

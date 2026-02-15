@@ -774,9 +774,9 @@ jobs:
         id: release_version
         uses: getdevopspro/github-actions/release-version@v3.0.0
         with:
-          previous-version: ${{ inputs.version-previous }}
-          next-version: ${{ inputs.version-next }}
-          output-format: ${{ inputs.version-output-format }}
+          version-previous: ${{ inputs.version-previous }}
+          version-next: ${{ inputs.version-next }}
+          version-output-format: ${{ inputs.version-output-format }}
 
       - name: Set version in file
         uses: getdevopspro/github-actions/version-file@v3.0.0
