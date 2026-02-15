@@ -24,6 +24,7 @@ release-version:
 		-e 's%getdevopspro/github-actions/buildx-bake/prepare@v.*%getdevopspro/github-actions/buildx-bake/prepare@v$(VERSION)%g' \
 		-e 's%getdevopspro/github-actions/buildx-bake/build@v.*%getdevopspro/github-actions/buildx-bake/build@v$(VERSION)%g' \
 		-e 's%getdevopspro/github-actions/buildx-bake/merge@v.*%getdevopspro/github-actions/buildx-bake/merge@v$(VERSION)%g' \
+		-e 's%getdevopspro/github-actions/buildx-bake/promote@v.*%getdevopspro/github-actions/buildx-bake/promote@v$(VERSION)%g' \
 		-e 's%getdevopspro/github-actions/release-version@v.*%getdevopspro/github-actions/release-version@v$(VERSION)%g' \
 		-e 's%getdevopspro/github-actions/release-git-push@v.*%getdevopspro/github-actions/release-git-push@v$(VERSION)%g' \
 		$(WORKFLOW_FILES)
