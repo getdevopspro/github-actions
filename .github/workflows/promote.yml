@@ -89,9 +89,19 @@ on:
         required: false
         type: boolean
         default: true
+      image-digests:
+        description: 'JSON with all merged image manifest digests'
+        required: false
+        type: string
+      image-additional-tags:
+        description: 'Additional image tags to apply (comma-separated, e.g. "stable,prod")'
+        required: false
+        type: string
+
 
 permissions:
   contents: write
+  packages: write
 
 jobs:
   promote:
@@ -125,6 +135,16 @@ jobs:
           version-script: ${{ inputs.version-script }}
           version-chart: ${{ inputs.version-chart }}
 
+      - name: promote container images
+        if: inputs.image-digests != ''
+        uses: getdevopspro/github-actions/buildx-bake/promote@v5.0.0
+        with:
+          version: ${{ steps.release_version.outputs.version }}
+          image-digests: ${{ inputs.image-digests }}
+          registry-username: ${{ inputs.registry-username }}
+          registry-password: ${{ secrets.registry-password || secrets.GITHUB_TOKEN }}
+          additional-tags: ${{ inputs.image-additional-tags }}
+
       - name: run make target before push
         if: inputs.make-target-pre-push != ''
         shell: bash
@@ -132,7 +152,7 @@ jobs:
           echo "run make target: ${{ inputs.make-target-pre-push }}"
           make ${{ inputs.make-target-pre-push }}
 
-      - name: Push git version
+      - name: push git version
         uses: getdevopspro/github-actions/release-git-push@v5.0.0
         if: inputs.push-git
         id: git_push
