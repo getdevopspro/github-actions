@@ -114,8 +114,7 @@ on:
 
 permissions:
   contents: write
-  # NOTE: Callers must also grant 'packages: write' when using image-digests input
-  # packages: write
+  packages: write
 
 jobs:
   promote:
