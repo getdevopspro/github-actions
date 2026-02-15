@@ -91,10 +91,10 @@ runs:
                 ref = f"{image_name}:{version}"
                 result = subprocess.run(
                     ["docker", "buildx", "imagetools", "inspect", ref,
-                     "--format", r"{{.Manifest.Digest}}"],
+                     "--format", "{{json .Manifest.Digest}}"],
                     capture_output=True, text=True, check=True,
                 )
-                digest = result.stdout.strip()
+                digest = json.loads(result.stdout.strip())
                 print(f"{ref} -> {digest}", flush=True)
                 image_digests.append({"name": image_name, "digest": digest})
 
