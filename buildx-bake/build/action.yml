@@ -37,6 +37,10 @@ inputs:
     description: "The Dockerfile to use for auto-discovery of the cache-map. Default: `Dockerfile`"
     default: "Dockerfile"
     required: false
+outputs:
+  metadata:
+    description: 'The bake metadata of the built image'
+    value: ${{ steps.bake.outputs.metadata }}
 runs:
   using: "composite"
   steps:
