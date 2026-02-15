@@ -1,4 +1,4 @@
-name: Pull Request
+name: Build
 
 on:
   workflow_call:
@@ -30,7 +30,7 @@ on:
       version-output-format:
         description: 'The output format of the next version'
         required: false
-        default: '{{.Major}}.{{.Minor}}.{{.Patch}}-pull-request'
+        default: '{{.Major}}.{{.Minor}}.{{.Patch}}-build'
         type: string
       version-file:
         description: 'Set version in file named as input'
