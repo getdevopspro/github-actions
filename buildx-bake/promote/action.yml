@@ -30,6 +30,10 @@ inputs:
     description: 'Also tag with major.minor version'
     required: false
     default: 'true'
+  additional-tags:
+    description: 'Additional tags to apply (comma-separated, e.g. "stable,prod")'
+    required: false
+    default: ''
 runs:
   using: "composite"
   steps:
@@ -51,43 +55,46 @@ runs:
         TAG_LATEST: ${{ inputs.tag-latest }}
         TAG_MAJOR: ${{ inputs.tag-major }}
         TAG_MINOR: ${{ inputs.tag-minor }}
+        ADDITIONAL_TAGS: ${{ inputs.additional-tags }}
       run: |
         import json, os, re, subprocess
 
+        # Parse inputs
         version = os.environ["VERSION"]
         image_digests = json.loads(os.environ["IMAGE_DIGESTS"])
-        tag_latest = os.environ["TAG_LATEST"].lower() == "true"
-        tag_major = os.environ["TAG_MAJOR"].lower() == "true"
-        tag_minor = os.environ["TAG_MINOR"].lower() == "true"
+
+        is_true = lambda v: v.lower() in {"true", "1", "yes"}
+        flags = {k: is_true(os.environ.get(k, "false"))
+                 for k in ("TAG_LATEST", "TAG_MAJOR", "TAG_MINOR")}
 
         # Parse semantic version
         m = re.match(r"^v?(\d+)\.(\d+)\.(\d+)", version)
         if not m:
             raise ValueError(f"Invalid semantic version: {version}")
         major, minor, patch = m.groups()
-        version_clean = f"{major}.{minor}.{patch}"
 
         # Build tag list
-        tags = [version_clean]
-        if tag_minor:
+        tags = [f"{major}.{minor}.{patch}"]
+        if flags["TAG_MINOR"]:
             tags.append(f"{major}.{minor}")
-        if tag_major:
+        if flags["TAG_MAJOR"]:
             tags.append(major)
-        if tag_latest:
+        if flags["TAG_LATEST"]:
             tags.append("latest")
 
-        print(f"Promoting version: {version_clean}", flush=True)
-        print(f"Tags: {', '.join(tags)}", flush=True)
+        # Add additional tags
+        if extra := os.environ.get("ADDITIONAL_TAGS", "").strip():
+            tags.extend(filter(None, (t.strip() for t in extra.split(","))))
 
-        def run(cmd):
-            print(f"+ {' '.join(cmd)}", flush=True)
-            subprocess.run(cmd, check=True)
+        print(f"Promoting: {tags[0]}", flush=True)
+        print(f"Flags: latest={flags['TAG_LATEST']}, major={flags['TAG_MAJOR']}, minor={flags['TAG_MINOR']}")
+        print(f"Tags: {', '.join(tags)}\n", flush=True)
 
         # Promote each image
         for item in image_digests:
-            image_name = item["name"]
-            digest = item["digest"]
-            source = f"{image_name}@{digest}"
-            tag_args = [a for t in tags for a in ("-t", f"{image_name}:{t}")]
-            print(f"\nPromoting: {source}", flush=True)
-            run(["docker", "buildx", "imagetools", "create", *tag_args, source])
+            name, digest = item["name"], item["digest"]
+            source = f"{name}@{digest}"
+            cmd = ["docker", "buildx", "imagetools", "create",
+                   *[a for t in tags for a in ("-t", f"{name}:{t}")], source]
+            print(f"+ {' '.join(cmd)}", flush=True)
+            subprocess.run(cmd, check=True)
