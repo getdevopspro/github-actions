@@ -13,6 +13,9 @@ on:
       version:
         description: 'Detected or calculated version'
         value: ${{ jobs.prepare.outputs.version }}
+      image-digests:
+        description: 'JSON with all merged image manifest digests'
+        value: ${{ jobs.merge.outputs.image-digests }}
     inputs:
       version-previous:
         description: 'The strategy to detect the previous version: auto, from-tag, from-file or manual'
@@ -1136,6 +1139,8 @@ jobs:
       - image-build
     if: ${{ !failure() && !cancelled() }}
     runs-on: ${{ inputs.runner-default }}
+    outputs:
+      image-digests: ${{ steps.merge.outputs.image-digests }}
     steps:
       - name: Download updated source
         uses: eviden-actions/download-artifact@v2
@@ -1143,6 +1148,7 @@ jobs:
           name: ${{ inputs.source-artifact-name }}
 
       - uses: getdevopspro/github-actions/buildx-bake/merge@v4.0.5
+        id: merge
         with:
           registry-username: ${{ inputs.registry-username }}
           registry-password: ${{ secrets.registry-password || secrets.GITHUB_TOKEN }}
