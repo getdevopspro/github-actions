@@ -12,6 +12,10 @@ inputs:
   registry-password:
     description: 'The container registry password'
     required: true
+outputs:
+  image-digests:
+    description: 'JSON with all merged image manifest digests'
+    value: ${{ steps.manifest.outputs.image-digests }}
 runs:
   using: "composite"
   steps:
@@ -38,34 +42,63 @@ runs:
     - name: Setup Docker Buildx
       uses: docker/setup-buildx-action@v3
 
-    - name: Create manifest lists & push
-      shell: bash
+    - name: Create manifest lists, push & inspect
+      id: manifest
+      shell: python
+      env:
+        DIGESTS_DIR: ${{ runner.temp }}/digests
+        BAKE_META: ${{ runner.temp }}/bake-meta.json
       run: |
-        JSON_FILE=${{ runner.temp }}/digests/all.json
-        jq -s '
-          reduce .[] as $doc ({};
-            reduce ($doc|to_entries[]) as $kv (
-              .;
-              .[$kv.key].name    = $kv.value.name
-              | .[$kv.key].digests = ((.[$kv.key].digests // []) + $kv.value.digests)
-            )
-          )
-        ' ${{ runner.temp }}/digests/*.json > $JSON_FILE
-        for key in $(jq -r 'keys[]' "$JSON_FILE"); do
-          image_name=$(jq -r ".\"$key\".name" "$JSON_FILE")
-          image_digests=$(jq -r ".\"$key\".digests[]" "$JSON_FILE" | while read -r digest; do echo "${image_name}@${digest} "; done)
-          image_tags=$(jq -cr '(.target."docker-metadata-action".tags // [] ) | map("-t '${image_name}':" + sub(".*:"; "")) | join(" ")' ${{ runner.temp }}/bake-meta.json)
-          docker buildx imagetools create \
-            ${image_tags} \
-            ${image_digests}
-        done
+        import json, glob, os, re, subprocess, sys
+        from pathlib import Path
 
-    - name: Inspect published images
-      shell: bash
-      run: |
-        JSON_FILE=${{ runner.temp }}/digests/all.json
-        version=$(jq -r '.target."docker-metadata-action".args.DOCKER_META_VERSION' ${{ runner.temp }}/bake-meta.json)
-        for key in $(jq -r 'keys[]' "$JSON_FILE"); do
-          image_name=$(jq -r ".\"$key\".name" "$JSON_FILE")
-          docker buildx imagetools inspect ${image_name}:${version}
-        done
+        digests_dir = Path(os.environ["DIGESTS_DIR"])
+        bake_meta_path = Path(os.environ["BAKE_META"])
+
+        # --- Merge per-platform digest files ---
+        merged = {}
+        for path in sorted(glob.glob(str(digests_dir / "*.json"))):
+            with open(path) as f:
+                doc = json.load(f)
+            for key, value in doc.items():
+                if key not in merged:
+                    merged[key] = {"name": value["name"], "digests": []}
+                merged[key]["digests"].extend(value["digests"])
+
+        all_json = digests_dir / "all.json"
+        with open(all_json, "w") as f:
+            json.dump(merged, f, indent=2)
+        print(f"Merged digests written to {all_json}")
+
+        with open(os.environ["GITHUB_OUTPUT"], "a") as gh:
+            gh.write(f"image-digests={json.dumps(merged)}\n")
+
+        # --- Load bake metadata ---
+        with open(bake_meta_path) as f:
+            bake_meta = json.load(f)
+
+        dm = bake_meta.get("target", {}).get("docker-metadata-action", {})
+        raw_tags = dm.get("tags", [])
+        version = dm.get("args", {}).get("DOCKER_META_VERSION", "")
+
+        def run(cmd):
+            print(f"+ {' '.join(cmd)}", flush=True)
+            subprocess.run(cmd, check=True)
+
+        # --- Create manifest lists & push ---
+        for key, entry in merged.items():
+            image_name = entry["name"]
+            digests = [f"{image_name}@{d}" for d in entry["digests"]]
+            tag_args = []
+            for raw in raw_tags:
+                tag = re.sub(r".*:", "", raw)
+                tag_args.extend(["-t", f"{image_name}:{tag}"])
+            run(["docker", "buildx", "imagetools", "create"] + tag_args + digests)
+
+        # --- Inspect published images ---
+        if not version:
+            print("WARNING: DOCKER_META_VERSION not found, skipping inspect")
+            sys.exit(0)
+        for key, entry in merged.items():
+            image_name = entry["name"]
+            run(["docker", "buildx", "imagetools", "inspect", f"{image_name}:{version}"])
