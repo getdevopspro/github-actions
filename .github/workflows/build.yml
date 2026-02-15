@@ -18,7 +18,7 @@ on:
         value: ${{ jobs.prepare.outputs.commit-sha }}
       image-digests:
         description: 'JSON with all merged image manifest digests'
-        value: ${{ jobs.merge.outputs.image-digests }}
+        value: ${{ jobs.image-push.outputs.image-digests }}
     inputs:
       version-previous:
         description: 'The strategy to detect the previous version: auto, from-tag, from-file or manual'
