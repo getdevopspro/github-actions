@@ -30,5 +30,5 @@ runs:
       with:
         previous-version: ${{ inputs.version-previous }}
         next-version: ${{ inputs.version-next }}
-        output-format: ${{ input.version-output-format }}
+        output-format: ${{ inputs.version-output-format }}
         tag: ${{ inputs.tag }}
