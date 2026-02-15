@@ -241,7 +241,7 @@ jobs:
         with:
           previous-version: ${{ inputs.version-previous }}
           next-version: ${{ inputs.version-next }}
-          output-format: ${{ version-output-format }}
+          output-format: ${{ input.version-output-format }}
 
       - name: Set version in file
         uses: getdevopspro/github-actions/version-file@v2.0.0
