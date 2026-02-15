@@ -65,13 +65,11 @@ runs:
                     merged[key] = {"name": value["name"], "digests": []}
                 merged[key]["digests"].extend(value["digests"])
 
-        all_json = digests_dir / "all.json"
-        with open(all_json, "w") as f:
-            json.dump(merged, f, indent=2)
-        print(f"Merged digests written to {all_json}")
+        merged_json = json.dumps(merged)
+        print(f"Merged digests:\n{json.dumps(merged, indent=2)}")
 
         with open(os.environ["GITHUB_OUTPUT"], "a") as gh:
-            gh.write(f"image-digests={json.dumps(merged)}\n")
+            gh.write(f"image-digests={merged_json}\n")
 
         # --- Load bake metadata ---
         with open(bake_meta_path) as f:
