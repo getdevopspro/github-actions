@@ -49,54 +49,48 @@ runs:
         DIGESTS_DIR: ${{ runner.temp }}/digests
         BAKE_META: ${{ runner.temp }}/bake-meta.json
       run: |
-        import json, glob, os, re, subprocess, sys
+        import json, glob, os, subprocess
+        from collections import defaultdict
         from pathlib import Path
 
         digests_dir = Path(os.environ["DIGESTS_DIR"])
         bake_meta_path = Path(os.environ["BAKE_META"])
 
         # --- Merge per-platform digest files ---
-        merged = {}
+        merged = defaultdict(lambda: {"name": "", "digests": []})
         for path in sorted(glob.glob(str(digests_dir / "*.json"))):
             with open(path) as f:
                 doc = json.load(f)
             for key, value in doc.items():
-                if key not in merged:
-                    merged[key] = {"name": value["name"], "digests": []}
+                merged[key]["name"] = value["name"]
                 merged[key]["digests"].extend(value["digests"])
+        merged = dict(merged)
 
-        merged_json = json.dumps(merged)
-        print(f"Merged digests:\n{json.dumps(merged, indent=2)}")
+        print(f"Merged digests:\n{json.dumps(merged, indent=2)}", flush=True)
 
         with open(os.environ["GITHUB_OUTPUT"], "a") as gh:
-            gh.write(f"image-digests={merged_json}\n")
+            gh.write(f"image-digests={json.dumps(merged)}\n")
 
         # --- Load bake metadata ---
         with open(bake_meta_path) as f:
             bake_meta = json.load(f)
 
         dm = bake_meta.get("target", {}).get("docker-metadata-action", {})
-        raw_tags = dm.get("tags", [])
+        tag_suffixes = [t.rsplit(":", 1)[-1] for t in dm.get("tags", [])]
         version = dm.get("args", {}).get("DOCKER_META_VERSION", "")
 
         def run(cmd):
             print(f"+ {' '.join(cmd)}", flush=True)
             subprocess.run(cmd, check=True)
 
-        # --- Create manifest lists & push ---
-        for key, entry in merged.items():
+        # --- Create manifest lists, push & inspect ---
+        for entry in merged.values():
             image_name = entry["name"]
             digests = [f"{image_name}@{d}" for d in entry["digests"]]
-            tag_args = []
-            for raw in raw_tags:
-                tag = re.sub(r".*:", "", raw)
-                tag_args.extend(["-t", f"{image_name}:{tag}"])
+            tag_args = [a for s in tag_suffixes for a in ("-t", f"{image_name}:{s}")]
             run(["docker", "buildx", "imagetools", "create"] + tag_args + digests)
+            if version:
+                run(["docker", "buildx", "imagetools", "inspect", f"{image_name}:{version}"])
 
-        # --- Inspect published images ---
         if not version:
             print("WARNING: DOCKER_META_VERSION not found, skipping inspect")
-            sys.exit(0)
-        for key, entry in merged.items():
-            image_name = entry["name"]
-            run(["docker", "buildx", "imagetools", "inspect", f"{image_name}:{version}"])
