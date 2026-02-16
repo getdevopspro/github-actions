@@ -20,22 +20,29 @@ runs:
   steps:
     - name: Push git version
       shell: bash
+      env:
+        TAG: ${{ inputs.version }}
       run: |
+        set -euo pipefail
         git config user.name "${{ inputs.git-user-name }}"
         git config user.email "${{ inputs.git-user-email }}"
         git add ${{ inputs.git-add-files }}
-        # check if there are no changes at all
+
+        # Check if there are changes to commit
         if [ -z "$(git status --porcelain)" ]; then
           echo "No changes to commit"
-          # check if current commit has no tag at all
+
+          # Check if current commit has no tag at all
           if [ -z "$(git tag --points-at HEAD)" ]; then
-            git tag v${{ inputs.version }}
-            git push origin HEAD v${{ inputs.version }}
+            echo "Creating and pushing tag ${TAG}"
+            git tag "${TAG}"
+            git push --atomic origin HEAD "${TAG}"
           else
             echo "A tag already exists for this commit"
           fi
         else
-          git commit -m "chore: bump version to v${{ inputs.version }}" -m "[skip ci]"
-          git tag v${{ inputs.version }}
-          git push origin HEAD v${{ inputs.version }}
+          echo "Committing changes and pushing"
+          git commit -m "chore: bump version to ${TAG}" -m "[skip ci]"
+          git tag "${TAG}"
+          git push --atomic origin HEAD "${TAG}"
         fi
