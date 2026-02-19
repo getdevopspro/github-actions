@@ -34,15 +34,15 @@ runs:
 
           # Check if current commit has no tag at all
           if [ -z "$(git tag --points-at HEAD)" ]; then
-            echo "Creating and pushing tag ${TAG}"
-            git tag "${TAG}"
-            git push --atomic origin HEAD "${TAG}"
+            echo "Creating and pushing tag v${TAG}"
+            git tag "v${TAG}"
+            git push --atomic origin HEAD "v${TAG}"
           else
             echo "A tag already exists for this commit"
           fi
         else
           echo "Committing changes and pushing"
-          git commit -m "chore: bump version to ${TAG}" -m "[skip ci]"
-          git tag "${TAG}"
-          git push --atomic origin HEAD "${TAG}"
+          git commit -m "chore: bump version to v${TAG}" -m "[skip ci]"
+          git tag "v${TAG}"
+          git push --atomic origin HEAD "v${TAG}"
         fi
