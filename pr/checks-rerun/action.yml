@@ -6,8 +6,8 @@ inputs:
     description: Workflow filename to rerun
     required: false
     default: pull-request.yml
-  github-token:
-    description: GitHub token with actions:write permission
+  token:
+    description: 'GitHub token or PAT with actions:write permission'
     required: false
     default: ${{ github.token }}
 
@@ -17,7 +17,7 @@ runs:
     - name: Rerun failed jobs
       uses: actions/github-script@v7
       with:
-        github-token: ${{ inputs.github-token }}
+        github-token: ${{ inputs.token }}
         script: |
           const owner = context.repo.owner;
           const repo = context.repo.repo;
