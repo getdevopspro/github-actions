@@ -1,0 +1,12 @@
+name: "All Green"
+description: "Checks that all required checks have passed and the PR is green."
+
+runs:
+  using: "composite"
+  steps:
+    - name: All Green
+      uses: wechuli/allcheckspassed@v2
+      with:
+        poll: false
+        delay: 0
+        retries: 0
