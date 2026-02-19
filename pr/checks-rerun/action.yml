@@ -23,20 +23,35 @@ runs:
           const repo = context.repo.repo;
           const headSha = context.payload.pull_request.head.sha;
 
+          // Fetch all runs for the workflow and HEAD SHA (no status filter)
           const runs = await github.rest.actions.listWorkflowRunsForRepo({
             owner,
             repo,
             workflow_id: '${{ inputs.workflow-id }}',
             event: 'pull_request',
             head_sha: headSha,
-            status: 'completed',
           });
 
-          const run = runs.data.workflow_runs[0];
-          if (run) {
+          // If there's an in-progress, queued, or waiting run, skip rerun to avoid
+          // concurrency deadlock ("waiting for PR to complete before running")
+          const activeRun = runs.data.workflow_runs.find(r =>
+            ['in_progress', 'queued', 'waiting', 'pending', 'requested'].includes(r.status)
+          );
+          if (activeRun) {
+            core.info(`Workflow run ${activeRun.id} is already ${activeRun.status}, skipping rerun.`);
+            return;
+          }
+
+          // Find the latest completed run and rerun its failed jobs
+          const completedRun = runs.data.workflow_runs.find(r => r.status === 'completed');
+          if (completedRun) {
+            core.info(`Rerunning failed jobs for run ${completedRun.id} (conclusion: ${completedRun.conclusion})`);
             await github.rest.actions.reRunWorkflowFailedJobs({
               owner,
               repo,
-              run_id: run.id,
+              run_id: completedRun.id,
             });
+            return;
           }
+
+          core.warning('No workflow runs found for the current HEAD SHA.');
