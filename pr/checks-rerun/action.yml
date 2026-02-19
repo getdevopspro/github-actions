@@ -1,0 +1,42 @@
+name: Rerun PR Checks
+description: Reruns failed or cancelled jobs of the latest completed run of a workflow for the current PR SHA
+
+inputs:
+  workflow-id:
+    description: Workflow filename to rerun
+    required: false
+    default: pull-request.yml
+  github-token:
+    description: GitHub token with actions:write permission
+    required: false
+    default: ${{ github.token }}
+
+runs:
+  using: composite
+  steps:
+    - name: Rerun failed jobs
+      uses: actions/github-script@v7
+      with:
+        github-token: ${{ inputs.github-token }}
+        script: |
+          const owner = context.repo.owner;
+          const repo = context.repo.repo;
+          const headSha = context.payload.pull_request.head.sha;
+
+          const runs = await github.rest.actions.listWorkflowRunsForRepo({
+            owner,
+            repo,
+            workflow_id: '${{ inputs.workflow-id }}',
+            event: 'pull_request',
+            head_sha: headSha,
+            status: 'completed',
+          });
+
+          const run = runs.data.workflow_runs[0];
+          if (run) {
+            await github.rest.actions.reRunWorkflowFailedJobs({
+              owner,
+              repo,
+              run_id: run.id,
+            });
+          }
