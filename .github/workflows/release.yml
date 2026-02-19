@@ -22,7 +22,7 @@ jobs:
   promote:
     uses: ./.github/workflows/promote.yml
     secrets:
-      checkout-token: ${{ secrets.BOT_RELEASE_CHECKOUT_TOKEN }}
+      checkout-token: ${{ secrets.BOT_REPO_TOKEN }}
     with:
       version-makefile: Makefile
       git-add-files: Makefile
