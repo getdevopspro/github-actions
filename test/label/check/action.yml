@@ -1,4 +1,4 @@
-name: "Test Check Labels"
+name: "Check Test Labels"
 description: "Fails if label-needed is present but label-done is not."
 
 inputs:
