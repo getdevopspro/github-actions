@@ -5,7 +5,7 @@ inputs:
   workflow-id:
     description: Workflow filename to rerun
     required: false
-    default: pull-request.yml
+    default: .github/workflows/pull-request.yml
   token:
     description: 'GitHub token or PAT with actions:write permission'
     required: false
@@ -24,12 +24,13 @@ runs:
           const headSha = context.payload.pull_request.head.sha;
 
           // Fetch all runs for the workflow and HEAD SHA (no status filter)
-          const runs = await github.rest.actions.listWorkflowRunsForRepo({
+          const runs = await github.rest.actions.listWorkflowRuns({
             owner,
             repo,
             workflow_id: '${{ inputs.workflow-id }}',
             event: 'pull_request',
             head_sha: headSha,
+            per_page: 20,
           });
 
           // If there's an in-progress, queued, or waiting run, skip rerun to avoid
