@@ -1,0 +1,78 @@
+name: Rerun Job
+description: Reruns job of the latest completed run of a workflow for the current PR SHA
+
+inputs:
+  workflow-id:
+    description: Workflow filename to rerun
+    required: false
+    default: .github/workflows/pull-request.yml
+  token:
+    description: 'GitHub token or PAT with actions:write permission'
+    required: false
+    default: ${{ github.token }}
+  job-name:
+    description: 'Name of the job to rerun. If not specified, reruns all failed jobs or the entire workflow run based on rerun-failed input'
+    required: false
+  rerun-failed:
+    description: 'If true (default), reruns only failed jobs. If false, triggers a clean run of all jobs'
+    required: false
+    default: 'true'
+
+runs:
+  using: composite
+  steps:
+    - name: Rerun job(s)
+      uses: actions/github-script@v7
+      with:
+        github-token: ${{ inputs.token }}
+        script: |
+          const owner = context.repo.owner;
+          const repo = context.repo.repo;
+          const headSha = context.payload.pull_request.head.sha;
+
+          const { data: { workflow_runs } } = await github.rest.actions.listWorkflowRuns({
+            owner, repo,
+            workflow_id: '${{ inputs.workflow-id }}',
+            event: 'pull_request',
+            head_sha: headSha,
+            per_page: 20,
+          });
+
+          // Skip if a run is already active to avoid concurrency deadlock
+          const activeRun = workflow_runs.find(r =>
+            ['in_progress', 'queued', 'waiting', 'pending', 'requested'].includes(r.status)
+          );
+          if (activeRun) {
+            core.info(`Workflow run ${activeRun.id} is already ${activeRun.status}, skipping rerun.`);
+            return;
+          }
+
+          const completedRun = workflow_runs.find(r => r.status === 'completed');
+          if (!completedRun) {
+            core.warning('No workflow runs found for the current HEAD SHA.');
+            return;
+          }
+
+          const jobName = '${{ inputs.job-name }}';
+          if (jobName) {
+            const { data: { jobs } } = await github.rest.actions.listJobsForWorkflowRun({
+              owner, repo, run_id: completedRun.id, filter: 'latest', per_page: 100,
+            });
+            const job = jobs.find(j => j.name === jobName);
+            if (!job) {
+              core.setFailed(`Job "${jobName}" not found in run ${completedRun.id}. Available: ${jobs.map(j => j.name).join(', ')}`);
+              return;
+            }
+            core.info(`Rerunning job "${job.name}" (id: ${job.id}) from run ${completedRun.id}`);
+            await github.rest.actions.reRunJobForWorkflowRun({ owner, repo, job_id: job.id });
+            return;
+          }
+
+          const rerunFailed = '${{ inputs.rerun-failed }}' === 'true';
+          if (rerunFailed) {
+            core.info(`Rerunning failed jobs for run ${completedRun.id} (conclusion: ${completedRun.conclusion})`);
+            await github.rest.actions.reRunWorkflowFailedJobs({ owner, repo, run_id: completedRun.id });
+          } else {
+            core.info(`Rerunning all jobs for run ${completedRun.id} (conclusion: ${completedRun.conclusion})`);
+            await github.rest.actions.reRunWorkflow({ owner, repo, run_id: completedRun.id });
+          }
