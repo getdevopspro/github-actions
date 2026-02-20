@@ -1,4 +1,4 @@
-VERSION ?= 6.2.6
+VERSION ?= 6.3.0
 WORKFLOW_FOLDER := .github/workflows
 ifneq (,$(findstring xterm,${TERM}))
 	RED          := $(shell tput -Txterm setaf 1)
