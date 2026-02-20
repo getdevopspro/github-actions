@@ -18,10 +18,16 @@ inputs:
     required: false
     default: 'true'
 
+outputs:
+  triggered:
+    description: 'Whether a rerun was actually triggered (true/false)'
+    value: ${{ steps.rerun.outputs.triggered }}
+
 runs:
   using: composite
   steps:
     - name: Rerun job(s)
+      id: rerun
       uses: actions/github-script@v7
       with:
         github-token: ${{ inputs.token }}
@@ -44,12 +50,14 @@ runs:
           );
           if (activeRun) {
             core.info(`Workflow run ${activeRun.id} is already ${activeRun.status}, skipping rerun.`);
+            core.setOutput('triggered', 'false');
             return;
           }
 
           const completedRun = workflow_runs.find(r => r.status === 'completed');
           if (!completedRun) {
             core.warning('No workflow runs found for the current HEAD SHA.');
+            core.setOutput('triggered', 'false');
             return;
           }
 
@@ -61,10 +69,12 @@ runs:
             const job = jobs.find(j => j.name === jobName);
             if (!job) {
               core.setFailed(`Job "${jobName}" not found in run ${completedRun.id}. Available: ${jobs.map(j => j.name).join(', ')}`);
+              core.setOutput('triggered', 'false');
               return;
             }
             core.info(`Rerunning job "${job.name}" (id: ${job.id}) from run ${completedRun.id}`);
             await github.rest.actions.reRunJobForWorkflowRun({ owner, repo, job_id: job.id });
+            core.setOutput('triggered', 'true');
             return;
           }
 
@@ -76,3 +86,4 @@ runs:
             core.info(`Rerunning all jobs for run ${completedRun.id} (conclusion: ${completedRun.conclusion})`);
             await github.rest.actions.reRunWorkflow({ owner, repo, run_id: completedRun.id });
           }
+          core.setOutput('triggered', 'true');
