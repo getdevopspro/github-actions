@@ -137,7 +137,7 @@ permissions:
 jobs:
   create_pull_request:
     name: Create PR
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     outputs:
       pull-request-number: ${{ steps.cpr.outputs.pull-request-number }}
       pull-request-url: ${{ steps.cpr.outputs.pull-request-url }}
