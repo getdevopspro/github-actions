@@ -61,6 +61,6 @@ runs:
 
           core.info(`\`${labelDone}\` found. Posting confirmation comment.`);
           await postComment(
-            `### ✅ ${testName} Complete\n\n` +
+            `### ✅ ${testName} Testing Complete\n\n` +
             `\`${labelDone}\` has been added. ${testName} testing has been confirmed for this PR.${shaLine}`
           );
