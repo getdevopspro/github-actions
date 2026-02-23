@@ -748,7 +748,7 @@ jobs:
     name: Prepare Steps
     runs-on: ${{ inputs.runner-default }}
     outputs:
-      version: ${{ steps.set_version.outputs.version }}
+      version: ${{ steps.release_version.outputs.version }}
       commit-sha: ${{ steps.determine_sha.outputs.sha }}
       pre-step-matrix: ${{ steps.set_pre_matrix.outputs.matrix }}
       post-step-matrix: ${{ steps.set_post_matrix.outputs.matrix }}
