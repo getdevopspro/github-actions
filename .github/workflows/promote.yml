@@ -9,6 +9,13 @@ on:
       checkout-token:
         description: 'Checkout token with repo permissions'
         required: false
+    outputs:
+      version:
+        description: 'Detected or calculated version'
+        value: ${{ jobs.promote.outputs.version }}
+      commit-sha:
+        description: 'The commit SHA being built'
+        value: ${{ jobs.promote.outputs.version }}
     inputs:
       git-user-name:
         description: 'The git user name'
@@ -120,6 +127,9 @@ jobs:
   promote:
     name: Promote
     runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.release_version.outputs.version }}
+      commit-sha: ${{ steps.determine_sha.outputs.sha }}
     steps:
       - name: checkout repository
         uses: actions/checkout@v6
@@ -128,6 +138,19 @@ jobs:
           fetch-tags: ${{ inputs.fetch-tags }}
           submodules: ${{ inputs.submodules }}
           token: ${{ secrets.checkout-token || secrets.GITHUB_TOKEN }}
+
+      - name: Determine commit SHA
+        id: determine_sha
+        shell: bash
+        run: |
+          if [ -n "${{ github.event.pull_request.head.sha }}" ]; then
+            SHA="${{ github.event.pull_request.head.sha }}"
+            echo "Using PR HEAD SHA: ${SHA}"
+          else
+            SHA=$(git rev-parse HEAD)
+            echo "Using current HEAD SHA: ${SHA}"
+          fi
+          echo "sha=${SHA}" >> "$GITHUB_OUTPUT"
 
       - id: release_version
         name: next release version
