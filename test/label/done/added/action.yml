@@ -14,6 +14,10 @@ inputs:
     description: 'Name of the test type used in comments (e.g. Robot)'
     required: false
     default: 'Test'
+  post-comment:
+    description: 'Whether to post a comment on the PR'
+    required: false
+    default: 'true'
   token:
     description: 'GitHub token or PAT used to post comments (defaults to github.token)'
     required: false
@@ -34,6 +38,7 @@ runs:
           const repo = context.repo;
 
           const postComment = async (body) => {
+            if (!postCommentEnabled) { core.info('post-comment is disabled. Skipping comment.'); return; }
             try {
               await github.rest.issues.createComment({ ...repo, issue_number: pr, body });
             } catch (err) {
@@ -41,6 +46,7 @@ runs:
             }
           };
 
+          const postCommentEnabled = '${{ inputs.post-comment }}' !== 'false';
           const { data: labels } = await github.rest.issues.listLabelsOnIssue({ ...repo, issue_number: pr });
           const has = new Set(labels.map(l => l.name));
           const shaLine = sha ? `\n\n**Commit:** \`${sha}\`` : '';
