@@ -27,7 +27,7 @@ runs:
   using: "composite"
   steps:
     - name: Comment on label added
-      uses: actions/github-script@v7
+      uses: actions/github-script@v8
       with:
         github-token: ${{ inputs.token }}
         script: |

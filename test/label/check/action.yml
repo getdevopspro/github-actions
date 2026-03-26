@@ -27,7 +27,7 @@ runs:
   using: "composite"
   steps:
     - name: Check test labels
-      uses: actions/github-script@v7
+      uses: actions/github-script@v8
       with:
         github-token: ${{ inputs.token }}
         script: |
