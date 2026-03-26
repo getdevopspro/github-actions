@@ -14,6 +14,10 @@ inputs:
     description: 'Name of the test type used in comments (e.g. Robot)'
     required: false
     default: 'Test'
+  post-comment:
+    description: 'Whether to post a comment on the PR'
+    required: false
+    default: 'true'
   token:
     description: 'GitHub token or PAT used to post comments (defaults to github.token)'
     required: false
@@ -33,7 +37,9 @@ runs:
           const { number: pr, head: { sha } } = context.payload.pull_request;
           const repo = context.repo;
 
+          const postCommentEnabled = '${{ inputs.post-comment }}' !== 'false';
           const postComment = async (body) => {
+            if (!postCommentEnabled) { core.info('post-comment is disabled. Skipping comment.'); return; }
             try {
               await github.rest.issues.createComment({ ...repo, issue_number: pr, body });
             } catch (err) {
