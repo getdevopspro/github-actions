@@ -119,6 +119,7 @@ on:
         description: 'Whether to create the PR as a draft'
         required: false
         type: string
+        default: false
     outputs:
       pull-request-number:
         description: 'The number of the created pull request'
