@@ -111,13 +111,13 @@ on:
         required: false
         type: string
         default: ''
-      pre-runner-default:
-        description: 'Default runner for pre-steps. Fallback chain: pre-<step>-runner -> pre-runner-default -> runner-default'
+      runner-pre-default:
+        description: 'Default runner for pre-steps. Fallback chain: pre-<step>-runner -> runner-pre-default -> runner-default'
         required: false
         type: string
         default: ''
-      post-runner-default:
-        description: 'Default runner for post-steps. Fallback chain: post-<step>-runner -> post-runner-default -> runner-default'
+      runner-post-default:
+        description: 'Default runner for post-steps. Fallback chain: post-<step>-runner -> runner-post-default -> runner-default'
         required: false
         type: string
         default: ''
@@ -150,7 +150,7 @@ on:
         required: false
         type: string
       pre-checks-runner:
-        description: 'Runner override for pre-checks. Fallback chain: pre-checks-runner -> pre-runner-default -> runner-default'
+        description: 'Runner override for pre-checks. Fallback chain: pre-checks-runner -> runner-pre-default -> runner-default'
         required: false
         type: string
       pre-checks-docker-login:
@@ -196,7 +196,7 @@ on:
         required: false
         type: string
       pre-lint-runner:
-        description: 'Runner override for pre-lint. Fallback chain: pre-lint-runner -> pre-runner-default -> runner-default'
+        description: 'Runner override for pre-lint. Fallback chain: pre-lint-runner -> runner-pre-default -> runner-default'
         required: false
         type: string
       pre-lint-docker-login:
@@ -242,7 +242,7 @@ on:
         required: false
         type: string
       pre-test-runner:
-        description: 'Runner override for pre-test. Fallback chain: pre-test-runner -> pre-runner-default -> runner-default'
+        description: 'Runner override for pre-test. Fallback chain: pre-test-runner -> runner-pre-default -> runner-default'
         required: false
         type: string
       pre-test-docker-login:
@@ -288,7 +288,7 @@ on:
         required: false
         type: string
       pre-test-unit-runner:
-        description: 'Runner override for pre-test-unit. Fallback chain: pre-test-unit-runner -> pre-runner-default -> runner-default'
+        description: 'Runner override for pre-test-unit. Fallback chain: pre-test-unit-runner -> runner-pre-default -> runner-default'
         required: false
         type: string
       pre-test-unit-docker-login:
@@ -334,7 +334,7 @@ on:
         required: false
         type: string
       pre-test-coverage-runner:
-        description: 'Runner override for pre-test-coverage. Fallback chain: pre-test-coverage-runner -> pre-runner-default -> runner-default'
+        description: 'Runner override for pre-test-coverage. Fallback chain: pre-test-coverage-runner -> runner-pre-default -> runner-default'
         required: false
         type: string
       pre-test-coverage-docker-login:
@@ -380,7 +380,7 @@ on:
         required: false
         type: string
       pre-test-integration-runner:
-        description: 'Runner override for pre-test-integration. Fallback chain: pre-test-integration-runner -> pre-runner-default -> runner-default'
+        description: 'Runner override for pre-test-integration. Fallback chain: pre-test-integration-runner -> runner-pre-default -> runner-default'
         required: false
         type: string
       pre-test-integration-docker-login:
@@ -426,7 +426,7 @@ on:
         required: false
         type: string
       pre-test-e2e-runner:
-        description: 'Runner override for pre-test-e2e. Fallback chain: pre-test-e2e-runner -> pre-runner-default -> runner-default'
+        description: 'Runner override for pre-test-e2e. Fallback chain: pre-test-e2e-runner -> runner-pre-default -> runner-default'
         required: false
         type: string
       pre-test-e2e-docker-login:
@@ -472,7 +472,7 @@ on:
         required: false
         type: string
       post-checks-runner:
-        description: 'Runner override for post-checks. Fallback chain: post-checks-runner -> post-runner-default -> runner-default'
+        description: 'Runner override for post-checks. Fallback chain: post-checks-runner -> runner-post-default -> runner-default'
         required: false
         type: string
       post-checks-docker-login:
@@ -518,7 +518,7 @@ on:
         required: false
         type: string
       post-lint-runner:
-        description: 'Runner override for post-lint. Fallback chain: post-lint-runner -> post-runner-default -> runner-default'
+        description: 'Runner override for post-lint. Fallback chain: post-lint-runner -> runner-post-default -> runner-default'
         required: false
         type: string
       post-lint-docker-login:
@@ -564,7 +564,7 @@ on:
         required: false
         type: string
       post-test-runner:
-        description: 'Runner override for post-test. Fallback chain: post-test-runner -> post-runner-default -> runner-default'
+        description: 'Runner override for post-test. Fallback chain: post-test-runner -> runner-post-default -> runner-default'
         required: false
         type: string
       post-test-docker-login:
@@ -610,7 +610,7 @@ on:
         required: false
         type: string
       post-test-unit-runner:
-        description: 'Runner override for post-test-unit. Fallback chain: post-test-unit-runner -> post-runner-default -> runner-default'
+        description: 'Runner override for post-test-unit. Fallback chain: post-test-unit-runner -> runner-post-default -> runner-default'
         required: false
         type: string
       post-test-unit-docker-login:
@@ -656,7 +656,7 @@ on:
         required: false
         type: string
       post-test-coverage-runner:
-        description: 'Runner override for post-test-coverage. Fallback chain: post-test-coverage-runner -> post-runner-default -> runner-default'
+        description: 'Runner override for post-test-coverage. Fallback chain: post-test-coverage-runner -> runner-post-default -> runner-default'
         required: false
         type: string
       post-test-coverage-docker-login:
@@ -702,7 +702,7 @@ on:
         required: false
         type: string
       post-test-integration-runner:
-        description: 'Runner override for post-test-integration. Fallback chain: post-test-integration-runner -> post-runner-default -> runner-default'
+        description: 'Runner override for post-test-integration. Fallback chain: post-test-integration-runner -> runner-post-default -> runner-default'
         required: false
         type: string
       post-test-integration-docker-login:
@@ -748,7 +748,7 @@ on:
         required: false
         type: string
       post-test-e2e-runner:
-        description: 'Runner override for post-test-e2e. Fallback chain: post-test-e2e-runner -> post-runner-default -> runner-default'
+        description: 'Runner override for post-test-e2e. Fallback chain: post-test-e2e-runner -> runner-post-default -> runner-default'
         required: false
         type: string
       post-test-e2e-docker-login:
@@ -1157,7 +1157,7 @@ jobs:
     name : ${{ matrix.pre-steps.name }}
     needs: prepare
     if: ${{ !cancelled() && needs.prepare.outputs.pre-step-matrix != '[]' }}
-    runs-on: ${{ matrix.pre-steps.runner || inputs.pre-runner-default || inputs.runner-default }}
+    runs-on: ${{ matrix.pre-steps.runner || inputs.runner-pre-default || inputs.runner-default }}
     strategy:
       matrix:
         pre-steps: ${{ fromJson(needs.prepare.outputs.pre-step-matrix) }}
@@ -1244,7 +1244,7 @@ jobs:
       - prepare
       - image-push
     if: ${{ !failure() && !cancelled() && needs.prepare.outputs.post-step-matrix != '[]' }}
-    runs-on: ${{ matrix.post-steps.runner || inputs.post-runner-default || inputs.runner-default }}
+    runs-on: ${{ matrix.post-steps.runner || inputs.runner-post-default || inputs.runner-default }}
     strategy:
       matrix:
         post-steps: ${{ fromJson(needs.prepare.outputs.post-step-matrix) }}
