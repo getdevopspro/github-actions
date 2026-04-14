@@ -39,7 +39,7 @@ runs:
 
     - name: Upload command output as artifact
       uses: eviden-actions/upload-artifact@v2
-      if: inputs.artifact-name != '' && inputs.artifact-path != ''
+      if: ${{ !cancelled() && inputs.artifact-name != '' && inputs.artifact-path != '' }}
       with:
         name: ${{ inputs.artifact-name }}
         path: ${{ inputs.artifact-path }}
