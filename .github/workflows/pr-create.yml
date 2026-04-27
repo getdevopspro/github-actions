@@ -146,7 +146,7 @@ jobs:
     steps:
       - name: Install just
         if: ${{ inputs.just-install }}
-        uses: extractions/setup-just@v3
+        uses: extractions/setup-just@v4
         with:
           just-version: ${{ inputs.just-version }}
 

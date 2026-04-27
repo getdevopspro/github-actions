@@ -863,7 +863,7 @@ jobs:
 
       - name: Install just
         if: inputs.just-install
-        uses: extractions/setup-just@v2
+        uses: extractions/setup-just@v4
         with:
           just-version: ${{ inputs.just-version }}
 
@@ -1169,7 +1169,7 @@ jobs:
 
       - name: Install just
         if: inputs.just-install
-        uses: extractions/setup-just@v2
+        uses: extractions/setup-just@v4
         with:
           just-version: ${{ inputs.just-version }}
 
@@ -1256,7 +1256,7 @@ jobs:
 
       - name: Install just
         if: inputs.just-install
-        uses: extractions/setup-just@v2
+        uses: extractions/setup-just@v4
         with:
           just-version: ${{ inputs.just-version }}
 
