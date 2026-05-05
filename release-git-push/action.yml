@@ -22,8 +22,15 @@ runs:
       shell: bash
       env:
         TAG: ${{ inputs.version }}
+        DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
       run: |
         set -euo pipefail
+        push_target="HEAD"
+
+        if [ "${GITHUB_REF_TYPE:-}" = "tag" ]; then
+          push_target="HEAD:refs/heads/${DEFAULT_BRANCH}"
+        fi
+
         git config user.name "${{ inputs.git-user-name }}"
         git config user.email "${{ inputs.git-user-email }}"
         git add ${{ inputs.git-add-files }}
@@ -32,17 +39,17 @@ runs:
         if [ -z "$(git status --porcelain)" ]; then
           echo "No changes to commit"
 
-          # Check if current commit has no tag at all
-          if [ -z "$(git tag --points-at HEAD)" ]; then
+          # Check if the target release tag already exists
+          if [ -z "$(git tag -l "v${TAG}")" ]; then
             echo "Creating and pushing tag v${TAG}"
             git tag "v${TAG}"
-            git push --atomic origin HEAD "v${TAG}"
+            git push --atomic origin "v${TAG}"
           else
-            echo "A tag already exists for this commit"
+            echo "Tag v${TAG} already exists"
           fi
         else
           echo "Committing changes and pushing"
           git commit -m "chore: bump version to v${TAG}" -m "[skip ci]"
           git tag "v${TAG}"
-          git push --atomic origin HEAD "v${TAG}"
+          git push --atomic origin "${push_target}" "v${TAG}"
         fi
