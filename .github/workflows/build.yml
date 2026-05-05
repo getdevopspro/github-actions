@@ -849,14 +849,14 @@ jobs:
 
       - name: Next release version
         id: release_version
-        uses: getdevopspro/github-actions/release-version@v7.0.4
+        uses: getdevopspro/github-actions/release-version@v7.0.5
         with:
           version-previous: ${{ inputs.version-previous }}
           version-next: ${{ inputs.version-next }}
           version-output-format: ${{ inputs.version-output-format }}
 
       - name: Set version in file
-        uses: getdevopspro/github-actions/version-file@v7.0.4
+        uses: getdevopspro/github-actions/version-file@v7.0.5
         with:
           version: ${{ steps.release_version.outputs.version }}
           version-makefile: ${{ inputs.version-makefile }}
@@ -1122,7 +1122,7 @@ jobs:
 
       - name: Set image metadata and platform matrix
         id: prepare_image
-        uses: getdevopspro/github-actions/buildx-bake/prepare@v7.0.4
+        uses: getdevopspro/github-actions/buildx-bake/prepare@v7.0.5
         with:
           bake-target: ${{ inputs.bake-target }}
           registry-image: ${{ inputs.registry-image }}
@@ -1192,7 +1192,7 @@ jobs:
 
       - name: ${{ matrix.pre-steps.name }}
         id: command
-        uses: getdevopspro/github-actions/command@v7.0.4
+        uses: getdevopspro/github-actions/command@v7.0.5
         with:
           command: ${{ matrix.pre-steps.command }}
 
@@ -1212,7 +1212,7 @@ jobs:
         with:
           name: ${{ inputs.source-artifact-name }}
 
-      - uses: getdevopspro/github-actions/buildx-bake/build@v7.0.4
+      - uses: getdevopspro/github-actions/buildx-bake/build@v7.0.5
         with:
           bake-file: ${{ inputs.bake-file }}
           bake-target: ${{ inputs.bake-target }}
@@ -1237,7 +1237,7 @@ jobs:
         with:
           name: ${{ inputs.source-artifact-name }}
 
-      - uses: getdevopspro/github-actions/buildx-bake/merge@v7.0.4
+      - uses: getdevopspro/github-actions/buildx-bake/merge@v7.0.5
         id: merge
         with:
           registry-username: ${{ inputs.registry-username }}
@@ -1279,7 +1279,7 @@ jobs:
 
       - name: ${{ matrix.post-steps.name }}
         id: command
-        uses: getdevopspro/github-actions/command@v7.0.4
+        uses: getdevopspro/github-actions/command@v7.0.5
         with:
           command: ${{ matrix.post-steps.command }}
           artifact-name: ${{ matrix.post-steps.artifact-name }}
