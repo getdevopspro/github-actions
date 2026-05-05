@@ -101,6 +101,11 @@ on:
         required: false
         type: string
         default: 'ubuntu-22.04'
+      runner-prepare-default:
+        description: 'Default runner for prepare job. Fallback chain: runner-prepare-default -> runner-default'
+        required: false
+        type: string
+        default: 'ubuntu-22.04'
       runner-build-arm64:
         description: 'Runner for linux/arm64 image builds'
         required: false
@@ -812,7 +817,7 @@ permissions:
 jobs:
   prepare:
     name: Prepare Steps
-    runs-on: ${{ inputs.runner-default }}
+    runs-on: ${{ inputs.runner-prepare-default || inputs.runner-default }}
     outputs:
       version: ${{ steps.release_version.outputs.version }}
       commit-sha: ${{ steps.determine_sha.outputs.sha }}
