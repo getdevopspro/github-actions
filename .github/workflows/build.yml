@@ -106,11 +106,11 @@ on:
         required: false
         type: string
         default: 'ubuntu-22.04-arm'
-      runner-build-default:
-        description: 'Default runner for non-arm64 image builds. Fallback chain: runner-build-default -> runner-default'
+      runner-build-amd64:
+        description: 'Runner for linux/amd64 image builds. Fallback chain: runner-build-amd64 -> runner-default'
         required: false
         type: string
-        default: ''
+        default: 'ubuntu-22.04'
       runner-pre-default:
         description: 'Default runner for pre-steps. Fallback chain: pre-<step>-runner -> runner-pre-default -> runner-default'
         required: false
@@ -1197,7 +1197,7 @@ jobs:
       - prepare
       - pre-steps
     if: ${{ !failure() && !cancelled() && needs.prepare.outputs.image-platform-matrix != '' && needs.prepare.outputs.image-platform-matrix != '[]' }}
-    runs-on: ${{ matrix.platform == 'linux/arm64' && inputs.runner-build-arm64 || inputs.runner-build-default || inputs.runner-default }}
+    runs-on: ${{ matrix.platform == 'linux/arm64' && (inputs.runner-build-arm64 || inputs.runner-default) || matrix.platform == 'linux/amd64' && (inputs.runner-build-amd64 || inputs.runner-default) || inputs.runner-default }}
     strategy:
       matrix:
         platform: ${{ fromJson(needs.prepare.outputs.image-platform-matrix) }}
