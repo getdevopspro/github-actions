@@ -8,7 +8,7 @@ jobs:
     name: All Green
     runs-on: ubuntu-24.04-arm
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: All Green
         uses: getdevopspro/github-actions/all-green@v7.0.4
