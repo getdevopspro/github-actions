@@ -100,7 +100,7 @@ on:
         description: 'Global fallback runner used when no more specific runner input applies'
         required: false
         type: string
-        default: 'ubuntu-22.04'
+        default: 'ubuntu-22.04-arm'
       runner-build-arm64:
         description: 'Runner for linux/arm64 image builds'
         required: false
