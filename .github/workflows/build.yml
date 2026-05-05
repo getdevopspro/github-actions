@@ -1183,7 +1183,7 @@ jobs:
 
       - name: Setup QEMU
         if: matrix.pre-steps.qemu-install == 'true'
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v4
 
       - name: ${{ matrix.pre-steps.name }}
         id: command
@@ -1270,7 +1270,7 @@ jobs:
 
       - name: Setup QEMU
         if: matrix.post-steps.qemu-install == 'true'
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v4
 
       - name: ${{ matrix.post-steps.name }}
         id: command

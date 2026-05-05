@@ -68,7 +68,7 @@ runs:
         echo ${{ steps.platforms.outputs.matrix }}
 
     - name: Set up qemu
-      uses: docker/setup-qemu-action@v3
+      uses: docker/setup-qemu-action@v4
 
     - name: Set up docker buildx
       uses: docker/setup-buildx-action@v3
