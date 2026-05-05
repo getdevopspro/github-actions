@@ -24,6 +24,10 @@ outputs:
 runs:
   using: "composite"
   steps:
+    - name: Setup QEMU
+      if: runner.os == 'Linux' && runner.arch != 'X64'
+      uses: docker/setup-qemu-action@v3
+
     - name: Next release version
       id: release_version
       uses: jenkins-x-plugins/jx-release-version@v2.7.8
