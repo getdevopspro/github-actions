@@ -1180,7 +1180,7 @@ jobs:
 
       - name: Login to registry
         if: matrix.pre-steps.docker-login == 'true'
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: ${{ inputs.registry }}
           username: ${{ inputs.registry-username }}
@@ -1267,7 +1267,7 @@ jobs:
 
       - name: Login to registry
         if: matrix.post-steps.docker-login == 'true'
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: ${{ inputs.registry }}
           username: ${{ inputs.registry-username }}

@@ -75,14 +75,14 @@ runs:
 
     - name: Extract metadata (tags, labels) for image
       id: meta
-      uses: docker/metadata-action@v5
+      uses: docker/metadata-action@v6
       with:
         images: ${{ steps.lowercase_registry_image.outputs.registry-image }}
         tags: ${{ inputs.meta-tags }}
         labels: ${{ inputs.meta-labels }}
 
     - name: Log in to the container registry
-      uses: docker/login-action@v3
+      uses: docker/login-action@v4
       with:
         registry: ${{ inputs.registry }}
         username: ${{ inputs.registry-username }}
