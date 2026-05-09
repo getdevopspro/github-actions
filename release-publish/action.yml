@@ -1,0 +1,58 @@
+name: Release Publish
+description: |
+  Create or update a GitHub release for the released version tag using the
+  provided changelog as release notes.
+
+  Must run after the git tag has been pushed to the remote.
+
+inputs:
+  version:
+    description: 'The released version (with or without v prefix, e.g. 1.2.3 or v1.2.3)'
+    required: true
+  changelog:
+    description: 'Release notes / changelog content for the release body'
+    required: false
+  draft:
+    description: 'Mark the release as draft'
+    required: false
+    default: 'false'
+  git-token:
+    description: 'GitHub token with permission to create/update releases. Defaults to the workflow GITHUB_TOKEN.'
+    required: false
+
+outputs:
+  release-url:
+    description: 'URL of the created or updated GitHub release'
+    value: ${{ steps.publish.outputs.release-url }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Publish release
+      id: publish
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.git-token != '' && inputs.git-token || github.token }}
+        VERSION: ${{ inputs.version }}
+        CHANGELOG: ${{ inputs.changelog }}
+        DRAFT: ${{ inputs.draft }}
+      run: |
+        set -euo pipefail
+
+        TAG="v${VERSION#v}"
+
+        NOTES_FILE=$(mktemp)
+        trap 'rm -f "${NOTES_FILE}"' EXIT
+        printf '%s' "${CHANGELOG}" > "${NOTES_FILE}"
+
+        ARGS=(--title "${TAG}" --notes-file "${NOTES_FILE}")
+        [ "${DRAFT}" = "true" ] && ARGS+=(--draft)
+
+        if gh release view "${TAG}" &>/dev/null; then
+          gh release edit "${TAG}" "${ARGS[@]}"
+        else
+          gh release create "${TAG}" "${ARGS[@]}"
+        fi
+
+        URL=$(gh release view "${TAG}" --json url --jq '.url')
+        echo "release-url=${URL}" >> "$GITHUB_OUTPUT"

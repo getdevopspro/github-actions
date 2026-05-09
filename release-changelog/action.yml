@@ -21,14 +21,6 @@ inputs:
     description: 'Run in batch mode without prompting for user input'
     required: false
     default: 'true'
-  update-release:
-    description: 'Update the release on the Git repository with the changelog'
-    required: false
-    default: 'false'
-  draft:
-    description: 'Mark the git provider release as draft. Only relevant when update-release is true. Defaults to true to prevent accidental publishing.'
-    required: false
-    default: 'true'
   output-markdown:
     description: 'Write the changelog output to this file'
     required: false
@@ -54,7 +46,7 @@ inputs:
     required: false
     default: 'false'
   git-token:
-    description: 'Git token used when update-release is true. Defaults to the workflow GITHUB_TOKEN.'
+    description: 'Git token for git operations. Defaults to the workflow GITHUB_TOKEN.'
     required: false
   image:
     description: 'jx-changelog container image (without tag)'
@@ -81,9 +73,6 @@ runs:
 
         BATCH_MODE="${{ inputs.batch-mode }}"
         echo "batch-mode=${BATCH_MODE:-true}" >> "$GITHUB_OUTPUT"
-
-        UPDATE_RELEASE="${{ inputs.update-release }}"
-        echo "update-release=${UPDATE_RELEASE:-false}" >> "$GITHUB_OUTPUT"
 
         OUTPUT_MD="${{ inputs.output-markdown }}"
         echo "output-markdown=${OUTPUT_MD:-CHANGELOG.md}" >> "$GITHUB_OUTPUT"
@@ -136,7 +125,7 @@ runs:
         ARGS=(create)
         ARGS+=(--batch-mode="${{ steps.resolve.outputs.batch-mode }}")
         ARGS+=(--version="${{ inputs.version }}")
-        ARGS+=(--update-release="${{ steps.resolve.outputs.update-release }}")
+        ARGS+=(--update-release=false)
         ARGS+=(--output-markdown="${OUTPUT_MD}")
         ARGS+=(--git-token="${GIT_TOKEN}")
         ARGS+=(--generate-yaml=false)
@@ -144,7 +133,6 @@ runs:
         [ -n "${PREV_REV}" ] && ARGS+=(--previous-rev="${PREV_REV}")
         ARGS+=(--rev="${REV}")
         [ -n "${{ inputs.exclude-regexp }}" ] && ARGS+=(--exclude-regexp="${{ inputs.exclude-regexp }}")
-        [ "${{ inputs.draft }}" = "true" ] && ARGS+=(--draft)
 
         docker run --rm \
           -v "${GITHUB_WORKSPACE}:/workspace" \

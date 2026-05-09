@@ -125,10 +125,6 @@ on:
         required: false
         type: boolean
         default: false
-      changelog-update-release:
-        description: 'Update the release on the Git repository with the changelog (release-changelog action)'
-        required: false
-        type: string
       changelog-output-markdown:
         description: 'Write the changelog output to this file (release-changelog action)'
         required: false
@@ -137,10 +133,16 @@ on:
         description: 'Regexp for excluding commits from the changelog (release-changelog action)'
         required: false
         type: string
-      changelog-draft:
-        description: 'Mark the git provider release as draft (release-changelog action)'
+      release-publish-enable:
+        description: 'Create or update a GitHub release after the git push. Requires changelog-enabled to be true.'
         required: false
-        type: string
+        type: boolean
+        default: false
+      release-publish-draft:
+        description: 'Mark the GitHub release as draft (release-publish action)'
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -155,6 +157,13 @@ jobs:
       commit-sha: ${{ steps.determine_sha.outputs.sha }}
       changelog: ${{ steps.release_changelog.outputs.changelog }}
     steps:
+      - name: validate inputs
+        if: inputs.release-publish-enable && !inputs.changelog-enabled
+        shell: bash
+        run: |
+          echo "::error::release-publish-enable requires changelog-enabled to be true"
+          exit 1
+
       - name: checkout repository
         uses: actions/checkout@v6
         with:
@@ -219,8 +228,6 @@ jobs:
         uses: getdevopspro/github-actions/release-changelog@v7.0.5
         with:
           version: ${{ steps.release_version.outputs.version }}
-          update-release: ${{ inputs.changelog-update-release }}
-          draft: ${{ inputs.changelog-draft }}
           output-markdown: ${{ inputs.changelog-output-markdown }}
           exclude-regexp: ${{ inputs.changelog-exclude-regexp }}
 
@@ -248,3 +255,11 @@ jobs:
           git-user-name: ${{ inputs.git-user-name }}
           git-user-email: ${{ inputs.git-user-email }}
           git-add-files: ${{ steps.resolve_changelog_git_add_files.outputs.files || inputs.git-add-files }}
+
+      - name: publish github release
+        if: inputs.release-publish-enable && inputs.push-git
+        uses: getdevopspro/github-actions/release-publish@v7.0.5
+        with:
+          version: ${{ steps.release_version.outputs.version }}
+          changelog: ${{ steps.release_changelog.outputs.changelog }}
+          draft: ${{ inputs.release-publish-draft }}
