@@ -225,7 +225,7 @@ jobs:
       - name: release changelog
         id: release_changelog
         if: inputs.changelog-enabled
-        uses: getdevopspro/github-actions/release-changelog@v7.0.5
+        uses: getdevopspro/github-actions/release-changelog@v7.0.6-prerelease
         with:
           version: ${{ steps.release_version.outputs.version }}
           output-markdown: ${{ inputs.changelog-output-markdown }}
@@ -258,7 +258,7 @@ jobs:
 
       - name: publish github release
         if: inputs.release-publish-enable && inputs.push-git
-        uses: getdevopspro/github-actions/release-publish@v7.0.5
+        uses: getdevopspro/github-actions/release-publish@v7.0.6-prerelease
         with:
           version: ${{ steps.release_version.outputs.version }}
           changelog: ${{ steps.release_changelog.outputs.changelog }}
