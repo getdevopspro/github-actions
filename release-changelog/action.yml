@@ -2,8 +2,8 @@ name: Release Changelog
 description: |
   Generate a release changelog using jx-changelog.
 
-  Container image: ghcr.io/jenkins-x/jx-changelog:0.0.0-pr-95-5-snapshot
-  Note: this image is only available for amd64 and must run on an amd64 runner.
+  Container image: ghcr.io/jenkins-x/jx-changelog
+  Note: this image is currently only available for amd64 and must run on an amd64 runner.
 
   previous-rev: when not set, the latest semantic version tag (vX.X.X or
   X.X.X, without any pre-release suffix) reachable from the current branch is
@@ -23,6 +23,10 @@ inputs:
     default: 'true'
   update-release:
     description: 'Update the release on the Git repository with the changelog'
+    required: false
+    default: 'false'
+  draft:
+    description: 'Mark the git provider release as draft'
     required: false
     default: 'false'
   output-markdown:
@@ -140,6 +144,7 @@ runs:
         [ -n "${PREV_REV}" ] && ARGS+=(--previous-rev="${PREV_REV}")
         ARGS+=(--rev="${REV}")
         [ -n "${{ inputs.exclude-regexp }}" ] && ARGS+=(--exclude-regexp="${{ inputs.exclude-regexp }}")
+        [ "${{ inputs.draft }}" = "true" ] && ARGS+=(--draft)
 
         docker run --rm \
           -v "${GITHUB_WORKSPACE}:/workspace" \

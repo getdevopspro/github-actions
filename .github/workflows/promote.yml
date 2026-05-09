@@ -137,6 +137,10 @@ on:
         description: 'Regexp for excluding commits from the changelog (release-changelog action)'
         required: false
         type: string
+      changelog-draft:
+        description: 'Mark the git provider release as draft (release-changelog action)'
+        required: false
+        type: string
 
 
 permissions:
@@ -199,6 +203,7 @@ jobs:
         with:
           version: ${{ steps.release_version.outputs.version }}
           update-release: ${{ inputs.changelog-update-release }}
+          draft: ${{ inputs.changelog-draft }}
           output-markdown: ${{ inputs.changelog-output-markdown }}
           exclude-regexp: ${{ inputs.changelog-exclude-regexp }}
 
