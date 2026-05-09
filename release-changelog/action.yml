@@ -122,7 +122,8 @@ runs:
         REV="${{ steps.resolve.outputs.rev }}"
         OUTPUT_MD="${{ steps.resolve.outputs.output-markdown }}"
 
-        ARGS=(create)
+        ARGS=(jx-changelog)
+        ARGS+=(create)
         ARGS+=(--batch-mode="${{ steps.resolve.outputs.batch-mode }}")
         ARGS+=(--version="${{ inputs.version }}")
         ARGS+=(--update-release=false)
