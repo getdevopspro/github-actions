@@ -1,0 +1,167 @@
+name: Release Changelog
+description: |
+  Generate a release changelog using jx-changelog.
+
+  Container image: ghcr.io/jenkins-x/jx-changelog:0.0.0-pr-95-5-snapshot
+  Note: this image is only available for amd64 and must run on an amd64 runner.
+
+  previous-rev: when not set, the latest semantic version tag (vX.X.X or
+  X.X.X, without any pre-release suffix) reachable from the current branch is
+  detected automatically. For pull requests, the PR target branch is used
+  instead. Tags with a suffix after the patch segment (e.g. v1.2.3-rc1) are
+  excluded from auto-detection.
+
+  rev: when not set, defaults to HEAD.
+
+inputs:
+  version:
+    description: 'The version to release'
+    required: true
+  batch-mode:
+    description: 'Run in batch mode without prompting for user input'
+    required: false
+    default: 'true'
+  update-release:
+    description: 'Update the release on the Git repository with the changelog'
+    required: false
+    default: 'false'
+  output-markdown:
+    description: 'Write the changelog output to this file'
+    required: false
+    default: 'CHANGELOG.md'
+  previous-rev:
+    description: |
+      Previous tag revision (git tag or SHA) to start the changelog from. When
+      not set, the latest semantic version tag (vX.X.X or X.X.X, no
+      pre-release suffix) reachable from the current branch is auto-detected.
+      For pull requests, the target branch is used for auto-detection.
+    required: false
+  rev:
+    description: 'Revision to end the changelog at. Defaults to HEAD when not set.'
+    required: false
+  exclude-regexp:
+    description: 'Regexp for excluding commits from the changelog'
+    required: false
+  prepend:
+    description: |
+      Prepend the generated changelog to the output-markdown file instead of
+      overwriting it. The changelog output contains only the current version
+      entries regardless of this setting.
+    required: false
+    default: 'false'
+  git-token:
+    description: 'Git token used when update-release is true. Defaults to the workflow GITHUB_TOKEN.'
+    required: false
+
+outputs:
+  changelog:
+    description: 'The changelog for the released version only'
+    value: ${{ steps.capture.outputs.changelog }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Resolve inputs
+      id: resolve
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        BATCH_MODE="${{ inputs.batch-mode }}"
+        echo "batch-mode=${BATCH_MODE:-true}" >> "$GITHUB_OUTPUT"
+
+        UPDATE_RELEASE="${{ inputs.update-release }}"
+        echo "update-release=${UPDATE_RELEASE:-false}" >> "$GITHUB_OUTPUT"
+
+        OUTPUT_MD="${{ inputs.output-markdown }}"
+        echo "output-markdown=${OUTPUT_MD:-CHANGELOG.md}" >> "$GITHUB_OUTPUT"
+
+        # Resolve previous-rev from the branch when not provided
+        PREV_REV="${{ inputs.previous-rev }}"
+        if [ -z "${PREV_REV}" ]; then
+          if [ -n "${{ github.base_ref }}" ]; then
+            BRANCH="origin/${{ github.base_ref }}"
+          else
+            BRANCH="HEAD"
+          fi
+          PREV_REV=$(git tag --merged "${BRANCH}" --sort=-version:refname \
+            | grep -E '^v?[0-9]+\.[0-9]+\.[0-9]+$' | head -1 || true)
+          if [ -n "${PREV_REV}" ]; then
+            echo "Auto-detected previous revision: ${PREV_REV}"
+          else
+            echo "No previous revision found"
+          fi
+        fi
+        echo "previous-rev=${PREV_REV}" >> "$GITHUB_OUTPUT"
+
+        REV="${{ inputs.rev }}"
+        echo "rev=${REV:-HEAD}" >> "$GITHUB_OUTPUT"
+
+    - name: Save existing changelog
+      id: save-existing
+      if: inputs.prepend == 'true'
+      shell: bash
+      run: |
+        set -euo pipefail
+        FILE="${{ steps.resolve.outputs.output-markdown }}"
+        if [ -f "${FILE}" ]; then
+          cp "${FILE}" "${FILE}.bak"
+          echo "backup=${FILE}.bak" >> "$GITHUB_OUTPUT"
+        fi
+
+    - name: Generate changelog
+      shell: bash
+      env:
+        GIT_TOKEN: ${{ inputs.git-token != '' && inputs.git-token || github.token }}
+        GITHUB_TOKEN: ${{ inputs.git-token != '' && inputs.git-token || github.token }}
+      run: |
+        set -euo pipefail
+
+        PREV_REV="${{ steps.resolve.outputs.previous-rev }}"
+        REV="${{ steps.resolve.outputs.rev }}"
+        OUTPUT_MD="${{ steps.resolve.outputs.output-markdown }}"
+
+        ARGS=(create)
+        ARGS+=(--batch-mode="${{ steps.resolve.outputs.batch-mode }}")
+        ARGS+=(--version="${{ inputs.version }}")
+        ARGS+=(--update-release="${{ steps.resolve.outputs.update-release }}")
+        ARGS+=(--output-markdown="${OUTPUT_MD}")
+        ARGS+=(--git-token="${GIT_TOKEN}")
+        ARGS+=(--generate-yaml=false)
+        ARGS+=(--no-dev-release)
+        [ -n "${PREV_REV}" ] && ARGS+=(--previous-rev="${PREV_REV}")
+        ARGS+=(--rev="${REV}")
+        [ -n "${{ inputs.exclude-regexp }}" ] && ARGS+=(--exclude-regexp="${{ inputs.exclude-regexp }}")
+
+        docker run --rm \
+          -v "${GITHUB_WORKSPACE}:/workspace" \
+          -w /workspace \
+          -e GITHUB_TOKEN="${GITHUB_TOKEN}" \
+          -e GIT_TOKEN="${GIT_TOKEN}" \
+          -e GIT_CONFIG_COUNT=1 \
+          -e GIT_CONFIG_KEY_0=safe.directory \
+          -e GIT_CONFIG_VALUE_0=/workspace \
+          ghcr.io/jenkins-x/jx-changelog:0.0.0-pr-95-5-snapshot \
+          "${ARGS[@]}"
+
+    - name: Capture changelog and prepend
+      id: capture
+      shell: bash
+      run: |
+        set -euo pipefail
+        FILE="${{ steps.resolve.outputs.output-markdown }}"
+        BACKUP="${{ steps.save-existing.outputs.backup }}"
+        delimiter="$(openssl rand -hex 8)"
+
+        # Capture the version-only changelog written by jx-changelog
+        {
+          echo "changelog<<${delimiter}"
+          [ -f "${FILE}" ] && cat "${FILE}" || true
+          echo "${delimiter}"
+        } >> "$GITHUB_OUTPUT"
+
+        # Append previous content after the new version changelog when prepend=true
+        if [ "${{ inputs.prepend }}" = "true" ] && [ -n "${BACKUP:-}" ] && [ -f "${BACKUP}" ]; then
+          cat "${BACKUP}" >> "${FILE}"
+          rm "${BACKUP}"
+        fi

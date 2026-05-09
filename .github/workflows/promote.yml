@@ -16,6 +16,9 @@ on:
       commit-sha:
         description: 'The commit SHA being built'
         value: ${{ jobs.promote.outputs.version }}
+      changelog:
+        description: 'The changelog for the released version'
+        value: ${{ jobs.promote.outputs.changelog }}
     inputs:
       git-user-name:
         description: 'The git user name'
@@ -117,6 +120,23 @@ on:
         description: 'Additional image tags to apply (comma-separated, e.g. "stable,prod")'
         required: false
         type: string
+      changelog-enabled:
+        description: 'Generate release changelog'
+        required: false
+        type: boolean
+        default: true
+      changelog-update-release:
+        description: 'Update the release on the Git repository with the changelog (release-changelog action)'
+        required: false
+        type: string
+      changelog-output-markdown:
+        description: 'Write the changelog output to this file (release-changelog action)'
+        required: false
+        type: string
+      changelog-exclude-regexp:
+        description: 'Regexp for excluding commits from the changelog (release-changelog action)'
+        required: false
+        type: string
 
 
 permissions:
@@ -130,6 +150,7 @@ jobs:
     outputs:
       version: ${{ steps.release_version.outputs.version }}
       commit-sha: ${{ steps.determine_sha.outputs.sha }}
+      changelog: ${{ steps.release_changelog.outputs.changelog }}
     steps:
       - name: checkout repository
         uses: actions/checkout@v6
@@ -170,6 +191,16 @@ jobs:
           version-package-lock: ${{ inputs.version-package-lock }}
           version-script: ${{ inputs.version-script }}
           version-chart: ${{ inputs.version-chart }}
+
+      - name: release changelog
+        id: release_changelog
+        if: inputs.changelog-enabled
+        uses: getdevopspro/github-actions/release-changelog@v7.0.5
+        with:
+          version: ${{ steps.release_version.outputs.version }}
+          update-release: ${{ inputs.changelog-update-release }}
+          output-markdown: ${{ inputs.changelog-output-markdown }}
+          exclude-regexp: ${{ inputs.changelog-exclude-regexp }}
 
       - name: promote container images
         if: inputs.image-digests != ''
