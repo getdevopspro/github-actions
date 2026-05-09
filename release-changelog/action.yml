@@ -26,9 +26,9 @@ inputs:
     required: false
     default: 'false'
   draft:
-    description: 'Mark the git provider release as draft'
+    description: 'Mark the git provider release as draft. Only relevant when update-release is true. Defaults to true to prevent accidental publishing.'
     required: false
-    default: 'false'
+    default: 'true'
   output-markdown:
     description: 'Write the changelog output to this file'
     required: false
@@ -171,15 +171,14 @@ runs:
 
         if [ "${{ inputs.prepend }}" = "true" ]; then
           # Build structured version block: division line, heading, blank line, content
-          printf '%s\n' "---" "# ${VERSION}" "" "${RAW_CHANGELOG}" > "${FILE}"
+          CHANGELOG_OUTPUT=$(printf '%s\n' "---" "# v${VERSION}" "" "${RAW_CHANGELOG}")
+          printf '%s\n' "${CHANGELOG_OUTPUT}" > "${FILE}"
 
           # Append previous changelog content after this version's block
           if [ -n "${BACKUP:-}" ] && [ -f "${BACKUP}" ]; then
             cat "${BACKUP}" >> "${FILE}"
             rm "${BACKUP}"
           fi
-
-          CHANGELOG_OUTPUT=$(printf '%s\n' "---" "# ${VERSION}" "" "${RAW_CHANGELOG}")
         else
           CHANGELOG_OUTPUT="${RAW_CHANGELOG}"
         fi
