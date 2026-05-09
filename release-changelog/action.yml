@@ -52,6 +52,14 @@ inputs:
   git-token:
     description: 'Git token used when update-release is true. Defaults to the workflow GITHUB_TOKEN.'
     required: false
+  image:
+    description: 'jx-changelog container image (without tag)'
+    required: false
+    default: 'ghcr.io/jenkins-x/jx-changelog'
+  image-tag:
+    description: 'jx-changelog container image tag'
+    required: false
+    default: '0.0.0-pr-95-5-snapshot'
 
 outputs:
   changelog:
@@ -141,7 +149,7 @@ runs:
           -e GIT_CONFIG_COUNT=1 \
           -e GIT_CONFIG_KEY_0=safe.directory \
           -e GIT_CONFIG_VALUE_0=/workspace \
-          ghcr.io/jenkins-x/jx-changelog:0.0.0-pr-95-5-snapshot \
+          ${{ inputs.image }}:${{ inputs.image-tag }} \
           "${ARGS[@]}"
 
     - name: Capture changelog and prepend
@@ -151,17 +159,29 @@ runs:
         set -euo pipefail
         FILE="${{ steps.resolve.outputs.output-markdown }}"
         BACKUP="${{ steps.save-existing.outputs.backup }}"
-        delimiter="$(openssl rand -hex 8)"
+        VERSION="${{ inputs.version }}"
 
-        # Capture the version-only changelog written by jx-changelog
+        RAW_CHANGELOG=""
+        [ -f "${FILE}" ] && RAW_CHANGELOG=$(cat "${FILE}")
+
+        if [ "${{ inputs.prepend }}" = "true" ]; then
+          # Build structured version block: division line, heading, blank line, content
+          printf '%s\n' "---" "# ${VERSION}" "" "${RAW_CHANGELOG}" > "${FILE}"
+
+          # Append previous changelog content after this version's block
+          if [ -n "${BACKUP:-}" ] && [ -f "${BACKUP}" ]; then
+            cat "${BACKUP}" >> "${FILE}"
+            rm "${BACKUP}"
+          fi
+
+          CHANGELOG_OUTPUT=$(printf '%s\n' "---" "# ${VERSION}" "" "${RAW_CHANGELOG}")
+        else
+          CHANGELOG_OUTPUT="${RAW_CHANGELOG}"
+        fi
+
+        delimiter="EOF_CHANGELOG_${GITHUB_RUN_ID}"
         {
           echo "changelog<<${delimiter}"
-          [ -f "${FILE}" ] && cat "${FILE}" || true
+          printf '%s\n' "${CHANGELOG_OUTPUT}"
           echo "${delimiter}"
         } >> "$GITHUB_OUTPUT"
-
-        # Append previous content after the new version changelog when prepend=true
-        if [ "${{ inputs.prepend }}" = "true" ] && [ -n "${BACKUP:-}" ] && [ -f "${BACKUP}" ]; then
-          cat "${BACKUP}" >> "${FILE}"
-          rm "${BACKUP}"
-        fi

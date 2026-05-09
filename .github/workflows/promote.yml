@@ -202,6 +202,21 @@ jobs:
           output-markdown: ${{ inputs.changelog-output-markdown }}
           exclude-regexp: ${{ inputs.changelog-exclude-regexp }}
 
+      - name: resolve changelog git-add-files
+        id: resolve_changelog_git_add_files
+        if: inputs.changelog-enabled
+        shell: bash
+        run: |
+          set -euo pipefail
+          CHANGELOG_FILE="${{ inputs.changelog-output-markdown }}"
+          CHANGELOG_FILE="${CHANGELOG_FILE:-CHANGELOG.md}"
+          FILES="${{ inputs.git-add-files }}"
+          case " ${FILES} " in
+            *" ${CHANGELOG_FILE} "*) ;;
+            *) FILES="${FILES:+${FILES} }${CHANGELOG_FILE}" ;;
+          esac
+          echo "files=${FILES}" >> "$GITHUB_OUTPUT"
+
       - name: promote container images
         if: inputs.image-digests != ''
         uses: getdevopspro/github-actions/buildx-bake/promote@v7.0.5
@@ -228,4 +243,4 @@ jobs:
           version: ${{ steps.release_version.outputs.version }}
           git-user-name: ${{ inputs.git-user-name }}
           git-user-email: ${{ inputs.git-user-email }}
-          git-add-files: ${{ inputs.git-add-files }}
+          git-add-files: ${{ steps.resolve_changelog_git_add_files.outputs.files || inputs.git-add-files }}
