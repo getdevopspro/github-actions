@@ -124,7 +124,7 @@ on:
         description: 'Generate release changelog'
         required: false
         type: boolean
-        default: true
+        default: false
       changelog-update-release:
         description: 'Update the release on the Git repository with the changelog (release-changelog action)'
         required: false
@@ -195,6 +195,24 @@ jobs:
           version-script: ${{ inputs.version-script }}
           version-chart: ${{ inputs.version-chart }}
 
+      - name: promote container images
+        if: inputs.image-digests != ''
+        uses: getdevopspro/github-actions/buildx-bake/promote@v7.0.5
+        with:
+          version: ${{ steps.release_version.outputs.version }}
+          image-digests: ${{ inputs.image-digests }}
+          registry: ${{ inputs.registry }}
+          registry-username: ${{ inputs.registry-username }}
+          registry-password: ${{ secrets.registry-password || secrets.GITHUB_TOKEN }}
+          additional-tags: ${{ inputs.image-additional-tags }}
+
+      - name: run make target before push
+        if: inputs.make-target-pre-push != ''
+        shell: bash
+        run: |
+          echo "run make target: ${{ inputs.make-target-pre-push }}"
+          make ${{ inputs.make-target-pre-push }}
+
       - name: release changelog
         id: release_changelog
         if: inputs.changelog-enabled
@@ -220,24 +238,6 @@ jobs:
             *) FILES="${FILES:+${FILES} }${CHANGELOG_FILE}" ;;
           esac
           echo "files=${FILES}" >> "$GITHUB_OUTPUT"
-
-      - name: promote container images
-        if: inputs.image-digests != ''
-        uses: getdevopspro/github-actions/buildx-bake/promote@v7.0.5
-        with:
-          version: ${{ steps.release_version.outputs.version }}
-          image-digests: ${{ inputs.image-digests }}
-          registry: ${{ inputs.registry }}
-          registry-username: ${{ inputs.registry-username }}
-          registry-password: ${{ secrets.registry-password || secrets.GITHUB_TOKEN }}
-          additional-tags: ${{ inputs.image-additional-tags }}
-
-      - name: run make target before push
-        if: inputs.make-target-pre-push != ''
-        shell: bash
-        run: |
-          echo "run make target: ${{ inputs.make-target-pre-push }}"
-          make ${{ inputs.make-target-pre-push }}
 
       - name: push git version
         uses: getdevopspro/github-actions/release-git-push@v7.0.5
