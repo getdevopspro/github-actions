@@ -278,32 +278,15 @@ jobs:
       - name: release changelog
         id: release_changelog
         if: inputs.changelog-enabled
-        uses: orhun/git-cliff-action@v4
-        env:
-          OUTPUT: ${{ inputs.changelog-prepend && '/tmp/cliff-changelog.md' || inputs.changelog-output || 'CHANGELOG.md' }}
+        uses: getdevopspro/github-actions/release-changelog@v7.2.2
         with:
+          version: ${{ steps.release_version.outputs.version }}
+          previous-version: ${{ steps.release_version.outputs.previous-version }}
+          token: ${{ inputs.changelog-token }}
+          output: ${{ inputs.changelog-output }}
           config: ${{ inputs.changelog-config }}
-          args: >-
-            ${{ steps.release_version.outputs.previous-version }}..${{ inputs.changelog-prepend && 'HEAD' || steps.release_version.outputs.version }}
-            --tag ${{ steps.release_version.outputs.version }}
-            ${{ inputs.changelog-prepend && format('--prepend {0}', inputs.changelog-output || 'CHANGELOG.md') || '' }}
-            ${{ inputs.changelog-args }}
-          github_token: ${{ inputs.changelog-token || github.token }}
-
-      - name: resolve changelog git-add-files
-        id: resolve_changelog_git_add_files
-        if: inputs.changelog-enabled
-        shell: bash
-        run: |
-          set -euo pipefail
-          CHANGELOG_FILE="${{ inputs.changelog-output }}"
-          CHANGELOG_FILE="${CHANGELOG_FILE:-CHANGELOG.md}"
-          FILES="${{ inputs.git-add-files }}"
-          case " ${FILES} " in
-            *" ${CHANGELOG_FILE} "*) ;;
-            *) FILES="${FILES:+${FILES} }${CHANGELOG_FILE}" ;;
-          esac
-          echo "files=${FILES}" >> "$GITHUB_OUTPUT"
+          args: ${{ inputs.changelog-args }}
+          prepend: ${{ inputs.changelog-prepend }}
 
       - name: push git version
         uses: getdevopspro/github-actions/release-git-push@v7.2.2
@@ -313,7 +296,7 @@ jobs:
           version: ${{ steps.release_version.outputs.version }}
           git-user-name: ${{ inputs.git-user-name }}
           git-user-email: ${{ inputs.git-user-email }}
-          git-add-files: ${{ steps.resolve_changelog_git_add_files.outputs.files || inputs.git-add-files }}
+          git-add-files: ${{ inputs.git-add-files }}
 
       - name: publish github release
         if: inputs.update-release-enabled && inputs.push-git

@@ -1,0 +1,54 @@
+name: Release Changelog
+description: 'Generate a release changelog using git-cliff and stage the output file'
+inputs:
+  version:
+    description: 'The release version to tag the changelog with'
+    required: true
+  previous-version:
+    description: 'The previous version to generate the changelog from'
+    required: true
+  token:
+    description: 'GitHub token for changelog generation (defaults to current GitHub token)'
+    required: false
+    default: ''
+  output:
+    description: 'Output file path for the generated changelog'
+    required: false
+    default: 'CHANGELOG.md'
+  config:
+    description: 'Path to the cliff.toml config file passed to git-cliff'
+    required: false
+    default: 'cliff'
+  args:
+    description: 'Additional arguments to pass to git-cliff'
+    required: false
+    default: ''
+  prepend:
+    description: 'Prepend the generated changelog to the output file instead of overwriting it'
+    required: false
+    default: 'true'
+outputs:
+  content:
+    description: 'The generated changelog content'
+    value: ${{ steps.git_cliff.outputs.content }}
+runs:
+  using: "composite"
+  steps:
+    - name: release changelog
+      id: git_cliff
+      uses: orhun/git-cliff-action@v4
+      env:
+        OUTPUT: ${{ inputs.prepend == 'true' && '/tmp/cliff-changelog.md' || inputs.output }}
+      with:
+        config: ${{ inputs.config }}
+        args: >-
+          ${{ inputs.previous-version }}..${{ inputs.prepend == 'true' && 'HEAD' || inputs.version }}
+          --tag ${{ inputs.version }}
+          ${{ inputs.prepend == 'true' && format('--prepend {0}', inputs.output) || '' }}
+          ${{ inputs.args }}
+        github_token: ${{ inputs.token || github.token }}
+
+    - name: add changelog to git staging
+      shell: bash
+      run: |
+        git add "${{ inputs.output }}"
