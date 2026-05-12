@@ -1,3 +1,17 @@
+## [7.1.0] - 2026-05-12
+
+### 🚀 Features
+
+- *(promote)* Replace requarks/changelog-action with orhun/git-cliff-action
+- *(promote)* Add changelog-prepend input for git-cliff prepend mode
+
+### 🐛 Bug Fixes
+
+- Add CHANGELOG.md
+
+### 🚜 Refactor
+
+- *(release-changelog)* Replace jx-changelog with requarks/changelog-action
 ## [7.0.6-prerelease] - 2026-05-12
 
 ### 🚀 Features

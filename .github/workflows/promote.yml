@@ -207,7 +207,7 @@ jobs:
 
       - id: release_version
         name: next release version
-        uses: getdevopspro/github-actions/release-version@v7.0.6-prerelease
+        uses: getdevopspro/github-actions/release-version@v7.1.0
         with:
           version-previous: ${{ inputs.version-previous }}
           version-next: ${{ inputs.version-next }}
@@ -215,7 +215,7 @@ jobs:
           version-tag-prefix: ${{ inputs.version-tag-prefix }}
 
       - name: set version in file
-        uses: getdevopspro/github-actions/version-file@v7.0.5
+        uses: getdevopspro/github-actions/version-file@v7.1.0
         with:
           version: ${{ steps.release_version.outputs.version }}
           version-makefile: ${{ inputs.version-makefile }}
@@ -227,7 +227,7 @@ jobs:
 
       - name: promote container images
         if: inputs.image-digests != ''
-        uses: getdevopspro/github-actions/buildx-bake/promote@v7.0.5
+        uses: getdevopspro/github-actions/buildx-bake/promote@v7.1.0
         with:
           version: ${{ steps.release_version.outputs.version }}
           image-digests: ${{ inputs.image-digests }}
@@ -274,7 +274,7 @@ jobs:
           echo "files=${FILES}" >> "$GITHUB_OUTPUT"
 
       - name: push git version
-        uses: getdevopspro/github-actions/release-git-push@v7.0.5
+        uses: getdevopspro/github-actions/release-git-push@v7.1.0
         if: inputs.push-git
         id: git_push
         with:
@@ -285,7 +285,7 @@ jobs:
 
       - name: publish github release
         if: inputs.release-publish-enable && inputs.push-git
-        uses: getdevopspro/github-actions/release-publish@v7.0.6-prerelease
+        uses: getdevopspro/github-actions/release-publish@v7.1.0
         with:
           version: ${{ steps.release_version.outputs.version }}
           changelog: ${{ steps.release_changelog.outputs.content }}
