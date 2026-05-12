@@ -1,3 +1,8 @@
+## [8.1.3](https://github.com/getdevopspro/github-actions/releases/tag/8.1.3) - 2026-05-12
+
+### 🚜 Refactor
+
+- *(release-changelog)* Use compare for version title ([`ed27c47`](https://github.com/getdevopspro/github-actions/commit/ed27c4738c524a07a5d53d6ed48432ffca66ce04))
 ## [8.1.2](https://github.com/getdevopspro/github-actions/compare/v8.1.1..v8.1.2) - 2026-05-12
 
 ### 🐛 Bug Fixes
