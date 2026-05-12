@@ -1,3 +1,8 @@
+## [7.2.1] - 2026-05-12
+
+### 🐛 Bug Fixes
+
+- *(promote)* Rename release-publish-enable and fix required file input
 ## [7.2.0] - 2026-05-12
 
 ### 🚀 Features
