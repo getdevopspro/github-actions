@@ -158,8 +158,40 @@ on:
         required: false
         type: boolean
         default: false
-      release-publish-draft:
-        description: 'Mark the GitHub release as draft (release-publish action)'
+      update-release-token:
+        description: 'GitHub token for release publishing (defaults to current GitHub token)'
+        required: false
+        type: string
+      update-release-tag:
+        description: 'Tag name for the release (defaults to version-tag-prefix + version)'
+        required: false
+        type: string
+      update-release-file:
+        description: 'File or glob pattern to upload to the release'
+        required: false
+        type: string
+      update-release-overwrite:
+        description: 'Overwrite the release if it already exists'
+        required: false
+        type: boolean
+        default: true
+      update-release-draft:
+        description: 'Mark the GitHub release as draft'
+        required: false
+        type: boolean
+        default: false
+      update-release-prerelease:
+        description: 'Mark the GitHub release as a pre-release'
+        required: false
+        type: boolean
+        default: false
+      update-release-make-latest:
+        description: 'Mark the GitHub release as the latest for the repository'
+        required: false
+        type: boolean
+        default: true
+      update-release-promote:
+        description: 'Promote a prerelease to a full release'
         required: false
         type: boolean
         default: false
@@ -285,8 +317,15 @@ jobs:
 
       - name: publish github release
         if: inputs.release-publish-enable && inputs.push-git
-        uses: getdevopspro/github-actions/release-publish@v7.1.0
+        uses: svenstaro/upload-release-action@v2
         with:
-          version: ${{ steps.release_version.outputs.version }}
-          changelog: ${{ steps.release_changelog.outputs.content }}
-          draft: ${{ inputs.release-publish-draft }}
+          repo_token: ${{ inputs.update-release-token || github.token }}
+          tag: ${{ inputs.update-release-tag || format('{0}{1}', inputs.version-tag-prefix, steps.release_version.outputs.version) }}
+          file: ${{ inputs.update-release-file }}
+          file_glob: true
+          body: ${{ steps.release_changelog.outputs.content }}
+          overwrite: ${{ inputs.update-release-overwrite }}
+          draft: ${{ inputs.update-release-draft }}
+          prerelease: ${{ inputs.update-release-prerelease }}
+          make_latest: ${{ inputs.update-release-make-latest }}
+          promote: ${{ inputs.update-release-promote }}
