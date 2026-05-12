@@ -1,3 +1,8 @@
+## [7.3.1](https://github.com/getdevopspro/github-actions/releases/tag/7.3.1) - 2026-05-12
+
+### 🚜 Refactor
+
+- *(workflows)* Rename release.yml to release.self.yml, promote.yml to release.yml ([`bfb1169`](https://github.com/getdevopspro/github-actions/commit/bfb11694880638b20198e1caeeefd011038fc57d))
 ## [7.3.0](https://github.com/getdevopspro/github-actions/releases/tag/7.3.0) - 2026-05-12
 
 ### 🚀 Features
