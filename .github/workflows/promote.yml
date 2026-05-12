@@ -130,14 +130,27 @@ on:
         required: false
         type: boolean
         default: false
-      changelog-output-markdown:
-        description: 'Write the changelog output to this file (release-changelog action)'
+      changelog-token:
+        description: 'GitHub token for changelog generation (defaults to current GitHub token)'
         required: false
         type: string
-      changelog-exclude-regexp:
-        description: 'Regexp for excluding commits from the changelog (release-changelog action)'
+      changelog-from-tag:
+        description: 'Tag to start changelog from (defaults to previous version from release-version)'
         required: false
         type: string
+      changelog-to-tag:
+        description: 'Tag to end changelog at (defaults to version from release-version)'
+        required: false
+        type: string
+      changelog-exclude-types:
+        description: 'Comma-separated list of commit types to exclude from the changelog'
+        required: false
+        type: string
+      changelog-file-path:
+        description: 'Path to the changelog file'
+        required: false
+        type: string
+        default: 'CHANGELOG.md'
       release-publish-enable:
         description: 'Create or update a GitHub release after the git push. Requires changelog-enabled to be true.'
         required: false
@@ -160,7 +173,7 @@ jobs:
     outputs:
       version: ${{ steps.release_version.outputs.version }}
       commit-sha: ${{ steps.determine_sha.outputs.sha }}
-      changelog: ${{ steps.release_changelog.outputs.changelog }}
+      changelog: ${{ steps.release_changelog.outputs.changes }}
     steps:
       - name: validate inputs
         if: inputs.release-publish-enable && !inputs.changelog-enabled
@@ -192,7 +205,7 @@ jobs:
 
       - id: release_version
         name: next release version
-        uses: getdevopspro/github-actions/release-version@v7.0.5
+        uses: getdevopspro/github-actions/release-version@v7.0.6-prerelease
         with:
           version-previous: ${{ inputs.version-previous }}
           version-next: ${{ inputs.version-next }}
@@ -231,11 +244,13 @@ jobs:
       - name: release changelog
         id: release_changelog
         if: inputs.changelog-enabled
-        uses: getdevopspro/github-actions/release-changelog@v7.0.6-prerelease
+        uses: requarks/changelog-action@v1
         with:
-          version: ${{ steps.release_version.outputs.version }}
-          output-markdown: ${{ inputs.changelog-output-markdown }}
-          exclude-regexp: ${{ inputs.changelog-exclude-regexp }}
+          token: ${{ inputs.changelog-token != '' && inputs.changelog-token || github.token }}
+          fromTag: ${{ inputs.changelog-from-tag != '' && inputs.changelog-from-tag || steps.determine_sha.outputs.sha }}
+          toTag: ${{ inputs.changelog-to-tag != '' && inputs.changelog-to-tag || steps.release_version.outputs.previous-version }}
+          excludeTypes: ${{ inputs.changelog-exclude-types }}
+          changelogFilePath: ${{ inputs.changelog-file-path }}
 
       - name: resolve changelog git-add-files
         id: resolve_changelog_git_add_files
@@ -243,7 +258,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          CHANGELOG_FILE="${{ inputs.changelog-output-markdown }}"
+          CHANGELOG_FILE="${{ inputs.changelog-file-path }}"
           CHANGELOG_FILE="${CHANGELOG_FILE:-CHANGELOG.md}"
           FILES="${{ inputs.git-add-files }}"
           case " ${FILES} " in
@@ -267,5 +282,5 @@ jobs:
         uses: getdevopspro/github-actions/release-publish@v7.0.6-prerelease
         with:
           version: ${{ steps.release_version.outputs.version }}
-          changelog: ${{ steps.release_changelog.outputs.changelog }}
+          changelog: ${{ steps.release_changelog.outputs.changes }}
           draft: ${{ inputs.release-publish-draft }}
