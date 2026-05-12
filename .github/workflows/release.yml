@@ -12,13 +12,13 @@ on:
     outputs:
       version:
         description: 'Detected or calculated version'
-        value: ${{ jobs.promote.outputs.version }}
+        value: ${{ jobs.release.outputs.version }}
       commit-sha:
         description: 'The commit SHA being built'
-        value: ${{ jobs.promote.outputs.version }}
+        value: ${{ jobs.release.outputs.version }}
       changelog:
         description: 'The changelog for the released version'
-        value: ${{ jobs.promote.outputs.changelog }}
+        value: ${{ jobs.release.outputs.changelog }}
     inputs:
       git-user-name:
         description: 'The git user name'
