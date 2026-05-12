@@ -153,7 +153,7 @@ on:
         required: false
         type: boolean
         default: true
-      release-publish-enable:
+      update-release-enabled:
         description: 'Create or update a GitHub release after the git push. Requires changelog-enabled to be true.'
         required: false
         type: boolean
@@ -210,10 +210,10 @@ jobs:
       changelog: ${{ steps.release_changelog.outputs.content }}
     steps:
       - name: validate inputs
-        if: inputs.release-publish-enable && !inputs.changelog-enabled
+        if: inputs.update-release-enabled && !inputs.changelog-enabled
         shell: bash
         run: |
-          echo "::error::release-publish-enable requires changelog-enabled to be true"
+          echo "::error::update-release-enabled requires changelog-enabled to be true"
           exit 1
 
       - name: checkout repository
@@ -315,13 +315,26 @@ jobs:
           git-user-email: ${{ inputs.git-user-email }}
           git-add-files: ${{ steps.resolve_changelog_git_add_files.outputs.files || inputs.git-add-files }}
 
+      - name: prepare release file
+        if: inputs.update-release-enabled && inputs.push-git
+        id: prepare_release_file
+        shell: bash
+        run: |
+          set -euo pipefail
+          FILE="${{ inputs.update-release-file }}"
+          if [ -z "$FILE" ]; then
+            touch /tmp/.release-placeholder
+            FILE="/tmp/.release-placeholder"
+          fi
+          echo "file=$FILE" >> "$GITHUB_OUTPUT"
+
       - name: publish github release
-        if: inputs.release-publish-enable && inputs.push-git
+        if: inputs.update-release-enabled && inputs.push-git
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ inputs.update-release-token || github.token }}
           tag: ${{ inputs.update-release-tag || format('{0}{1}', inputs.version-tag-prefix, steps.release_version.outputs.version) }}
-          file: ${{ inputs.update-release-file }}
+          file: ${{ steps.prepare_release_file.outputs.file }}
           file_glob: true
           body: ${{ steps.release_changelog.outputs.content }}
           overwrite: ${{ inputs.update-release-overwrite }}

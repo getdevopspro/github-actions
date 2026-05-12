@@ -30,4 +30,4 @@ jobs:
       git-user-email: 203600057+getdevopspro-cibot@users.noreply.github.com
       make-target-pre-push: release-version
       changelog-enabled: true
-      release-publish-enable: true
+      update-release-enabled: true
