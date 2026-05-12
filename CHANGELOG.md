@@ -1,3 +1,8 @@
+## [7.2.0] - 2026-05-12
+
+### 🚀 Features
+
+- *(promote)* Replace release-publish with svenstaro/upload-release-action
 ## [7.1.0] - 2026-05-12
 
 ### 🚀 Features
