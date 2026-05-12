@@ -854,7 +854,7 @@ jobs:
 
       - name: Next release version
         id: release_version
-        uses: ./release-version
+        uses: ./release/version
         with:
           version-previous: ${{ inputs.version-previous }}
           version-next: ${{ inputs.version-next }}
