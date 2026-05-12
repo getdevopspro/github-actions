@@ -201,8 +201,8 @@ permissions:
   packages: write
 
 jobs:
-  promote:
-    name: Promote
+  release:
+    name: Release
     runs-on: ubuntu-24.04
     outputs:
       version: ${{ steps.release_version.outputs.version }}
@@ -298,7 +298,7 @@ jobs:
           git-user-email: ${{ inputs.git-user-email }}
           git-add-files: ${{ inputs.git-add-files }}
 
-      - name: publish github release
+      - name: update github release
         if: inputs.update-release-enabled && inputs.push-git
         uses: svenstaro/upload-release-action@v2
         with:
