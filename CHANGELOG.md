@@ -1,3 +1,9 @@
+## [7.2.3] - 2026-05-12
+
+### 🚜 Refactor
+
+- *(release-changelog)* Extract release changelog into composite action
+- *(workflows)* Replace remote action refs with relative paths
 ## [7.2.2] - 2026-05-12
 
 ### 🐛 Bug Fixes
