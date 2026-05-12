@@ -89,3 +89,6 @@ topo_order_commits = true
 sort_commits = "oldest"
 # Process submodules commits
 recurse_submodules = false
+# Match any tag that contains a prerelease suffix (hyphen followed by anything)
+# Only stable
+ignore_tags = "v[0-9]+\\.[0-9]+\\.[0-9]+-.+"
