@@ -59,6 +59,7 @@ commit_parsers = [
     { message = "^refactor", group = "<!-- 2 -->🚜 Refactor" },
     { message = "^style", group = "<!-- 5 -->🎨 Styling" },
     { message = "^test", group = "<!-- 6 -->🧪 Testing" },
+    { message = "(?i)\\[skip changelog\\]", skip = true },
     { message = "(?i)\\[(skip ci|ci skip|no ci|skip actions|actions skip)\\]", skip = true },
     { message = "(?i)skip-checks:\\s*true", skip = true },
     { message = "^chore\\(release\\): prepare for", skip = true },
