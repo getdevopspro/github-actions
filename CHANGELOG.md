@@ -1,3 +1,8 @@
+## [8.1.2](https://github.com/getdevopspro/github-actions/releases/tag/8.1.2) - 2026-05-12
+
+### 🐛 Bug Fixes
+
+- *(workflows)* Use versioned refs for same-repo composite actions ([`e4bc3e9`](https://github.com/getdevopspro/github-actions/commit/e4bc3e9bf34b7c56a71b84bc9ba917e1dc92acc1))
 ## [8.1.1](https://github.com/getdevopspro/github-actions/releases/tag/8.1.1) - 2026-05-12
 
 ### 🐛 Bug Fixes
