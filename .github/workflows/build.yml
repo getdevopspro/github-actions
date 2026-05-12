@@ -854,7 +854,7 @@ jobs:
 
       - name: Next release version
         id: release_version
-        uses: ./release/version
+        uses: getdevopspro/github-actions/release/version@v8.1.1
         with:
           version-previous: ${{ inputs.version-previous }}
           version-next: ${{ inputs.version-next }}
@@ -862,7 +862,7 @@ jobs:
           version-tag-prefix: ${{ inputs.version-tag-prefix }}
 
       - name: Set version in file
-        uses: ./version-file
+        uses: getdevopspro/github-actions/version-file@v8.1.1
         with:
           version: ${{ steps.release_version.outputs.version }}
           version-makefile: ${{ inputs.version-makefile }}
@@ -1128,7 +1128,7 @@ jobs:
 
       - name: Set image metadata and platform matrix
         id: prepare_image
-        uses: ./buildx-bake/prepare
+        uses: getdevopspro/github-actions/buildx-bake/prepare@v8.1.1
         with:
           bake-target: ${{ inputs.bake-target }}
           registry-image: ${{ inputs.registry-image }}
@@ -1198,7 +1198,7 @@ jobs:
 
       - name: ${{ matrix.pre-steps.name }}
         id: command
-        uses: ./command
+        uses: getdevopspro/github-actions/command@v8.1.1
         with:
           command: ${{ matrix.pre-steps.command }}
 
@@ -1218,7 +1218,7 @@ jobs:
         with:
           name: ${{ inputs.source-artifact-name }}
 
-      - uses: ./buildx-bake/build
+      - uses: getdevopspro/github-actions/buildx-bake/build@v8.1.1
         with:
           bake-file: ${{ inputs.bake-file }}
           bake-target: ${{ inputs.bake-target }}
@@ -1243,7 +1243,7 @@ jobs:
         with:
           name: ${{ inputs.source-artifact-name }}
 
-      - uses: ./buildx-bake/merge
+      - uses: getdevopspro/github-actions/buildx-bake/merge@v8.1.1
         id: merge
         with:
           registry-username: ${{ inputs.registry-username }}
@@ -1285,7 +1285,7 @@ jobs:
 
       - name: ${{ matrix.post-steps.name }}
         id: command
-        uses: ./command
+        uses: getdevopspro/github-actions/command@v8.1.1
         with:
           command: ${{ matrix.post-steps.command }}
           artifact-name: ${{ matrix.post-steps.artifact-name }}

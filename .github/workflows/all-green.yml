@@ -11,4 +11,4 @@ jobs:
       - uses: actions/checkout@v6
 
       - name: All Green
-        uses: ./all-green
+        uses: getdevopspro/github-actions/all-green@v8.1.1
