@@ -17,6 +17,10 @@ inputs:
     description: 'If enabled, a new tag will be created'
     required: false
     default: 'false'
+  version-tag-prefix:
+    description: 'The prefix for the new tag - prefixed before the output'
+    required: false
+    default: 'v'
 outputs:
   version:
     description: 'The next version (using semantic versioning)'
@@ -32,3 +36,4 @@ runs:
         next-version: ${{ inputs.version-next }}
         output-format: ${{ inputs.version-output-format }}
         tag: ${{ inputs.version-tag }}
+        tag-prefix: ${{ inputs.version-tag-prefix }}

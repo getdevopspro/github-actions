@@ -35,6 +35,11 @@ on:
         required: false
         default: '{{.Major}}.{{.Minor}}.{{.Patch}}-build'
         type: string
+      version-tag-prefix:
+        description: 'The prefix for the new tag - prefixed before the output'
+        required: false
+        default: 'v'
+        type: string
       version-file:
         description: 'Set version in file named as input'
         required: false
@@ -854,6 +859,7 @@ jobs:
           version-previous: ${{ inputs.version-previous }}
           version-next: ${{ inputs.version-next }}
           version-output-format: ${{ inputs.version-output-format }}
+          version-tag-prefix: ${{ inputs.version-tag-prefix }}
 
       - name: Set version in file
         uses: getdevopspro/github-actions/version-file@v7.0.5
