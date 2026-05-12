@@ -148,6 +148,11 @@ on:
         description: 'Additional arguments to pass to git-cliff'
         required: false
         type: string
+      changelog-prepend:
+        description: 'Prepend the generated changelog to the output file instead of overwriting it'
+        required: false
+        type: boolean
+        default: true
       release-publish-enable:
         description: 'Create or update a GitHub release after the git push. Requires changelog-enabled to be true.'
         required: false
@@ -243,10 +248,14 @@ jobs:
         if: inputs.changelog-enabled
         uses: orhun/git-cliff-action@v4
         env:
-          OUTPUT: ${{ inputs.changelog-output || 'CHANGELOG.md' }}
+          OUTPUT: ${{ inputs.changelog-prepend && '/tmp/cliff-changelog.md' || inputs.changelog-output || 'CHANGELOG.md' }}
         with:
           config: ${{ inputs.changelog-config }}
-          args: ${{ steps.release_version.outputs.previous-version }}..HEAD --tag ${{ steps.release_version.outputs.version }} ${{ inputs.changelog-args }}
+          args: >-
+            ${{ steps.release_version.outputs.previous-version }}..${{ inputs.changelog-prepend && 'HEAD' || steps.release_version.outputs.version }}
+            --tag ${{ steps.release_version.outputs.version }}
+            ${{ inputs.changelog-prepend && format('--prepend {0}', inputs.changelog-output || 'CHANGELOG.md') || '' }}
+            ${{ inputs.changelog-args }}
           github_token: ${{ inputs.changelog-token || github.token }}
 
       - name: resolve changelog git-add-files
