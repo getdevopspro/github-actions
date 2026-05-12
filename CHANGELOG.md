@@ -1,3 +1,8 @@
+## [7.2.2] - 2026-05-12
+
+### 🐛 Bug Fixes
+
+- *(promote)* Simplify release file fallback using /dev/null
 ## [7.2.1] - 2026-05-12
 
 ### 🐛 Bug Fixes
