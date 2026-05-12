@@ -18,7 +18,7 @@ inputs:
   config:
     description: 'Path to the cliff.toml config file passed to git-cliff'
     required: false
-    default: 'cliff'
+    default: ''
   args:
     description: 'Additional arguments to pass to git-cliff'
     required: false
@@ -40,7 +40,7 @@ runs:
       env:
         OUTPUT: ${{ inputs.prepend == 'true' && '/tmp/cliff-changelog.md' || inputs.output }}
       with:
-        config: ${{ inputs.config }}
+        config: ${{ inputs.config || format('{0}/cliff.toml', github.action_path) }}
         args: >-
           ${{ inputs.previous-version }}..${{ inputs.prepend == 'true' && 'HEAD' || inputs.version }}
           --tag ${{ inputs.version }}
