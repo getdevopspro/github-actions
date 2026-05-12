@@ -1,3 +1,14 @@
+## [7.3.0](https://github.com/getdevopspro/github-actions/releases/tag/7.3.0) - 2026-05-12
+
+### 🚀 Features
+
+- *(release-changelog)* Add commit/issue links and skip chore bumps ([`be760f5`](https://github.com/getdevopspro/github-actions/commit/be760f5a495f0f97313daeb78f1fe674b2156448))
+- *(release-changelog)* Link version heading to GitHub release tag and skip CI-flagged commits ([`f01332a`](https://github.com/getdevopspro/github-actions/commit/f01332a26409ca07e0b968f1a48cf67a14839631))
+- *(release-changelog)* Skip commits with [skip changelog] in message ([`6749dca`](https://github.com/getdevopspro/github-actions/commit/6749dcaa5a5e4e7c5ee88a07a018416fd6524049))
+
+### 🐛 Bug Fixes
+
+- *(promote)* Default changelog-config to empty to use bundled cliff.toml ([`bfb2f0c`](https://github.com/getdevopspro/github-actions/commit/bfb2f0c8cc87adb62c32bd84efcb8df4de917f56))
 ## [7.2.3](https://github.com/getdevopspro/github-actions/releases/tag/v7.2.3) - 2026-05-12
 
 ### 🚜 Refactor
