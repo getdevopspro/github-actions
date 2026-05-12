@@ -1,3 +1,15 @@
+## [8.1.0](https://github.com/getdevopspro/github-actions/releases/tag/8.1.0) - 2026-05-12
+
+### 🚀 Features
+
+- *(release-changelog)* Ignore tags that are not stable format ([`d777838`](https://github.com/getdevopspro/github-actions/commit/d777838737cf29539c71e88b9dc61d64a143a646))
+
+### 🚜 Refactor
+
+- *(workflows)* Rename release.yml to release.self.yml, promote.yml to release.yml ([`74a24ef`](https://github.com/getdevopspro/github-actions/commit/74a24ef7b768fc39b58ee0f4d7571498306d2450))
+- *(release)* Extract release update action ([`2b0c194`](https://github.com/getdevopspro/github-actions/commit/2b0c1940eda3839f2df52e880c9b82aabc3eef47))
+- *(release)* Group release actions under release directory ([`3bbc810`](https://github.com/getdevopspro/github-actions/commit/3bbc810ac262be2e23d546133194c2b64bb249fe))
+- *(release-changelog)* Remove ignore_tags ([`9369e99`](https://github.com/getdevopspro/github-actions/commit/9369e99800b27c64cd884b8f304364e679ff4d70))
 ## [7.3.1](https://github.com/getdevopspro/github-actions/releases/tag/7.3.1) - 2026-05-12
 
 ### 🚜 Refactor
