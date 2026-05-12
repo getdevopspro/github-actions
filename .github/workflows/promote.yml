@@ -239,7 +239,7 @@ jobs:
 
       - id: release_version
         name: next release version
-        uses: getdevopspro/github-actions/release-version@v7.2.2
+        uses: ./release-version
         with:
           version-previous: ${{ inputs.version-previous }}
           version-next: ${{ inputs.version-next }}
@@ -247,7 +247,7 @@ jobs:
           version-tag-prefix: ${{ inputs.version-tag-prefix }}
 
       - name: set version in file
-        uses: getdevopspro/github-actions/version-file@v7.2.2
+        uses: ./version-file
         with:
           version: ${{ steps.release_version.outputs.version }}
           version-makefile: ${{ inputs.version-makefile }}
@@ -259,7 +259,7 @@ jobs:
 
       - name: promote container images
         if: inputs.image-digests != ''
-        uses: getdevopspro/github-actions/buildx-bake/promote@v7.2.2
+        uses: ./buildx-bake/promote
         with:
           version: ${{ steps.release_version.outputs.version }}
           image-digests: ${{ inputs.image-digests }}
@@ -278,7 +278,7 @@ jobs:
       - name: release changelog
         id: release_changelog
         if: inputs.changelog-enabled
-        uses: getdevopspro/github-actions/release-changelog@v7.2.2
+        uses: ./release-changelog
         with:
           version: ${{ steps.release_version.outputs.version }}
           previous-version: ${{ steps.release_version.outputs.previous-version }}
@@ -289,7 +289,7 @@ jobs:
           prepend: ${{ inputs.changelog-prepend }}
 
       - name: push git version
-        uses: getdevopspro/github-actions/release-git-push@v7.2.2
+        uses: ./release-git-push
         if: inputs.push-git
         id: git_push
         with:
