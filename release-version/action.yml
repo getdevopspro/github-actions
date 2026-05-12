@@ -25,6 +25,9 @@ outputs:
   version:
     description: 'The next version (using semantic versioning)'
     value: ${{ steps.release_version.outputs.version }}
+  previous-version:
+    description: 'The previous version'
+    value: ${{ steps.release_version.outputs.previous-version }}
 runs:
   using: "composite"
   steps:
@@ -45,7 +48,7 @@ runs:
 
     - name: Next release version
       id: release_version
-      uses: jenkins-x-plugins/jx-release-version@v2.7.8
+      uses: getdevopspro/jx-release-version@dev
       with:
         previous-version: ${{ steps.resolve_previous_version.outputs.previous-version }}
         next-version: ${{ inputs.version-next }}
