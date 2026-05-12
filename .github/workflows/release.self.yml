@@ -1,0 +1,33 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+      - master
+    tags:
+      - "v*"
+    paths-ignore:
+      - "**.md"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  promote:
+    uses: ./.github/workflows/release.yml
+    secrets:
+      checkout-token: ${{ secrets.BOT_REPO_TOKEN }}
+    with:
+      version-makefile: Makefile
+      git-add-files: Makefile
+      git-user-name: getdevopspro-cibot
+      git-user-email: 203600057+getdevopspro-cibot@users.noreply.github.com
+      make-target-pre-push: release-version
+      changelog-enabled: true
+      update-release-enabled: true
