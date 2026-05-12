@@ -143,7 +143,7 @@ on:
         description: 'Path to the cliff.toml config file passed to git-cliff'
         required: false
         type: string
-        default: 'cliff'
+        default: ''
       changelog-args:
         description: 'Additional arguments to pass to git-cliff'
         required: false
