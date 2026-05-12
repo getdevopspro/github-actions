@@ -28,11 +28,26 @@ outputs:
 runs:
   using: "composite"
   steps:
+    - name: Resolve previous-version strategy
+      id: resolve_previous_version
+      shell: bash
+      run: |
+        set -euo pipefail
+        PREVIOUS="${{ inputs.version-previous }}"
+        if [[ "${PREVIOUS}" == "auto" && "${{ github.event_name }}" != "pull_request" ]]; then
+          BRANCH="${{ github.ref_name }}"
+          if [[ "${BRANCH}" =~ ^release-v?([0-9]+(\.[0-9]+)?)$ ]]; then
+            BRANCH_VERSION="${BASH_REMATCH[1]}"
+            PREVIOUS="from-tag:${{ inputs.version-tag-prefix }}${BRANCH_VERSION}"
+          fi
+        fi
+        echo "previous-version=${PREVIOUS}" >> "$GITHUB_OUTPUT"
+
     - name: Next release version
       id: release_version
       uses: jenkins-x-plugins/jx-release-version@v2.7.8
       with:
-        previous-version: ${{ inputs.version-previous }}
+        previous-version: ${{ steps.resolve_previous_version.outputs.previous-version }}
         next-version: ${{ inputs.version-next }}
         output-format: ${{ inputs.version-output-format }}
         tag: ${{ inputs.version-tag }}
