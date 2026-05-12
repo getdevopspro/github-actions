@@ -1,0 +1,54 @@
+name: Release Update
+description: 'Create or update a GitHub release for an existing release tag'
+inputs:
+  token:
+    description: 'GitHub token with permission to create or update releases. Defaults to the workflow GITHUB_TOKEN.'
+    required: false
+    default: ''
+  tag:
+    description: 'Tag name for the release'
+    required: true
+  file:
+    description: 'File or glob pattern to upload to the release'
+    required: false
+    default: '/dev/null'
+  body:
+    description: 'Release body content'
+    required: false
+    default: ''
+  overwrite:
+    description: 'Overwrite the release if it already exists'
+    required: false
+    default: 'true'
+  draft:
+    description: 'Mark the GitHub release as draft'
+    required: false
+    default: 'false'
+  prerelease:
+    description: 'Mark the GitHub release as a pre-release'
+    required: false
+    default: 'false'
+  make-latest:
+    description: 'Mark the GitHub release as the latest for the repository'
+    required: false
+    default: 'true'
+  promote:
+    description: 'Promote a prerelease to a full release'
+    required: false
+    default: 'false'
+runs:
+  using: "composite"
+  steps:
+    - name: update github release
+      uses: svenstaro/upload-release-action@v2
+      with:
+        repo_token: ${{ inputs.token || github.token }}
+        tag: ${{ inputs.tag }}
+        file: ${{ inputs.file }}
+        file_glob: true
+        body: ${{ inputs.body }}
+        overwrite: ${{ inputs.overwrite }}
+        draft: ${{ inputs.draft }}
+        prerelease: ${{ inputs.prerelease }}
+        make_latest: ${{ inputs.make-latest }}
+        promote: ${{ inputs.promote }}

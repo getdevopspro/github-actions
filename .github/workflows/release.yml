@@ -300,15 +300,14 @@ jobs:
 
       - name: update github release
         if: inputs.update-release-enabled && inputs.push-git
-        uses: svenstaro/upload-release-action@v2
+        uses: ./release-update
         with:
-          repo_token: ${{ inputs.update-release-token || github.token }}
+          token: ${{ inputs.update-release-token }}
           tag: ${{ inputs.update-release-tag || format('{0}{1}', inputs.version-tag-prefix, steps.release_version.outputs.version) }}
           file: ${{ inputs.update-release-file || '/dev/null' }}
-          file_glob: true
           body: ${{ steps.release_changelog.outputs.content }}
           overwrite: ${{ inputs.update-release-overwrite }}
           draft: ${{ inputs.update-release-draft }}
           prerelease: ${{ inputs.update-release-prerelease }}
-          make_latest: ${{ inputs.update-release-make-latest }}
+          make-latest: ${{ inputs.update-release-make-latest }}
           promote: ${{ inputs.update-release-promote }}
