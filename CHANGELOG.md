@@ -1,3 +1,8 @@
+## [8.1.1](https://github.com/getdevopspro/github-actions/releases/tag/8.1.1) - 2026-05-12
+
+### 🐛 Bug Fixes
+
+- *(release)* Set output values ([`4d5ad1e`](https://github.com/getdevopspro/github-actions/commit/4d5ad1e8d88e8eb8b9cfa5e750ec8874a6fe9b08))
 ## [8.1.0](https://github.com/getdevopspro/github-actions/releases/tag/8.1.0) - 2026-05-12
 
 ### 🚀 Features
