@@ -1,3 +1,10 @@
+## [8.2.0](https://github.com/getdevopspro/github-actions/compare/v8.1.3..8.2.0) - 2026-05-13
+
+### 🚀 Features
+
+- *(workflows)* Allow release source artifact download ([`ae21352`](https://github.com/getdevopspro/github-actions/commit/ae2135282ea6d1c3c50fe13e737d30621511c730))
+- *(workflows)* Add configurable release artifact download ([`a52ffca`](https://github.com/getdevopspro/github-actions/commit/a52ffcace5f6035355e9222a696187870aa04d71))
+- *(release-changelog)* Publish changelog summary and artifact ([`bf2e95d`](https://github.com/getdevopspro/github-actions/commit/bf2e95d8698fece92397ccd388e1cd4b7abfd654))
 ## [8.1.3](https://github.com/getdevopspro/github-actions/releases/tag/8.1.3) - 2026-05-12
 
 ### 🚜 Refactor
