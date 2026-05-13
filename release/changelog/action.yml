@@ -27,6 +27,18 @@ inputs:
     description: 'Prepend the generated changelog to the output file instead of overwriting it'
     required: false
     default: 'true'
+  summary:
+    description: 'Append the generated changelog to the GitHub step summary'
+    required: false
+    default: 'true'
+  artifact:
+    description: 'Upload the generated changelog as a workflow artifact'
+    required: false
+    default: 'true'
+  artifact-name:
+    description: 'Name of the changelog artifact'
+    required: false
+    default: 'release-changelog'
 outputs:
   content:
     description: 'The generated changelog content'
@@ -47,6 +59,27 @@ runs:
           ${{ inputs.prepend == 'true' && format('--prepend {0}', inputs.output) || '' }}
           ${{ inputs.args }}
         github_token: ${{ inputs.token || github.token }}
+
+    - name: add changelog to step summary
+      if: inputs.summary == 'true'
+      shell: bash
+      env:
+        CHANGELOG_OUTPUT: ${{ inputs.prepend == 'true' && '/tmp/cliff-changelog.md' || inputs.output }}
+      run: |
+        set -euo pipefail
+        {
+          echo "## Release changelog"
+          echo
+          cat "${CHANGELOG_OUTPUT}"
+        } >> "${GITHUB_STEP_SUMMARY}"
+
+    - name: upload changelog artifact
+      if: inputs.artifact == 'true'
+      uses: eviden-actions/upload-artifact@v2
+      with:
+        name: ${{ inputs.artifact-name }}
+        path: ${{ inputs.prepend == 'true' && '/tmp/cliff-changelog.md' || inputs.output }}
+        if-no-files-found: error
 
     - name: add changelog to git staging
       shell: bash
