@@ -107,6 +107,16 @@ on:
         required: false
         type: boolean
         default: true
+      source-artifact-download:
+        description: 'Download source code from artifact instead of checking out the repository'
+        required: false
+        type: boolean
+        default: false
+      source-artifact-name:
+        description: 'Name of the artifact to download for source code'
+        required: false
+        type: string
+        default: 'source-code'
       registry:
         description: 'The container registry'
         required: false
@@ -217,12 +227,19 @@ jobs:
           exit 1
 
       - name: checkout repository
+        if: ${{ !inputs.source-artifact-download }}
         uses: actions/checkout@v6
         with:
           fetch-depth: ${{ inputs.fetch-depth }}
           fetch-tags: ${{ inputs.fetch-tags }}
           submodules: ${{ inputs.submodules }}
           token: ${{ secrets.checkout-token || secrets.GITHUB_TOKEN }}
+
+      - name: Download updated source
+        if: inputs.source-artifact-download
+        uses: eviden-actions/download-artifact@v2
+        with:
+          name: ${{ inputs.source-artifact-name }}
 
       - name: Determine commit SHA
         id: determine_sha
