@@ -92,6 +92,11 @@ on:
         required: false
         default: true
         type: boolean
+      checkout_repository:
+        description: 'Checkout the repository before release steps'
+        required: false
+        type: boolean
+        default: true
       fetch-depth:
         description: 'Number of commits to fetch. 0 indicates all history for all branches and tags'
         required: false
@@ -107,16 +112,30 @@ on:
         required: false
         type: boolean
         default: true
-      source-artifact-download:
-        description: 'Download source code from artifact instead of checking out the repository'
+      download-artifact:
+        description: 'Download an artifact before release steps'
         required: false
         type: boolean
         default: false
-      source-artifact-name:
-        description: 'Name of the artifact to download for source code'
+      download-artifact-name:
+        description: 'Artifact name'
         required: false
         type: string
-        default: 'source-code'
+        default: 'artifact'
+      download-artifact-path:
+        description: 'Destination path'
+        required: false
+        type: string
+        default: '.'
+      download-artifact-pattern:
+        description: 'A glob pattern matching the artifacts that should be downloaded. Ignored if download-artifact-name is specified.'
+        required: false
+        type: string
+      download-artifact-merge-multiple:
+        description: 'When multiple artifacts are matched, download them into the same directory instead of individual named directories.'
+        required: false
+        type: boolean
+        default: false
       registry:
         description: 'The container registry'
         required: false
@@ -227,7 +246,7 @@ jobs:
           exit 1
 
       - name: checkout repository
-        if: ${{ !inputs.source-artifact-download }}
+        if: inputs.checkout_repository
         uses: actions/checkout@v6
         with:
           fetch-depth: ${{ inputs.fetch-depth }}
@@ -235,11 +254,14 @@ jobs:
           submodules: ${{ inputs.submodules }}
           token: ${{ secrets.checkout-token || secrets.GITHUB_TOKEN }}
 
-      - name: Download updated source
-        if: inputs.source-artifact-download
+      - name: Download artifact
+        if: inputs.download-artifact
         uses: eviden-actions/download-artifact@v2
         with:
-          name: ${{ inputs.source-artifact-name }}
+          name: ${{ inputs.download-artifact-name }}
+          path: ${{ inputs.download-artifact-path }}
+          pattern: ${{ inputs.download-artifact-pattern }}
+          merge-multiple: ${{ inputs.download-artifact-merge-multiple }}
 
       - name: Determine commit SHA
         id: determine_sha
