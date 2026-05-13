@@ -1,3 +1,9 @@
+## [8.2.2](https://github.com/getdevopspro/github-actions/compare/v8.2.1..8.2.2) - 2026-05-13
+
+### 🚜 Refactor
+
+- *(release-changelog)* Change upload artifact action ([`1d4da60`](https://github.com/getdevopspro/github-actions/commit/1d4da603015d2deee538110d0ff90a652c3adee5))
+- Rename migrated upload action ([`0a61161`](https://github.com/getdevopspro/github-actions/commit/0a61161a0c110935fa363e5210bc9e71c41e096f))
 ## [8.2.1](https://github.com/getdevopspro/github-actions/compare/v8.2.0..8.2.1) - 2026-05-13
 
 ### 🐛 Bug Fixes
