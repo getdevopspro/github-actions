@@ -256,7 +256,7 @@ jobs:
 
       - name: Download artifact
         if: inputs.download-artifact
-        uses: eviden-actions/download-artifact@v2
+        uses: atos-actions/download-artifact@v2
         with:
           name: ${{ inputs.download-artifact-name }}
           path: ${{ inputs.download-artifact-path }}

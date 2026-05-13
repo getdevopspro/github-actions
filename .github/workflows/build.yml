@@ -1174,7 +1174,7 @@ jobs:
         pre-steps: ${{ fromJson(needs.prepare.outputs.pre-step-matrix) }}
     steps:
       - name: Download updated source
-        uses: eviden-actions/download-artifact@v2
+        uses: atos-actions/download-artifact@v2
         with:
           name: ${{ inputs.source-artifact-name }}
 
@@ -1214,7 +1214,7 @@ jobs:
         platform: ${{ fromJson(needs.prepare.outputs.image-platform-matrix) }}
     steps:
       - name: Download updated source
-        uses: eviden-actions/download-artifact@v2
+        uses: atos-actions/download-artifact@v2
         with:
           name: ${{ inputs.source-artifact-name }}
 
@@ -1239,7 +1239,7 @@ jobs:
       image-digests: ${{ steps.merge.outputs.image-digests }}
     steps:
       - name: Download updated source
-        uses: eviden-actions/download-artifact@v2
+        uses: atos-actions/download-artifact@v2
         with:
           name: ${{ inputs.source-artifact-name }}
 
@@ -1261,7 +1261,7 @@ jobs:
         post-steps: ${{ fromJson(needs.prepare.outputs.post-step-matrix) }}
     steps:
       - name: Download updated source
-        uses: eviden-actions/download-artifact@v2
+        uses: atos-actions/download-artifact@v2
         with:
           name: ${{ inputs.source-artifact-name }}
 
