@@ -100,7 +100,7 @@ runs:
 
     - name: upload changelog artifact
       if: inputs.artifact == 'true'
-      uses: eviden-actions/upload-artifact@v2
+      uses: actions/upload-artifact@v7
       with:
         name: ${{ inputs.artifact-name }}
         path: ${{ runner.temp }}/cliff-changelog-artifact/*
