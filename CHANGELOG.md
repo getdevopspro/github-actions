@@ -1,3 +1,8 @@
+## [8.2.1](https://github.com/getdevopspro/github-actions/compare/v8.2.0..8.2.1) - 2026-05-13
+
+### 🐛 Bug Fixes
+
+- *(release-changelog)* Strip folders from artifact ([`0614013`](https://github.com/getdevopspro/github-actions/commit/06140137dda695a93ce9f5b038942a0529e147f9))
 ## [8.2.0](https://github.com/getdevopspro/github-actions/compare/v8.1.3..8.2.0) - 2026-05-13
 
 ### 🚀 Features
