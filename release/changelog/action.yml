@@ -70,13 +70,7 @@ runs:
       run: |
         set -euo pipefail
 
-        output="${CHANGELOG_OUTPUT}"
-        if [ "${PREPEND}" = "true" ]; then
-          output="${RUNNER_TEMP}/cliff/changelog/${CHANGELOG_OUTPUT}"
-          mkdir -p "$(dirname "${output}")"
-          [ -f "${output}" ] || touch "${output}"
-        fi
-
+        echo "Installing git-cliff..."
         install_dir="${RUNNER_TEMP}/git-cliff/bin"
         mkdir -p "${install_dir}"
         echo "${install_dir}" >> "${GITHUB_PATH}"
@@ -104,6 +98,14 @@ runs:
 
         git-cliff --version
 
+        echo "Setting up git-cliff context..."
+        output="${CHANGELOG_OUTPUT}"
+        if [ "${PREPEND}" = "true" ]; then
+          output="${RUNNER_TEMP}/cliff/changelog/${CHANGELOG_OUTPUT}"
+          mkdir -p "$(dirname "${output}")"
+          [ -f "${output}" ] || touch "${output}"
+        fi
+
         range="${PREVIOUS_VERSION}..${VERSION}"
         prepend_args=()
         if [ "${PREPEND}" = "true" ]; then
@@ -111,6 +113,7 @@ runs:
           prepend_args=(--prepend "${CHANGELOG_OUTPUT}")
         fi
 
+        echo "Generating changelog for range ${range} with git-cliff..."
         # shellcheck disable=SC2086
         git-cliff \
           --config "${CONFIG}" \
@@ -119,7 +122,9 @@ runs:
           "${prepend_args[@]}" \
           ${GIT_CLIFF_ARGS} \
           "${range}"
+        git add "${CHANGELOG_OUTPUT}"
 
+        echo "Storing generated changelog content in output variable..."
         {
           delimiter="git_cliff_content_${RANDOM}_${RANDOM}"
           echo "content<<${delimiter}"
@@ -127,6 +132,7 @@ runs:
           echo "${delimiter}"
         } >> "${GITHUB_OUTPUT}"
 
+        echo "Saving generated changelog to step summary..."
         if [ "${SUMMARY}" = "true" ]; then
           {
             echo "# Release changelog"
@@ -135,13 +141,12 @@ runs:
           } >> "${GITHUB_STEP_SUMMARY}"
         fi
 
+        echo "Saving generated changelog as artifact..."
         if [ "${ARTIFACT}" = "true" ]; then
           rm -rf "${CHANGELOG_ARTIFACT_DIR}"
           mkdir -p "${CHANGELOG_ARTIFACT_DIR}"
           cp "${output}" "${CHANGELOG_ARTIFACT_DIR}/CHANGELOG.md"
         fi
-
-        git add "${CHANGELOG_OUTPUT}"
 
     - name: upload changelog artifact
       if: inputs.artifact == 'true'
