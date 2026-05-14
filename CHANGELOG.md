@@ -1,3 +1,8 @@
+## [8.3.0](https://github.com/getdevopspro/github-actions/compare/v8.2.4..8.3.0) - 2026-05-14
+
+### Features
+
+- *(changelog)* Add optional emoji support in group headers ([`3d20358`](https://github.com/getdevopspro/github-actions/commit/3d2035805cf3b3a91bcc67d3df11fcfc60df9817))
 ## [8.2.4](https://github.com/getdevopspro/github-actions/compare/v8.2.3..8.2.4) - 2026-05-14
 
 ### 🚜 Refactor

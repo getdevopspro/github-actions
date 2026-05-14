@@ -288,7 +288,7 @@ jobs:
 
       - id: release_version
         name: next release version
-        uses: getdevopspro/github-actions/release/version@v8.2.4
+        uses: getdevopspro/github-actions/release/version@v8.3.0
         with:
           version-previous: ${{ inputs.version-previous }}
           version-next: ${{ inputs.version-next }}
@@ -296,7 +296,7 @@ jobs:
           version-tag-prefix: ${{ inputs.version-tag-prefix }}
 
       - name: set version in file
-        uses: getdevopspro/github-actions/version-file@v8.2.4
+        uses: getdevopspro/github-actions/version-file@v8.3.0
         with:
           version: ${{ steps.release_version.outputs.version }}
           version-makefile: ${{ inputs.version-makefile }}
@@ -308,7 +308,7 @@ jobs:
 
       - name: promote container images
         if: inputs.image-digests != ''
-        uses: getdevopspro/github-actions/buildx-bake/promote@v8.2.4
+        uses: getdevopspro/github-actions/buildx-bake/promote@v8.3.0
         with:
           version: ${{ steps.release_version.outputs.version }}
           image-digests: ${{ inputs.image-digests }}
@@ -327,7 +327,7 @@ jobs:
       - name: release changelog
         id: release_changelog
         if: inputs.changelog-enabled
-        # uses: getdevopspro/github-actions/release/changelog@v8.2.4
+        # uses: getdevopspro/github-actions/release/changelog@v8.3.0
         uses: ./release/changelog
         with:
           version: ${{ steps.release_version.outputs.version }}
@@ -341,7 +341,7 @@ jobs:
           use-emojis: ${{ inputs.changelog-use-emojis }}
 
       - name: push git version
-        uses: getdevopspro/github-actions/release/git-push@v8.2.4
+        uses: getdevopspro/github-actions/release/git-push@v8.3.0
         if: inputs.push-git
         id: git_push
         with:
@@ -352,7 +352,7 @@ jobs:
 
       - name: update github release
         if: inputs.update-release-enabled && inputs.push-git
-        uses: getdevopspro/github-actions/release/update@v8.2.4
+        uses: getdevopspro/github-actions/release/update@v8.3.0
         with:
           token: ${{ inputs.update-release-token }}
           tag: ${{ inputs.update-release-tag || format('{0}{1}', inputs.version-tag-prefix, steps.release_version.outputs.version) }}
