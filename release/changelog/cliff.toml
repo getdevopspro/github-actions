@@ -7,13 +7,14 @@
 # See https://keats.github.io/tera/docs/#introduction
 body = """
 {%- set gh_url = get_env(name="GITHUB_SERVER_URL", default="https://github.com") ~ "/" ~ get_env(name="GITHUB_REPOSITORY", default="") -%}
+{%- set use_emojis = get_env(name="CLIFF_USE_EMOJIS", default="false") == "true" -%}
 {% if version %}\
     ## [{{ version | trim_start_matches(pat="v") }}]({{ gh_url }}/compare/{{ previous.version }}..{{ version }}) - {{ timestamp | date(format="%Y-%m-%d") }}
 {% else %}\
     ## [unreleased]
 {% endif %}\
 {% for group, commits in commits | group_by(attribute="group") %}
-    ### {{ group | striptags | trim | upper_first }}
+    ### {% set group_parts = group | striptags | trim | split(pat="|") -%}{% if use_emojis %}{{ group_parts[0] }} {% endif %}{{ group_parts[1] | upper_first }}
     {% for commit in commits %}
         - {% if commit.scope %}*({{ commit.scope }})* {% endif %}\
             {% if commit.breaking %}[**breaking**] {% endif %}\
@@ -52,13 +53,13 @@ protect_breaking_commits = false
 # Assigns commits to groups.
 # Optionally sets the commit's scope and can decide to exclude commits from further processing.
 commit_parsers = [
-    { message = "^feat", group = "<!-- 0 -->🚀 Features" },
-    { message = "^fix", group = "<!-- 1 -->🐛 Bug Fixes" },
-    { message = "^doc", group = "<!-- 3 -->📚 Documentation" },
-    { message = "^perf", group = "<!-- 4 -->⚡ Performance" },
-    { message = "^refactor", group = "<!-- 2 -->🚜 Refactor" },
-    { message = "^style", group = "<!-- 5 -->🎨 Styling" },
-    { message = "^test", group = "<!-- 6 -->🧪 Testing" },
+    { message = "^feat", group = "<!-- 0 -->🚀|Features" },
+    { message = "^fix", group = "<!-- 1 -->🐛|Bug Fixes" },
+    { message = "^doc", group = "<!-- 3 -->📚|Documentation" },
+    { message = "^perf", group = "<!-- 4 -->⚡|Performance" },
+    { message = "^refactor", group = "<!-- 2 -->🚜|Refactor" },
+    { message = "^style", group = "<!-- 5 -->🎨|Styling" },
+    { message = "^test", group = "<!-- 6 -->🧪|Testing" },
     { message = "(?i)\\[skip changelog\\]", skip = true },
     { message = "(?i)\\[(skip ci|ci skip|no ci|skip actions|actions skip)\\]", skip = true },
     { message = "(?i)skip-checks:\\s*true", skip = true },
@@ -67,10 +68,10 @@ commit_parsers = [
     { message = "^chore\\(pr\\)", skip = true },
     { message = "^chore\\(pull\\)", skip = true },
     { message = "^chore: bump", skip = true },
-    { message = "^chore|^ci", group = "<!-- 7 -->⚙️ Miscellaneous Tasks" },
-    { body = ".*security", group = "<!-- 8 -->🛡️ Security" },
-    { message = "^revert", group = "<!-- 9 -->◀️ Revert" },
-    { message = ".*", group = "<!-- 10 -->💼 Other" },
+    { message = "^chore|^ci", group = "<!-- 7 -->⚙️|Miscellaneous Tasks" },
+    { body = ".*security", group = "<!-- 8 -->🛡️|Security" },
+    { message = "^revert", group = "<!-- 9 -->◀️|Revert" },
+    { message = ".*", group = "<!-- 10 -->💼|Other" },
 ]
 # Exclude commits that are not matched by any commit parser.
 filter_commits = false

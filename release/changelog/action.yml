@@ -43,6 +43,10 @@ inputs:
     description: 'git-cliff version to install (defaults to latest)'
     required: false
     default: 'latest'
+  use-emojis:
+    description: 'Include emojis in changelog group headers'
+    required: false
+    default: 'false'
 outputs:
   content:
     description: 'The generated changelog content'
@@ -59,6 +63,7 @@ runs:
         CHANGELOG_OUTPUT: ${{ inputs.output }}
         CONFIG: ${{ inputs.config || format('{0}/cliff.toml', github.action_path) }}
         GIT_CLIFF_ARGS: ${{ inputs.args }}
+        CLIFF_USE_EMOJIS: ${{ inputs.use-emojis }}
         GIT_CLIFF_VERSION: ${{ inputs.git-cliff-version }}
         GITHUB_REPO: ${{ github.repository }}
         GITHUB_TOKEN: ${{ inputs.token || github.token }}

@@ -187,6 +187,11 @@ on:
         required: false
         type: string
         default: 'latest'
+      changelog-use-emojis:
+        description: 'Include emojis in changelog group headers'
+        required: false
+        type: boolean
+        default: false
       update-release-enabled:
         description: 'Create or update a GitHub release after the git push. Requires changelog-enabled to be true.'
         required: false
@@ -333,6 +338,7 @@ jobs:
           args: ${{ inputs.changelog-args }}
           prepend: ${{ inputs.changelog-prepend }}
           git-cliff-version: ${{ inputs.changelog-git-cliff-version }}
+          use-emojis: ${{ inputs.changelog-use-emojis }}
 
       - name: push git version
         uses: getdevopspro/github-actions/release/git-push@v8.2.4
