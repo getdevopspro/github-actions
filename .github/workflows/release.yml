@@ -187,6 +187,11 @@ on:
         required: false
         type: string
         default: 'latest'
+      changelog-version-prefix:
+        description: 'Prefix to trim from version tags when generating changelog (e.g. "v")'
+        required: false
+        type: string
+        default: 'v'
       changelog-use-emojis:
         description: 'Include emojis in changelog group headers'
         required: false
@@ -339,6 +344,7 @@ jobs:
           prepend: ${{ inputs.changelog-prepend }}
           git-cliff-version: ${{ inputs.changelog-git-cliff-version }}
           use-emojis: ${{ inputs.changelog-use-emojis }}
+          version-prefix: ${{ inputs.changelog-version-prefix }}
 
       - name: push git version
         uses: getdevopspro/github-actions/release/git-push@v8.3.0

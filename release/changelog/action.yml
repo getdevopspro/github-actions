@@ -47,6 +47,10 @@ inputs:
     description: 'Include emojis in changelog group headers'
     required: false
     default: 'false'
+  version-prefix:
+    description: 'Prefix to trim from version tags when generating changelog (e.g. "v")'
+    required: false
+    default: 'v'
 outputs:
   content:
     description: 'The generated changelog content'
@@ -63,8 +67,9 @@ runs:
         CHANGELOG_OUTPUT: ${{ inputs.output }}
         CONFIG: ${{ inputs.config || format('{0}/cliff.toml', github.action_path) }}
         GIT_CLIFF_ARGS: ${{ inputs.args }}
-        CLIFF_USE_EMOJIS: ${{ inputs.use-emojis }}
         GIT_CLIFF_VERSION: ${{ inputs.git-cliff-version }}
+        CLIFF_USE_EMOJIS: ${{ inputs.use-emojis }}
+        CLIFF_VERSION_PREFIX: ${{ inputs.version-prefix }}
         GITHUB_REPO: ${{ github.repository }}
         GITHUB_TOKEN: ${{ inputs.token || github.token }}
         PREPEND: ${{ inputs.prepend }}

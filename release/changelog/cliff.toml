@@ -6,10 +6,11 @@
 # A Tera template to be rendered for each release in the changelog.
 # See https://keats.github.io/tera/docs/#introduction
 body = """
+{%- set version_prefix = get_env(name="CLIFF_VERSION_PREFIX", default="v") -%}
 {%- set gh_url = get_env(name="GITHUB_SERVER_URL", default="https://github.com") ~ "/" ~ get_env(name="GITHUB_REPOSITORY", default="") -%}
 {%- set use_emojis = get_env(name="CLIFF_USE_EMOJIS", default="false") == "true" -%}
 {% if version %}\
-    ## [{{ version | trim_start_matches(pat="v") }}]({{ gh_url }}/compare/{{ previous.version }}..{{ version }}) - {{ timestamp | date(format="%Y-%m-%d") }}
+    ## [{{ version_prefix ~ version | trim_start_matches(pat=version_prefix) }}]({{ gh_url }}/compare/{{ version_prefix ~ previous.version | trim_start_matches(pat=version_prefix) }}..{{ version_prefix ~ version | trim_start_matches(pat=version_prefix) }}) - {{ timestamp | date(format="%Y-%m-%d") }}
 {% else %}\
     ## [unreleased]
 {% endif %}\
