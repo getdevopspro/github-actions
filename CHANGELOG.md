@@ -1,3 +1,14 @@
+## [8.2.4](https://github.com/getdevopspro/github-actions/compare/v8.2.3..8.2.4) - 2026-05-14
+
+### 🚜 Refactor
+
+- *(changelog)* Consolidate git-cliff shell steps ([`f4d4273`](https://github.com/getdevopspro/github-actions/commit/f4d42736882b2cda739e467e1fca1206fe420f28))
+- Change to local action for testing ([`942ea94`](https://github.com/getdevopspro/github-actions/commit/942ea946c9c89e7feeb2b42db2ac870a346118d4))
+- *(release-changelog)* Add comments to bash script ([`99cbf8f`](https://github.com/getdevopspro/github-actions/commit/99cbf8fc8b9bc8b0cf8a9bfab7e2967323e6d690))
+
+### ⚡ Performance
+
+- *(changelog)* Install git-cliff from GitHub releases ([`4ca4e25`](https://github.com/getdevopspro/github-actions/commit/4ca4e250a1842b1f6d788d8f0276d38ee112220a))
 ## [8.2.3](https://github.com/getdevopspro/github-actions/compare/v8.2.2..8.2.3) - 2026-05-14
 
 ### 🚜 Refactor
