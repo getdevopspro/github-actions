@@ -322,7 +322,8 @@ jobs:
       - name: release changelog
         id: release_changelog
         if: inputs.changelog-enabled
-        uses: getdevopspro/github-actions/release/changelog@v8.2.3
+        # uses: getdevopspro/github-actions/release/changelog@v8.2.3
+        uses: ./release/changelog
         with:
           version: ${{ steps.release_version.outputs.version }}
           previous-version: ${{ steps.release_version.outputs.previous-version }}
