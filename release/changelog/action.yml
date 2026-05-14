@@ -39,6 +39,10 @@ inputs:
     description: 'Name of the changelog artifact'
     required: false
     default: 'release-changelog'
+  git-cliff-version:
+    description: 'git-cliff version to install with cargo (defaults to latest)'
+    required: false
+    default: 'latest'
 outputs:
   content:
     description: 'The generated changelog content'
@@ -60,19 +64,62 @@ runs:
         mkdir -p "$(dirname "${OUTPUT}")"
         [ ! -f "${OUTPUT}" ] && touch "${OUTPUT}"
 
+    - name: install git-cliff
+      shell: bash
+      env:
+        GIT_CLIFF_VERSION: ${{ inputs.git-cliff-version }}
+      run: |
+        set -euo pipefail
+        cargo_bin="${CARGO_HOME:-${HOME}/.cargo}/bin"
+        echo "${cargo_bin}" >> "${GITHUB_PATH}"
+        export PATH="${cargo_bin}:${PATH}"
+
+        if [ "${GIT_CLIFF_VERSION}" != "latest" ]; then
+          cargo install git-cliff --version "${GIT_CLIFF_VERSION}" --force
+        else
+          cargo install git-cliff --force
+        fi
+
+        git-cliff --version
+
     - name: release changelog
       id: git_cliff
-      uses: orhun/git-cliff-action@v4
+      shell: bash
       env:
+        CONFIG: ${{ inputs.config || format('{0}/cliff.toml', github.action_path) }}
         OUTPUT: ${{ steps.set_output.outputs.output }}
-      with:
-        config: ${{ inputs.config || format('{0}/cliff.toml', github.action_path) }}
-        args: >-
-          ${{ inputs.previous-version }}..${{ inputs.prepend == 'true' && 'HEAD' || inputs.version }}
-          --tag ${{ inputs.version }}
-          ${{ inputs.prepend == 'true' && format('--prepend {0}', inputs.output) || '' }}
-          ${{ inputs.args }}
-        github_token: ${{ inputs.token || github.token }}
+        CHANGELOG_OUTPUT: ${{ inputs.output }}
+        GIT_CLIFF_ARGS: ${{ inputs.args }}
+        GITHUB_REPO: ${{ github.repository }}
+        GITHUB_TOKEN: ${{ inputs.token || github.token }}
+        PREPEND: ${{ inputs.prepend }}
+        PREVIOUS_VERSION: ${{ inputs.previous-version }}
+        VERSION: ${{ inputs.version }}
+      run: |
+        set -euo pipefail
+
+        range="${PREVIOUS_VERSION}..${VERSION}"
+        prepend_args=()
+        if [ "${PREPEND}" = "true" ]; then
+          range="${PREVIOUS_VERSION}..HEAD"
+          prepend_args=(--prepend "${CHANGELOG_OUTPUT}")
+        fi
+
+        # shellcheck disable=SC2086
+        git-cliff \
+          --config "${CONFIG}" \
+          --tag "${VERSION}" \
+          --output "${OUTPUT}" \
+          "${prepend_args[@]}" \
+          ${GIT_CLIFF_ARGS} \
+          "${range}"
+
+        {
+          delimiter="git_cliff_content_${RANDOM}_${RANDOM}"
+          echo "content<<${delimiter}"
+          cat "${OUTPUT}"
+          echo "${delimiter}"
+        } >> "${GITHUB_OUTPUT}"
 
     - name: add changelog to step summary
       if: inputs.summary == 'true'
