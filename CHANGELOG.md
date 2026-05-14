@@ -1,3 +1,8 @@
+## [8.3.1](https://github.com/getdevopspro/github-actions/compare/8.3.0..8.3.1) - 2026-05-14
+
+### Refactor
+
+- *(release-changelog)* Add version prefix ([`c131dc1`](https://github.com/getdevopspro/github-actions/commit/c131dc1dd51cc10ad77a438c4d42d9a4a5ef840e))
 ## [8.3.0](https://github.com/getdevopspro/github-actions/compare/v8.2.4..8.3.0) - 2026-05-14
 
 ### Features
