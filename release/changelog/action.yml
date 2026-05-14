@@ -40,7 +40,7 @@ inputs:
     required: false
     default: 'release-changelog'
   git-cliff-version:
-    description: 'git-cliff version to install with cargo (defaults to latest)'
+    description: 'git-cliff version to install (defaults to latest)'
     required: false
     default: 'latest'
 outputs:
@@ -77,15 +77,30 @@ runs:
           [ -f "${output}" ] || touch "${output}"
         fi
 
-        cargo_bin="${CARGO_HOME:-${HOME}/.cargo}/bin"
-        echo "${cargo_bin}" >> "${GITHUB_PATH}"
-        export PATH="${cargo_bin}:${PATH}"
+        install_dir="${RUNNER_TEMP}/git-cliff/bin"
+        mkdir -p "${install_dir}"
+        echo "${install_dir}" >> "${GITHUB_PATH}"
+        export PATH="${install_dir}:${PATH}"
 
+        download_dir="${RUNNER_TEMP}/git-cliff/download"
+        rm -rf "${download_dir}"
+        mkdir -p "${download_dir}"
+
+        target="$(uname -m | sed 's/^arm64$/aarch64/')-$([ "$(uname -s)" = Darwin ] && echo apple-darwin || echo unknown-linux-gnu)"
+
+        tag_args=()
         if [ "${GIT_CLIFF_VERSION}" != "latest" ]; then
-          cargo install git-cliff --version "${GIT_CLIFF_VERSION}" --force
-        else
-          cargo install git-cliff --force
+          tag_args=("v${GIT_CLIFF_VERSION#v}")
         fi
+
+        GH_TOKEN="${GITHUB_TOKEN}" gh release download "${tag_args[@]}" \
+          --repo orhun/git-cliff \
+          --pattern "git-cliff-*-${target}.tar.gz" \
+          --dir "${download_dir}" \
+          --clobber
+
+        tar -xzf "${download_dir}"/git-cliff-*-"${target}".tar.gz -C "${download_dir}"
+        install -m 0755 "${download_dir}"/git-cliff-*/git-cliff "${install_dir}/git-cliff"
 
         git-cliff --version
 

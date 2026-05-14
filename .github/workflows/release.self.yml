@@ -18,7 +18,7 @@ permissions:
 
 jobs:
   release:
-    uses: getdevopspro/github-actions/.github/workflows/release.yml@v8.2.3
+    uses: ./.github/workflows/release.yml
     secrets:
       checkout-token: ${{ secrets.BOT_REPO_TOKEN }}
     with:

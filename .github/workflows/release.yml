@@ -183,7 +183,7 @@ on:
         type: boolean
         default: true
       changelog-git-cliff-version:
-        description: 'git-cliff version to install with cargo (defaults to latest)'
+        description: 'git-cliff version to install (defaults to latest)'
         required: false
         type: string
         default: 'latest'
