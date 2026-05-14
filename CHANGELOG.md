@@ -1,3 +1,8 @@
+## [v8.3.2](https://github.com/getdevopspro/github-actions/compare/v8.3.1..v8.3.2) - 2026-05-14
+
+### Bug Fixes
+
+- *(release-changelog)* Update template for correct versino prefix ([`b3cbe50`](https://github.com/getdevopspro/github-actions/commit/b3cbe50e3c2a941933b33b6cfc2271b89447d124))
 ## [8.3.1](https://github.com/getdevopspro/github-actions/compare/8.3.0..8.3.1) - 2026-05-14
 
 ### Refactor
