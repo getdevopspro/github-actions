@@ -1,3 +1,12 @@
+## [v8.3.3](https://github.com/getdevopspro/github-actions/compare/v8.3.2..v8.3.3) - 2026-05-14
+
+### Documentation
+
+- *(changelog)* Update format ([`ad5a6df`](https://github.com/getdevopspro/github-actions/commit/ad5a6df8a8bdccaf2009c270707c5d62061431d2))
+
+### Miscellaneous Tasks
+
+- Update github action version ([`c38a86a`](https://github.com/getdevopspro/github-actions/commit/c38a86a2311d3c7522311c9f04980f7a808ad005))
 ## [v8.3.2](https://github.com/getdevopspro/github-actions/compare/v8.3.1..v8.3.2) - 2026-05-14
 
 ### Bug Fixes
