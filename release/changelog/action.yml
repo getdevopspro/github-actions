@@ -50,26 +50,33 @@ outputs:
 runs:
   using: "composite"
   steps:
-    - name: set output file based on prepend option
-      id: set_output
-      shell: bash
-      run: echo "output=${{ inputs.prepend == 'true' && format('{0}/cliff/changelog/{1}', runner.temp, inputs.output) || inputs.output }}" >> $GITHUB_OUTPUT
-
-    - name: create temporary directory for changelog if prepending
-      if: inputs.prepend == 'true'
+    - name: generate release changelog
+      id: git_cliff
       shell: bash
       env:
-        OUTPUT: ${{ steps.set_output.outputs.output }}
-      run: |
-        mkdir -p "$(dirname "${OUTPUT}")"
-        [ ! -f "${OUTPUT}" ] && touch "${OUTPUT}"
-
-    - name: install git-cliff
-      shell: bash
-      env:
+        ARTIFACT: ${{ inputs.artifact }}
+        CHANGELOG_ARTIFACT_DIR: ${{ runner.temp }}/cliff-changelog-artifact
+        CHANGELOG_OUTPUT: ${{ inputs.output }}
+        CONFIG: ${{ inputs.config || format('{0}/cliff.toml', github.action_path) }}
+        GIT_CLIFF_ARGS: ${{ inputs.args }}
         GIT_CLIFF_VERSION: ${{ inputs.git-cliff-version }}
+        GITHUB_REPO: ${{ github.repository }}
+        GITHUB_TOKEN: ${{ inputs.token || github.token }}
+        PREPEND: ${{ inputs.prepend }}
+        PREVIOUS_VERSION: ${{ inputs.previous-version }}
+        RUNNER_TEMP: ${{ runner.temp }}
+        SUMMARY: ${{ inputs.summary }}
+        VERSION: ${{ inputs.version }}
       run: |
         set -euo pipefail
+
+        output="${CHANGELOG_OUTPUT}"
+        if [ "${PREPEND}" = "true" ]; then
+          output="${RUNNER_TEMP}/cliff/changelog/${CHANGELOG_OUTPUT}"
+          mkdir -p "$(dirname "${output}")"
+          [ -f "${output}" ] || touch "${output}"
+        fi
+
         cargo_bin="${CARGO_HOME:-${HOME}/.cargo}/bin"
         echo "${cargo_bin}" >> "${GITHUB_PATH}"
         export PATH="${cargo_bin}:${PATH}"
@@ -82,22 +89,6 @@ runs:
 
         git-cliff --version
 
-    - name: release changelog
-      id: git_cliff
-      shell: bash
-      env:
-        CONFIG: ${{ inputs.config || format('{0}/cliff.toml', github.action_path) }}
-        OUTPUT: ${{ steps.set_output.outputs.output }}
-        CHANGELOG_OUTPUT: ${{ inputs.output }}
-        GIT_CLIFF_ARGS: ${{ inputs.args }}
-        GITHUB_REPO: ${{ github.repository }}
-        GITHUB_TOKEN: ${{ inputs.token || github.token }}
-        PREPEND: ${{ inputs.prepend }}
-        PREVIOUS_VERSION: ${{ inputs.previous-version }}
-        VERSION: ${{ inputs.version }}
-      run: |
-        set -euo pipefail
-
         range="${PREVIOUS_VERSION}..${VERSION}"
         prepend_args=()
         if [ "${PREPEND}" = "true" ]; then
@@ -109,7 +100,7 @@ runs:
         git-cliff \
           --config "${CONFIG}" \
           --tag "${VERSION}" \
-          --output "${OUTPUT}" \
+          --output "${output}" \
           "${prepend_args[@]}" \
           ${GIT_CLIFF_ARGS} \
           "${range}"
@@ -117,33 +108,25 @@ runs:
         {
           delimiter="git_cliff_content_${RANDOM}_${RANDOM}"
           echo "content<<${delimiter}"
-          cat "${OUTPUT}"
+          cat "${output}"
           echo "${delimiter}"
         } >> "${GITHUB_OUTPUT}"
 
-    - name: add changelog to step summary
-      if: inputs.summary == 'true'
-      shell: bash
-      env:
-        OUTPUT: ${{ steps.set_output.outputs.output }}
-      run: |
-        set -euo pipefail
-        {
-          echo "# Release changelog"
-          echo
-          cat "${OUTPUT}"
-        } >> "${GITHUB_STEP_SUMMARY}"
+        if [ "${SUMMARY}" = "true" ]; then
+          {
+            echo "# Release changelog"
+            echo
+            cat "${output}"
+          } >> "${GITHUB_STEP_SUMMARY}"
+        fi
 
-    - name: prepare changelog artifact
-      if: inputs.artifact == 'true'
-      shell: bash
-      env:
-        OUTPUT: ${{ steps.set_output.outputs.output }}
-        CHANGELOG_ARTIFACT_DIR: ${{ runner.temp }}/cliff-changelog-artifact
-      run: |
-        rm -rf "${CHANGELOG_ARTIFACT_DIR}"
-        mkdir -p "${CHANGELOG_ARTIFACT_DIR}"
-        cp "${OUTPUT}" "${CHANGELOG_ARTIFACT_DIR}/CHANGELOG.md"
+        if [ "${ARTIFACT}" = "true" ]; then
+          rm -rf "${CHANGELOG_ARTIFACT_DIR}"
+          mkdir -p "${CHANGELOG_ARTIFACT_DIR}"
+          cp "${output}" "${CHANGELOG_ARTIFACT_DIR}/CHANGELOG.md"
+        fi
+
+        git add "${CHANGELOG_OUTPUT}"
 
     - name: upload changelog artifact
       if: inputs.artifact == 'true'
@@ -152,8 +135,3 @@ runs:
         name: ${{ inputs.artifact-name }}
         path: ${{ runner.temp }}/cliff-changelog-artifact/*
         if-no-files-found: error
-
-    - name: add changelog to git staging
-      shell: bash
-      run: |
-        git add "${{ inputs.output }}"
