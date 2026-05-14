@@ -1,3 +1,8 @@
+## [8.2.3](https://github.com/getdevopspro/github-actions/compare/v8.2.2..8.2.3) - 2026-05-14
+
+### 🚜 Refactor
+
+- *(changelog)* Invoke git-cliff directly ([`ad7052d`](https://github.com/getdevopspro/github-actions/commit/ad7052d8e9054c2544a0012b52e97b32a534d1da))
 ## [8.2.2](https://github.com/getdevopspro/github-actions/compare/v8.2.1..8.2.2) - 2026-05-13
 
 ### 🚜 Refactor
