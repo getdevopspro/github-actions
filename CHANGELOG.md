@@ -1,3 +1,8 @@
+## [v8.3.4](https://github.com/getdevopspro/github-actions/compare/v8.3.3..v8.3.4) - 2026-05-15
+
+### Bug Fixes
+
+- *(release-changelog)* Set  correctpermissions ([`70af3f0`](https://github.com/getdevopspro/github-actions/commit/70af3f01a19ea8c9a905df337ef8e36c4cc67750))
 ## [v8.3.3](https://github.com/getdevopspro/github-actions/compare/v8.3.2..v8.3.3) - 2026-05-14
 
 ### Documentation
