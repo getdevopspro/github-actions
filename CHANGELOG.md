@@ -1,3 +1,8 @@
+## [v8.3.6](https://github.com/getdevopspro/github-actions/compare/v8.3.5..v8.3.6) - 2026-05-15
+
+### Bug Fixes
+
+- _(changelog)_ Guard compare link when previous.version is null ([`fef7cdb`](https://github.com/getdevopspro/github-actions/commit/fef7cdba569560a76a75ba8a4050d9a1a0c1aa6d))
 ## [v8.3.5](https://github.com/getdevopspro/github-actions/compare/v8.3.4..v8.3.5) - 2026-05-15
 
 ### Bug Fixes
