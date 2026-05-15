@@ -10,9 +10,11 @@ body = """
 {%- set gh_url = get_env(name="GITHUB_SERVER_URL", default="https://github.com") ~ "/" ~ get_env(name="GITHUB_REPOSITORY", default="") -%}
 {%- set use_emojis = get_env(name="CLIFF_USE_EMOJIS", default="false") == "true" -%}
 {% if version %}\
-    {%- set ver = version_prefix ~ (version | trim_start_matches(pat=version_prefix)) -%}
-    {% if previous.version %}\
-    ## [{{ ver }}]({{ gh_url }}/compare/{{ version_prefix }}{{ previous.version | trim_start_matches(pat=version_prefix) }}..{{ ver }}) - {{ timestamp | date(format="%Y-%m-%d") }}
+    {%- set ver_stripped = version | trim_start_matches(pat=version_prefix) -%}
+    {%- set ver = version_prefix ~ ver_stripped -%}
+    {%- if previous.version %}\
+    {%- set prev_stripped = previous.version | trim_start_matches(pat=version_prefix) -%}
+    ## [{{ ver }}]({{ gh_url }}/compare/{{ version_prefix }}{{ prev_stripped }}..{{ ver }}) - {{ timestamp | date(format="%Y-%m-%d") }}
     {%- else %}\
     ## {{ ver }} - {{ timestamp | date(format="%Y-%m-%d") }}
     {%- endif %}
