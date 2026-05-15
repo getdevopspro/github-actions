@@ -17,7 +17,7 @@ body = """
 {% for group, commits in commits | group_by(attribute="group") %}
     ### {% set group_parts = group | striptags | trim | split(pat="|") -%}{% if use_emojis %}{{ group_parts[0] }} {% endif %}{{ group_parts[1] | upper_first }}
     {% for commit in commits %}
-        - {% if commit.scope %}*({{ commit.scope }})* {% endif %}\
+        - {% if commit.scope %}_({{ commit.scope }})_ {% endif %}\
             {% if commit.breaking %}[**breaking**] {% endif %}\
             {{ commit.message | upper_first }} \
             ([`{{ commit.id | truncate(length=7, end="") }}`]({{ gh_url }}/commit/{{ commit.id }}))\
