@@ -1,3 +1,8 @@
+## [v8.3.5](https://github.com/getdevopspro/github-actions/compare/v8.3.4..v8.3.5) - 2026-05-15
+
+### Bug Fixes
+
+- *(changelog)* Use underscore italic style for commit scopes ([`595d52d`](https://github.com/getdevopspro/github-actions/commit/595d52d67a16eda2c8141384900e0d93543854f3))
 ## [v8.3.4](https://github.com/getdevopspro/github-actions/compare/v8.3.3..v8.3.4) - 2026-05-15
 
 ### Bug Fixes
