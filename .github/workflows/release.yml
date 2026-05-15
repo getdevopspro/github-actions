@@ -243,6 +243,8 @@ on:
 permissions:
   contents: write
   packages: write
+  pull-requests: read
+  statuses: read
 
 jobs:
   release:
