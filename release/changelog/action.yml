@@ -132,6 +132,12 @@ runs:
           "${prepend_args[@]}" \
           ${GIT_CLIFF_ARGS} \
           "${range}"
+
+        # git-cliff postprocessors run per-release, so the file always ends with
+        # an extra blank line. Strip all trailing newlines then add exactly one.
+        content="$(cat "${output}")"
+        printf '%s\n' "${content}" > "${output}"
+
         git add "${CHANGELOG_OUTPUT}"
 
         echo "Storing generated changelog content in output variable..."

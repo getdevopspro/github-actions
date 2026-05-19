@@ -31,15 +31,18 @@ body = """
             ([`{{ commit.id | truncate(length=7, end="") }}`]({{ gh_url }}/commit/{{ commit.id }}))\
     {% endfor %}
 {% endfor %}
-{%- if github_actions %}
-{% endif %}
 """
 # Remove leading and trailing whitespaces from the changelog's body.
 trim = true
 # Render body even when there are no releases to process.
 render_always = true
 # An array of regex based postprocessors to modify the changelog.
-postprocessors = []
+postprocessors = [
+    # Postprocessors run per-release body (not on the full changelog).
+    # Normalize each release body to end with exactly two newlines so that
+    # releases are separated by a blank line when concatenated.
+    { pattern = "(?-m)\\s+$", replace = "\n\n" },
+]
 
 [git]
 # Parse commits according to the conventional commits specification.
