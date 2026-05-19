@@ -1,3 +1,9 @@
+## [v8.3.10](https://github.com/getdevopspro/github-actions/compare/v8.3.9..v8.3.10) - 2026-05-19
+
+### Bug Fixes
+
+- _(release-changelog)_ Overwrite output file ([`99f6daf`](https://github.com/getdevopspro/github-actions/commit/99f6daf55b778d313c69a5a16d76d003efaf7f80))
+
 ## [v8.3.9](https://github.com/getdevopspro/github-actions/compare/v8.3.8..v8.3.9) - 2026-05-19
 
 ### Bug Fixes
