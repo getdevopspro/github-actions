@@ -5,6 +5,9 @@
 - Treat this repository as a public library of reusable GitHub Actions, reusable workflows, and CI/CD helpers. Keep actions generic enough for external repositories to adopt, even when a change is motivated by GetDevOpsPro usage.
 - Prefer parameterized composite actions and reusable workflows over copying workflow YAML between repositories.
 - Keep action and workflow behavior documented in `README.md` when it changes user-facing inputs, outputs, permissions, required secrets, or expected calling patterns.
+- Every reusable workflow in `.github/workflows/` must be briefly documented in `.github/workflows/README.md`, except self-maintenance workflows such as `release.self.yml`.
+- Every composite action must have a `README.md` in the same directory as its `action.yml`; include a short purpose statement, when to use it, and a minimal safe example.
+- Link new action and reusable workflow documentation from the root `README.md`.
 - Use stable versioned references in examples. When bumping the repository version, run `make release-version VERSION=<version>` so references in `.github/workflows/` and `README.md` stay aligned.
 - Prefer wrapping maintained upstream actions when they already provide the needed behavior. Add custom logic here when behavior needs to be shared consistently across repositories.
 - Preserve the existing directory layout:
@@ -17,7 +20,7 @@
 ## Action And Workflow Changes
 
 - Keep inputs and outputs explicit, documented, and backward compatible when possible.
-- Prefer additive inputs over breaking changes. If a breaking change is unavoidable, document the migration impact in `README.md` or briefly in the commit message..
+- Prefer additive inputs over breaking changes. If a breaking change is unavoidable, document the migration impact in `README.md` or briefly in the commit message.
 - Use clear, generic input names unless an input intentionally targets a specific upstream tool.
 - Keep default values safe for public repositories. Avoid organization-specific defaults unless they are necessary for this repository itself.
 - Do not embed secrets, credentials, private repository names, or private infrastructure details in actions, workflows, tests, or examples.
@@ -43,3 +46,4 @@
 - Keep documentation concise and useful to someone discovering the public repository for the first time.
 - Include minimal examples that are safe to copy into another repository.
 - Prefer synthetic placeholder values for secrets, owners, repositories, images, and branch names.
+- For per-action READMEs, avoid duplicating the full input table unless it adds clarity; `action.yml` remains the authoritative schema.
