@@ -1,3 +1,13 @@
+## [v8.3.9](https://github.com/getdevopspro/github-actions/compare/v8.3.8..v8.3.9) - 2026-05-19
+
+### Bug Fixes
+
+- _(release-changelog)_ Add exactly one new line at the end ([`040eb1a`](https://github.com/getdevopspro/github-actions/commit/040eb1aa0b8f8a3e11704d8e9e86dfb69b860ac1))
+
+### Documentation
+
+- _(actions)_ Add reusable workflow and action READMEs ([`2729780`](https://github.com/getdevopspro/github-actions/commit/27297806a3e35b92fc6a83f0c55129a0aafddbd5))
+
 ## [v8.3.8](https://github.com/getdevopspro/github-actions/compare/v8.3.7..v8.3.8) - 2026-05-19
 
 ### Documentation
@@ -8,30 +18,41 @@
 
 - _(repo)_ Add guidance and version README refs ([`405e245`](https://github.com/getdevopspro/github-actions/commit/405e245cc36e6315ed72478c1986ce0c02e8e12d))
 
+## [v8.3.7](https://github.com/getdevopspro/github-actions/compare/v8.3.6..v8.3.7) - 2026-05-18
+
+### Bug Fixes
+
+- _(changelog)_ Guard compare link when previous.version is null ([`19d4ab1`](https://github.com/getdevopspro/github-actions/commit/19d4ab14cff091630183a2419744ee18486dafd7))
+- _(changelog)_ Add CI-only trailing newline for prepend ([`7e1bb7a`](https://github.com/getdevopspro/github-actions/commit/7e1bb7aecb1e09d1ec88c381d8db7a5340bb4ef6))
+
 ## [v8.3.6](https://github.com/getdevopspro/github-actions/compare/v8.3.5..v8.3.6) - 2026-05-15
 
 ### Bug Fixes
 
 - _(changelog)_ Guard compare link when previous.version is null ([`fef7cdb`](https://github.com/getdevopspro/github-actions/commit/fef7cdba569560a76a75ba8a4050d9a1a0c1aa6d))
+
 ## [v8.3.5](https://github.com/getdevopspro/github-actions/compare/v8.3.4..v8.3.5) - 2026-05-15
 
 ### Bug Fixes
 
-- *(changelog)* Use underscore italic style for commit scopes ([`595d52d`](https://github.com/getdevopspro/github-actions/commit/595d52d67a16eda2c8141384900e0d93543854f3))
+- _(changelog)_ Use underscore italic style for commit scopes ([`595d52d`](https://github.com/getdevopspro/github-actions/commit/595d52d67a16eda2c8141384900e0d93543854f3))
+
 ## [v8.3.4](https://github.com/getdevopspro/github-actions/compare/v8.3.3..v8.3.4) - 2026-05-15
 
 ### Bug Fixes
 
-- *(release-changelog)* Set  correctpermissions ([`70af3f0`](https://github.com/getdevopspro/github-actions/commit/70af3f01a19ea8c9a905df337ef8e36c4cc67750))
+- _(release-changelog)_ Set  correctpermissions ([`70af3f0`](https://github.com/getdevopspro/github-actions/commit/70af3f01a19ea8c9a905df337ef8e36c4cc67750))
+
 ## [v8.3.3](https://github.com/getdevopspro/github-actions/compare/v8.3.2..v8.3.3) - 2026-05-14
 
 ### Documentation
 
-- *(changelog)* Update format ([`ad5a6df`](https://github.com/getdevopspro/github-actions/commit/ad5a6df8a8bdccaf2009c270707c5d62061431d2))
+- _(changelog)_ Update format ([`ad5a6df`](https://github.com/getdevopspro/github-actions/commit/ad5a6df8a8bdccaf2009c270707c5d62061431d2))
 
 ### Miscellaneous Tasks
 
 - Update github action version ([`c38a86a`](https://github.com/getdevopspro/github-actions/commit/c38a86a2311d3c7522311c9f04980f7a808ad005))
+
 ## [v8.3.2](https://github.com/getdevopspro/github-actions/compare/v8.3.1..v8.3.2) - 2026-05-14
 
 ### Bug Fixes
@@ -395,7 +416,7 @@
 ### Features
 
 - Add all-green action ([`bee4677`](https://github.com/getdevopspro/github-actions/commit/bee4677e313fdd00db394726a5c36db6e67faaae))
-- Add checks rerun action ([`2c13dce`](https://github.com/getdevopspro/github-actions/commit/2c13dce5b8267e8e0a581694e406c3be48ad4184))
+- Add checks rerun  action ([`2c13dce`](https://github.com/getdevopspro/github-actions/commit/2c13dce5b8267e8e0a581694e406c3be48ad4184))
 
 ## [v6.0.4](https://github.com/getdevopspro/github-actions/compare/v6.0.3..v6.0.4) - 2026-02-16
 
@@ -1184,3 +1205,10 @@
 ### Features
 
 - Add promote and golint workflows ([`492ed35`](https://github.com/getdevopspro/github-actions/commit/492ed352beffd37a98809583a6d1668c477f4bbd))
+
+## v0.0.1 - 2024-12-17
+
+### Features
+
+- Add release version action ([`39d8d20`](https://github.com/getdevopspro/github-actions/commit/39d8d2075390c8dce07f4fdee21814069c44d2ec))
+- Add license ([`67cb1c9`](https://github.com/getdevopspro/github-actions/commit/67cb1c9ec5b91e36a38368545484ad69153d5ff0))

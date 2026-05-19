@@ -133,10 +133,11 @@ runs:
           ${GIT_CLIFF_ARGS} \
           "${range}"
 
+        # WORKAROUND: https://github.com/orhun/git-cliff/issues/1524
         # git-cliff postprocessors run per-release, so the file always ends with
         # an extra blank line. Strip all trailing newlines then add exactly one.
         content="$(cat "${output}")"
-        printf '%s\n' "${content}" > "${output}"
+        printf '%s\n' "${content}" >| "${output}"
 
         git add "${CHANGELOG_OUTPUT}"
 
