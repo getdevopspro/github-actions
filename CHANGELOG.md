@@ -1,3 +1,9 @@
+## [v8.3.11](https://github.com/getdevopspro/github-actions/compare/v8.3.10..v8.3.11) - 2026-05-19
+
+### Bug Fixes
+
+- _(release-changelog)_ Omit pr and include non conventional ([`42c9401`](https://github.com/getdevopspro/github-actions/commit/42c940116729659f26b30b4d860e60908a98db81))
+
 ## [v8.3.10](https://github.com/getdevopspro/github-actions/compare/v8.3.9..v8.3.10) - 2026-05-19
 
 ### Bug Fixes
