@@ -1,5 +1,6 @@
 VERSION ?= 8.3.7
 WORKFLOW_FOLDER := .github/workflows
+VERSION_REF_FILES := $(WORKFLOW_FOLDER)/*.y*ml README.md
 ifneq (,$(findstring xterm,${TERM}))
 	RED          := $(shell tput -Txterm setaf 1)
 	GREEN        := $(shell tput -Txterm setaf 2)
@@ -17,10 +18,10 @@ endif
 .PHONY: release-version
 release-version:
 	@echo -e "${LIGHTPURPLE}+ make target: $@${RESET}"
-	sed -i \
-		-e 's%\(getdevopspro/github-actions[^@]*\)@v[^[:space:]]*%\1@v$(VERSION)%g' \
-		$(WORKFLOW_FOLDER)/*.y*ml
-	git add $(WORKFLOW_FOLDER)
+	sed -i -E \
+		-e "s%(getdevopspro/github-actions[^[:space:]\`\"'<>]*)@v[0-9A-Za-z._-]+%\1@v$(VERSION)%g" \
+		$(VERSION_REF_FILES)
+	git add $(VERSION_REF_FILES)
 
 promote: release-version
 	@echo -e "${LIGHTPURPLE}+ make target: $@${RESET}"
