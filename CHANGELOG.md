@@ -1,3 +1,13 @@
+## [v8.3.8](https://github.com/getdevopspro/github-actions/compare/v8.3.7..v8.3.8) - 2026-05-19
+
+### Documentation
+
+- _(readme)_ Describe reusable github actions repository ([`0ef19b5`](https://github.com/getdevopspro/github-actions/commit/0ef19b5ca6898670fdaab00ea059ad403bdff006))
+
+### Miscellaneous Tasks
+
+- _(repo)_ Add guidance and version README refs ([`405e245`](https://github.com/getdevopspro/github-actions/commit/405e245cc36e6315ed72478c1986ce0c02e8e12d))
+
 ## [v8.3.6](https://github.com/getdevopspro/github-actions/compare/v8.3.5..v8.3.6) - 2026-05-15
 
 ### Bug Fixes
