@@ -109,8 +109,14 @@ runs:
         git-cliff --version
 
         echo "Setting up git-cliff context..."
+        initial_release_without_previous_ref="false"
+        if [ "${PREVIOUS_VERSION}" = "0.0.0" ] && ! git rev-parse --verify --quiet "${PREVIOUS_VERSION}^{commit}" >/dev/null; then
+          initial_release_without_previous_ref="true"
+          echo "::warning title=Release changelog::Previous version 0.0.0 does not exist; generating the initial changelog from HEAD and disabling prepend."
+        fi
+
         output="${CHANGELOG_OUTPUT}"
-        if [ "${PREPEND}" = "true" ]; then
+        if [ "${PREPEND}" = "true" ] && [ "${initial_release_without_previous_ref}" != "true" ]; then
           output="${RUNNER_TEMP}/cliff/changelog/${CHANGELOG_OUTPUT}"
           mkdir -p "$(dirname "${output}")"
           [ -f "${output}" ] || touch "${output}"
@@ -118,7 +124,9 @@ runs:
 
         range="${PREVIOUS_VERSION}..${VERSION}"
         prepend_args=()
-        if [ "${PREPEND}" = "true" ]; then
+        if [ "${initial_release_without_previous_ref}" = "true" ]; then
+          range="HEAD"
+        elif [ "${PREPEND}" = "true" ]; then
           range="${PREVIOUS_VERSION}..HEAD"
           prepend_args=(--prepend "${CHANGELOG_OUTPUT}")
         fi
