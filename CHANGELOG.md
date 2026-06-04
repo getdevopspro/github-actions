@@ -1,3 +1,9 @@
+## [v8.3.12](https://github.com/getdevopspro/github-actions/compare/v8.3.11..v8.3.12) - 2026-06-04
+
+### Bug Fixes
+
+- _(release-changelog)_ Handle missing bootstrap previous version ([`91dda42`](https://github.com/getdevopspro/github-actions/commit/91dda42d7e305b38c254f0f056b304a0143a977c))
+
 ## [v8.3.11](https://github.com/getdevopspro/github-actions/compare/v8.3.10..v8.3.11) - 2026-05-19
 
 ### Bug Fixes
