@@ -1,3 +1,9 @@
+## [v8.3.13](https://github.com/getdevopspro/github-actions/compare/v8.3.12..v8.3.13) - 2026-06-19
+
+### Miscellaneous Tasks
+
+- Bump github action version ([`06c47c3`](https://github.com/getdevopspro/github-actions/commit/06c47c32d3b720d28138841dde790fbd0520f4a5))
+
 ## [v8.3.12](https://github.com/getdevopspro/github-actions/compare/v8.3.11..v8.3.12) - 2026-06-04
 
 ### Bug Fixes
