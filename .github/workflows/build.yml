@@ -1129,6 +1129,8 @@ jobs:
       - name: Set image metadata and platform matrix
         id: prepare_image
         uses: getdevopspro/github-actions/buildx-bake/prepare@v8.3.13
+        env:
+          DOCKER_METADATA_PR_HEAD_SHA: true
         with:
           bake-target: ${{ inputs.bake-target }}
           registry-image: ${{ inputs.registry-image }}
