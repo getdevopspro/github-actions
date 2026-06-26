@@ -1,3 +1,9 @@
+## [v8.3.14](https://github.com/getdevopspro/github-actions/compare/v8.3.13..v8.3.14) - 2026-06-26
+
+### Bug Fixes
+
+- _(build)_ Use PR head SHA for image metadata tags ([`91758ca`](https://github.com/getdevopspro/github-actions/commit/91758ca675f24fc49d0b1dbdc33b4586c8e1f2d1))
+
 ## [v8.3.13](https://github.com/getdevopspro/github-actions/compare/v8.3.12..v8.3.13) - 2026-06-19
 
 ### Miscellaneous Tasks

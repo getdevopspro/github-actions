@@ -1,4 +1,4 @@
-VERSION ?= 8.3.13
+VERSION ?= 8.3.14
 WORKFLOW_FOLDER := .github/workflows
 VERSION_REF_FILES := $(WORKFLOW_FOLDER)/*.y*ml README.md
 ifneq (,$(findstring xterm,${TERM}))
