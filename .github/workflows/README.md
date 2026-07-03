@@ -35,6 +35,8 @@ jobs:
 
 Set `docker-version` or `compose-version` to install a specific Docker CE or Docker Compose release before the Bake prepare and build actions run. Leave them empty to use the runner defaults.
 
+Pre and post command jobs use those same versions by default. Set `pre-docker-version`, `pre-compose-version`, `post-docker-version`, or `post-compose-version` to override them for pre or post jobs.
+
 ## Go Lint
 
 File: `golangci-lint.yml`

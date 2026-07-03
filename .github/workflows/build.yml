@@ -146,6 +146,26 @@ on:
         required: false
         default: ''
         type: string
+      pre-docker-version:
+        description: 'Docker CE version for pre-steps. Defaults to docker-version.'
+        required: false
+        default: ''
+        type: string
+      pre-compose-version:
+        description: 'Compose version for pre-steps. Defaults to compose-version.'
+        required: false
+        default: ''
+        type: string
+      post-docker-version:
+        description: 'Docker CE version for post-steps. Defaults to docker-version.'
+        required: false
+        default: ''
+        type: string
+      post-compose-version:
+        description: 'Compose version for post-steps. Defaults to compose-version.'
+        required: false
+        default: ''
+        type: string
       prepare-command:
         description: 'The prepare command to run for preparing the build (pre-steps)'
         required: false
@@ -897,7 +917,7 @@ jobs:
 
           matrix = []
 
-          def add_step(name, command, runner, docker_login, qemu_install, artifact_name, artifact_path, artifact_overwrite, artifact_if_no_files_found, artifact_retention_days):
+          def add_step(name, command, runner, docker_login, qemu_install, docker_version, compose_version, artifact_name, artifact_path, artifact_overwrite, artifact_if_no_files_found, artifact_retention_days):
               if command:
                   matrix.append({
                       "name": name,
@@ -905,6 +925,8 @@ jobs:
                       "runner": runner,
                       "docker-login": docker_login,
                       "qemu-install": qemu_install,
+                      "docker-version": docker_version,
+                      "compose-version": compose_version,
                       "artifact-name": artifact_name,
                       "artifact-path": artifact_path,
                       "artifact-overwrite": artifact_overwrite,
@@ -918,6 +940,8 @@ jobs:
               r'''${{ inputs.pre-checks-runner }}''',
               r'''${{ inputs.pre-checks-docker-login }}''',
               r'''${{ inputs.pre-checks-qemu-install }}''',
+              r'''${{ inputs.pre-docker-version || inputs.docker-version }}''',
+              r'''${{ inputs.pre-compose-version || inputs.compose-version }}''',
               r'''${{ inputs.pre-checks-artifact-name }}''',
               r'''${{ inputs.pre-checks-artifact-path }}''',
               r'''${{ inputs.pre-checks-artifact-overwrite }}''',
@@ -931,6 +955,8 @@ jobs:
               r'''${{ inputs.pre-lint-runner }}''',
               r'''${{ inputs.pre-lint-docker-login }}''',
               r'''${{ inputs.pre-lint-qemu-install }}''',
+              r'''${{ inputs.pre-docker-version || inputs.docker-version }}''',
+              r'''${{ inputs.pre-compose-version || inputs.compose-version }}''',
               r'''${{ inputs.pre-lint-artifact-name }}''',
               r'''${{ inputs.pre-lint-artifact-path }}''',
               r'''${{ inputs.pre-lint-artifact-overwrite }}''',
@@ -944,6 +970,8 @@ jobs:
               r'''${{ inputs.pre-test-runner }}''',
               r'''${{ inputs.pre-test-docker-login }}''',
               r'''${{ inputs.pre-test-qemu-install }}''',
+              r'''${{ inputs.pre-docker-version || inputs.docker-version }}''',
+              r'''${{ inputs.pre-compose-version || inputs.compose-version }}''',
               r'''${{ inputs.pre-test-artifact-name }}''',
               r'''${{ inputs.pre-test-artifact-path }}''',
               r'''${{ inputs.pre-test-artifact-overwrite }}''',
@@ -957,6 +985,8 @@ jobs:
               r'''${{ inputs.pre-test-unit-runner }}''',
               r'''${{ inputs.pre-test-unit-docker-login }}''',
               r'''${{ inputs.pre-test-unit-qemu-install }}''',
+              r'''${{ inputs.pre-docker-version || inputs.docker-version }}''',
+              r'''${{ inputs.pre-compose-version || inputs.compose-version }}''',
               r'''${{ inputs.pre-test-unit-artifact-name }}''',
               r'''${{ inputs.pre-test-unit-artifact-path }}''',
               r'''${{ inputs.pre-test-unit-artifact-overwrite }}''',
@@ -970,6 +1000,8 @@ jobs:
               r'''${{ inputs.pre-test-coverage-runner }}''',
               r'''${{ inputs.pre-test-coverage-docker-login }}''',
               r'''${{ inputs.pre-test-coverage-qemu-install }}''',
+              r'''${{ inputs.pre-docker-version || inputs.docker-version }}''',
+              r'''${{ inputs.pre-compose-version || inputs.compose-version }}''',
               r'''${{ inputs.pre-test-coverage-artifact-name }}''',
               r'''${{ inputs.pre-test-coverage-artifact-path }}''',
               r'''${{ inputs.pre-test-coverage-artifact-overwrite }}''',
@@ -983,6 +1015,8 @@ jobs:
               r'''${{ inputs.pre-test-integration-runner }}''',
               r'''${{ inputs.pre-test-integration-docker-login }}''',
               r'''${{ inputs.pre-test-integration-qemu-install }}''',
+              r'''${{ inputs.pre-docker-version || inputs.docker-version }}''',
+              r'''${{ inputs.pre-compose-version || inputs.compose-version }}''',
               r'''${{ inputs.pre-test-integration-artifact-name }}''',
               r'''${{ inputs.pre-test-integration-artifact-path }}''',
               r'''${{ inputs.pre-test-integration-artifact-overwrite }}''',
@@ -996,6 +1030,8 @@ jobs:
               r'''${{ inputs.pre-test-e2e-runner }}''',
               r'''${{ inputs.pre-test-e2e-docker-login }}''',
               r'''${{ inputs.pre-test-e2e-qemu-install }}''',
+              r'''${{ inputs.pre-docker-version || inputs.docker-version }}''',
+              r'''${{ inputs.pre-compose-version || inputs.compose-version }}''',
               r'''${{ inputs.pre-test-e2e-artifact-name }}''',
               r'''${{ inputs.pre-test-e2e-artifact-path }}''',
               r'''${{ inputs.pre-test-e2e-artifact-overwrite }}''',
@@ -1021,7 +1057,7 @@ jobs:
 
           matrix = []
 
-          def add_step(name, command, runner, docker_login, qemu_install, artifact_name, artifact_path, artifact_overwrite, artifact_if_no_files_found, artifact_retention_days):
+          def add_step(name, command, runner, docker_login, qemu_install, docker_version, compose_version, artifact_name, artifact_path, artifact_overwrite, artifact_if_no_files_found, artifact_retention_days):
               if command:
                   matrix.append({
                       "name": name,
@@ -1029,6 +1065,8 @@ jobs:
                       "runner": runner,
                       "docker-login": docker_login,
                       "qemu-install": qemu_install,
+                      "docker-version": docker_version,
+                      "compose-version": compose_version,
                       "artifact-name": artifact_name,
                       "artifact-path": artifact_path,
                       "artifact-overwrite": artifact_overwrite,
@@ -1042,6 +1080,8 @@ jobs:
               r'''${{ inputs.post-checks-runner }}''',
               r'''${{ inputs.post-checks-docker-login }}''',
               r'''${{ inputs.post-checks-qemu-install }}''',
+              r'''${{ inputs.post-docker-version || inputs.docker-version }}''',
+              r'''${{ inputs.post-compose-version || inputs.compose-version }}''',
               r'''${{ inputs.post-checks-artifact-name }}''',
               r'''${{ inputs.post-checks-artifact-path }}''',
               r'''${{ inputs.post-checks-artifact-overwrite }}''',
@@ -1055,6 +1095,8 @@ jobs:
               r'''${{ inputs.post-lint-runner }}''',
               r'''${{ inputs.post-lint-docker-login }}''',
               r'''${{ inputs.post-lint-qemu-install }}''',
+              r'''${{ inputs.post-docker-version || inputs.docker-version }}''',
+              r'''${{ inputs.post-compose-version || inputs.compose-version }}''',
               r'''${{ inputs.post-lint-artifact-name }}''',
               r'''${{ inputs.post-lint-artifact-path }}''',
               r'''${{ inputs.post-lint-artifact-overwrite }}''',
@@ -1068,6 +1110,8 @@ jobs:
               r'''${{ inputs.post-test-runner }}''',
               r'''${{ inputs.post-test-docker-login }}''',
               r'''${{ inputs.post-test-qemu-install }}''',
+              r'''${{ inputs.post-docker-version || inputs.docker-version }}''',
+              r'''${{ inputs.post-compose-version || inputs.compose-version }}''',
               r'''${{ inputs.post-test-artifact-name }}''',
               r'''${{ inputs.post-test-artifact-path }}''',
               r'''${{ inputs.post-test-artifact-overwrite }}''',
@@ -1081,6 +1125,8 @@ jobs:
               r'''${{ inputs.post-test-unit-runner }}''',
               r'''${{ inputs.post-test-unit-docker-login }}''',
               r'''${{ inputs.post-test-unit-qemu-install }}''',
+              r'''${{ inputs.post-docker-version || inputs.docker-version }}''',
+              r'''${{ inputs.post-compose-version || inputs.compose-version }}''',
               r'''${{ inputs.post-test-unit-artifact-name }}''',
               r'''${{ inputs.post-test-unit-artifact-path }}''',
               r'''${{ inputs.post-test-unit-artifact-overwrite }}''',
@@ -1094,6 +1140,8 @@ jobs:
               r'''${{ inputs.post-test-coverage-runner }}''',
               r'''${{ inputs.post-test-coverage-docker-login }}''',
               r'''${{ inputs.post-test-coverage-qemu-install }}''',
+              r'''${{ inputs.post-docker-version || inputs.docker-version }}''',
+              r'''${{ inputs.post-compose-version || inputs.compose-version }}''',
               r'''${{ inputs.post-test-coverage-artifact-name }}''',
               r'''${{ inputs.post-test-coverage-artifact-path }}''',
               r'''${{ inputs.post-test-coverage-artifact-overwrite }}''',
@@ -1107,6 +1155,8 @@ jobs:
               r'''${{ inputs.post-test-integration-runner }}''',
               r'''${{ inputs.post-test-integration-docker-login }}''',
               r'''${{ inputs.post-test-integration-qemu-install }}''',
+              r'''${{ inputs.post-docker-version || inputs.docker-version }}''',
+              r'''${{ inputs.post-compose-version || inputs.compose-version }}''',
               r'''${{ inputs.post-test-integration-artifact-name }}''',
               r'''${{ inputs.post-test-integration-artifact-path }}''',
               r'''${{ inputs.post-test-integration-artifact-overwrite }}''',
@@ -1120,6 +1170,8 @@ jobs:
               r'''${{ inputs.post-test-e2e-runner }}''',
               r'''${{ inputs.post-test-e2e-docker-login }}''',
               r'''${{ inputs.post-test-e2e-qemu-install }}''',
+              r'''${{ inputs.post-docker-version || inputs.docker-version }}''',
+              r'''${{ inputs.post-compose-version || inputs.compose-version }}''',
               r'''${{ inputs.post-test-e2e-artifact-name }}''',
               r'''${{ inputs.post-test-e2e-artifact-path }}''',
               r'''${{ inputs.post-test-e2e-artifact-overwrite }}''',
@@ -1197,6 +1249,18 @@ jobs:
         uses: extractions/setup-just@v4
         with:
           just-version: ${{ inputs.just-version }}
+
+      - name: Setup Docker
+        if: matrix.pre-steps.docker-version != ''
+        uses: docker/setup-docker-action@v5
+        with:
+          version: ${{ matrix.pre-steps.docker-version }}
+
+      - name: Setup Docker Compose
+        if: matrix.pre-steps.compose-version != ''
+        uses: docker/setup-compose-action@v2
+        with:
+          version: ${{ matrix.pre-steps.compose-version }}
 
       - name: Login to registry
         if: matrix.pre-steps.docker-login == 'true'
@@ -1286,6 +1350,18 @@ jobs:
         uses: extractions/setup-just@v4
         with:
           just-version: ${{ inputs.just-version }}
+
+      - name: Setup Docker
+        if: matrix.post-steps.docker-version != ''
+        uses: docker/setup-docker-action@v5
+        with:
+          version: ${{ matrix.post-steps.docker-version }}
+
+      - name: Setup Docker Compose
+        if: matrix.post-steps.compose-version != ''
+        uses: docker/setup-compose-action@v2
+        with:
+          version: ${{ matrix.post-steps.compose-version }}
 
       - name: Login to registry
         if: matrix.post-steps.docker-login == 'true'
