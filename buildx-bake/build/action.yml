@@ -29,6 +29,14 @@ inputs:
   registry-image:
     description: 'Container registry + image prefix'
     required: false
+  docker-version:
+    description: 'Docker CE version. (e.g, v24.0.9)'
+    required: false
+    default: ''
+  compose-version:
+    description: 'Compose version. (eg. v2.32.4)'
+    required: false
+    default: ''
   free-disk-space:
     description: 'Free disk space before build'
     required: false
@@ -55,6 +63,18 @@ runs:
       run: |
         platform=${{ matrix.platform }}
         echo "PLATFORM_PAIR=${platform//\//-}" >> $GITHUB_ENV
+
+    - name: Setup Docker
+      uses: docker/setup-docker-action@v5
+      if: ${{ inputs.docker-version != '' }}
+      with:
+        version: ${{ inputs.docker-version }}
+
+    - name: Setup Docker Compose
+      uses: docker/setup-compose-action@v2
+      if: ${{ inputs.compose-version != '' }}
+      with:
+        version: ${{ inputs.compose-version }}
 
     - name: Free Disk Space (Ubuntu)
       uses: jlumbroso/free-disk-space@v1.3.1
