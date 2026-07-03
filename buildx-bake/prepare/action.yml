@@ -14,6 +14,14 @@ inputs:
   registry-image:
     description: 'Container registry + image prefix (e.g. ghcr.io/org/repo)'
     required: false
+  docker-version:
+    description: 'Docker CE version. (e.g, v24.0.9)'
+    required: false
+    default: ''
+  compose-version:
+    description: 'Compose version. (eg. v2.32.4)'
+    required: false
+    default: ''
 outputs:
   matrix:
     description: 'JSON array of platforms'
@@ -26,6 +34,18 @@ runs:
       id: lowercase_registry_image
       run: |
         echo "registry-image=${{ inputs.registry-image }}" | tr '[:upper:]' '[:lower:]' >> "$GITHUB_OUTPUT"
+
+    - name: Setup Docker
+      uses: docker/setup-docker-action@v5
+      if: ${{ inputs.docker-version != '' }}
+      with:
+        version: ${{ inputs.docker-version }}
+
+    - name: Setup Docker Compose
+      uses: docker/setup-compose-action@v2
+      if: ${{ inputs.compose-version != '' }}
+      with:
+        version: ${{ inputs.compose-version }}
 
     - name: Create matrix
       id: platforms

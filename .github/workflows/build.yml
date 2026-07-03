@@ -136,6 +136,16 @@ on:
         required: false
         default: false
         type: boolean
+      docker-version:
+        description: 'Docker CE version. (e.g, v24.0.9)'
+        required: false
+        default: ''
+        type: string
+      compose-version:
+        description: 'Compose version. (eg. v2.32.4)'
+        required: false
+        default: ''
+        type: string
       prepare-command:
         description: 'The prepare command to run for preparing the build (pre-steps)'
         required: false
@@ -1134,6 +1144,8 @@ jobs:
         with:
           bake-target: ${{ inputs.bake-target }}
           registry-image: ${{ inputs.registry-image }}
+          docker-version: ${{ inputs.docker-version }}
+          compose-version: ${{ inputs.compose-version }}
           meta-labels:
             ${{ inputs.meta-labels }}
           meta-tags: |
@@ -1229,6 +1241,8 @@ jobs:
           registry-username: ${{ inputs.registry-username }}
           registry-password: ${{ secrets.registry-password || secrets.GITHUB_TOKEN }}
           free-disk-space: ${{ inputs.free-disk-space }}
+          docker-version: ${{ inputs.docker-version }}
+          compose-version: ${{ inputs.compose-version }}
 
   image-push:
     name: Push Image

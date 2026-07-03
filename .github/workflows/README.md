@@ -33,6 +33,8 @@ jobs:
       bake-target: build
 ```
 
+Set `docker-version` or `compose-version` to install a specific Docker CE or Docker Compose release before the Bake prepare and build actions run. Leave them empty to use the runner defaults.
+
 ## Go Lint
 
 File: `golangci-lint.yml`
