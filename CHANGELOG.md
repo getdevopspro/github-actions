@@ -1,3 +1,11 @@
+## [v8.4.0](https://github.com/getdevopspro/github-actions/compare/v8.3.14..v8.4.0) - 2026-07-03
+
+### Features
+
+- _(buildx-bake)_ Add optional Docker and Compose setup versions ([`2eea79e`](https://github.com/getdevopspro/github-actions/commit/2eea79e9900a1a59c6dc3a42d6cea495938c64e3))
+- _(buildx-bake)_ Add Docker and Compose setup passthroughs ([`abda965`](https://github.com/getdevopspro/github-actions/commit/abda965f4e8ef068e9bdb0ac3f3703d9cf8042e7))
+- _(build)_ Support Docker versions in pre and post jobs ([`65aec6c`](https://github.com/getdevopspro/github-actions/commit/65aec6c9a4515a4200c05872ec14d158c9800f1d))
+
 ## [v8.3.14](https://github.com/getdevopspro/github-actions/compare/v8.3.13..v8.3.14) - 2026-06-26
 
 ### Bug Fixes
