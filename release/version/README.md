@@ -7,7 +7,7 @@ Use this action when a workflow needs shared version detection and semantic vers
 ```yaml
 steps:
   - id: version
-    uses: clean-botix/github-actions/release/version@v2.5.1
+    uses: clean-botix/github-actions/release/version@v3.0.0
     with:
       version-previous: auto
       version-next: auto

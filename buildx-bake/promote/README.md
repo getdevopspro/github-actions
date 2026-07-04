@@ -6,7 +6,7 @@ Use this action when a build has already produced immutable manifest digests and
 
 ```yaml
 steps:
-  - uses: clean-botix/github-actions/buildx-bake/promote@v2.5.1
+  - uses: clean-botix/github-actions/buildx-bake/promote@v3.0.0
     with:
       version: 1.2.3
       image-digests: ${{ needs.build.outputs.image-digests }}

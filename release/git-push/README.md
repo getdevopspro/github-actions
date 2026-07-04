@@ -6,7 +6,7 @@ Use this action near the end of a release workflow after version files or change
 
 ```yaml
 steps:
-  - uses: clean-botix/github-actions/release/git-push@v2.5.1
+  - uses: clean-botix/github-actions/release/git-push@v3.0.0
     with:
       version: 1.2.3
       git-add-files: CHANGELOG.md Makefile
