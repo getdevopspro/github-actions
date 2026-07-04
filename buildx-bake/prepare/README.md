@@ -10,7 +10,7 @@ Set `docker-version` or `compose-version` to install a specific Docker CE or Doc
 steps:
   - uses: actions/checkout@v6
   - id: prepare
-    uses: getdevopspro/github-actions/buildx-bake/prepare@v8.3.7
+    uses: clean-botix/github-actions/buildx-bake/prepare@v2.5.1
     with:
       bake-target: build
       registry-image: ghcr.io/example/project

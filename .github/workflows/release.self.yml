@@ -3,8 +3,7 @@ name: Release
 on:
   push:
     branches:
-      - main
-      - master
+      - cleanbotix
     paths-ignore:
       - "**.md"
 
@@ -26,8 +25,8 @@ jobs:
     with:
       version-makefile: Makefile
       git-add-files: Makefile
-      git-user-name: getdevopspro-cibot
-      git-user-email: 203600057+getdevopspro-cibot@users.noreply.github.com
+      git-user-name: cleanbotix-cibot
+      git-user-email: 286146176+cleanbotix-cibot@users.noreply.github.com
       make-target-pre-push: release-version
       changelog-enabled: true
       update-release-enabled: true

@@ -1,6 +1,8 @@
 # Reusable Workflows
 
-These workflows are intended to be called with `workflow_call` from another repository or from another workflow in this repository. Use versioned references such as `@v8.3.7` when calling them from external repositories.
+These private reusable workflows are intended to be called with `workflow_call` from Clean-Botix OptimusClean repositories or from another workflow in this repository. Use stable versioned references when calling them.
+
+This catalog documents the reusable workflows that exist so far. The repository is also the general home for future custom reusable OptimusClean workflow patterns.
 
 `release.self.yml` is intentionally omitted from this catalog because it is this repository's self-release workflow.
 
@@ -13,7 +15,7 @@ Wraps the `all-green` composite action as a reusable workflow. Use it when a rep
 ```yaml
 jobs:
   all-green:
-    uses: getdevopspro/github-actions/.github/workflows/all-green.yml@v8.3.7
+    uses: clean-botix/github-actions/.github/workflows/all-green.yml@v2.5.1
 ```
 
 ## Build
@@ -25,7 +27,7 @@ Calculates a build version, optionally updates version files, runs configurable 
 ```yaml
 jobs:
   build:
-    uses: getdevopspro/github-actions/.github/workflows/build.yml@v8.3.7
+    uses: clean-botix/github-actions/.github/workflows/build.yml@v2.5.1
     secrets:
       registry-password: ${{ secrets.GITHUB_TOKEN }}
     with:
@@ -46,7 +48,7 @@ Runs GolangCI-Lint with a pinned Go setup. Use it for Go repositories that want 
 ```yaml
 jobs:
   lint:
-    uses: getdevopspro/github-actions/.github/workflows/golangci-lint.yml@v8.3.7
+    uses: clean-botix/github-actions/.github/workflows/golangci-lint.yml@v2.5.1
 ```
 
 ## Create Pull Request
@@ -58,7 +60,7 @@ Checks out a target repository, optionally installs `just`, runs a caller-provid
 ```yaml
 jobs:
   sync:
-    uses: getdevopspro/github-actions/.github/workflows/pr-create.yml@v8.3.7
+    uses: clean-botix/github-actions/.github/workflows/pr-create.yml@v2.5.1
     secrets:
       token: ${{ secrets.REPO_TOKEN }}
     with:
@@ -76,11 +78,70 @@ Calculates the release version, updates supported version files, optionally down
 ```yaml
 jobs:
   release:
-    uses: getdevopspro/github-actions/.github/workflows/release.yml@v8.3.7
+    uses: clean-botix/github-actions/.github/workflows/release.yml@v2.5.1
     secrets:
       checkout-token: ${{ secrets.REPO_TOKEN }}
     with:
       version-makefile: Makefile
       git-add-files: Makefile
       changelog-enabled: true
+```
+
+## Notify Slack
+
+File: `notify-slack.yml`
+
+Sends a Slack notification for either an OptimusClean pull request build or a release build. The caller selects `notification-type: pr` or `notification-type: release`, passes the upstream job status, and provides the Slack incoming webhook as a secret.
+
+```yaml
+jobs:
+  notify:
+    uses: clean-botix/github-actions/.github/workflows/notify-slack.yml@v2.5.1
+    secrets:
+      slack-webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
+    with:
+      notification-type: pr
+      job-status: ${{ needs.build.result }}
+```
+
+## Robot Test Check
+
+File: `test-robot-check.yml`
+
+Checks OptimusClean pull request labels and fails when robot testing is required but the matching done label is missing. It wraps the shared `clean-botix/github-actions/test/label/check` action with OptimusClean robot-test defaults.
+
+```yaml
+jobs:
+  robot-test-check:
+    uses: clean-botix/github-actions/.github/workflows/test-robot-check.yml@v2.5.1
+    secrets:
+      token: ${{ secrets.GITHUB_TOKEN }}
+```
+
+## Robot Test Label
+
+File: `test-robot-label.yml`
+
+Handles robot-test label events. When the done label is added, it posts confirmation through the shared label action and reruns the configured pull request workflow job so branch protection can re-evaluate the robot-test check.
+
+```yaml
+jobs:
+  robot-test-label:
+    uses: clean-botix/github-actions/.github/workflows/test-robot-label.yml@v2.5.1
+    secrets:
+      token: ${{ secrets.GITHUB_TOKEN }}
+```
+
+## Remove Robot Test
+
+File: `test-robot-remove.yml`
+
+Removes the robot-test done label when new commits are pushed to a pull request, ensuring robot testing is repeated after the PR content changes.
+
+```yaml
+jobs:
+  robot-test-remove:
+    uses: clean-botix/github-actions/.github/workflows/test-robot-remove.yml@v2.5.1
+    secrets:
+      token: ${{ secrets.GITHUB_TOKEN }}
 ```

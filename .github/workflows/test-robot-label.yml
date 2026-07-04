@@ -1,0 +1,58 @@
+name: Robot Test Label
+
+on:
+  workflow_call:
+    inputs:
+      label-test-robot-done:
+        description: 'Label name indicating the PR has been test-robot-done'
+        type: string
+        required: false
+        default: 'test-robot-done'
+      label-test-robot-needed:
+        description: 'Label name indicating the PR needs robot testing'
+        type: string
+        required: false
+        default: 'test-robot-needed'
+      post-comment:
+        description: 'Whether to post a comment on the PR'
+        required: false
+        default: true
+        type: boolean
+    secrets:
+      token:
+        description: 'GitHub token or PAT'
+        required: false
+
+permissions:
+  contents: read
+  pull-requests: write
+  actions: write
+
+jobs:
+  test-robot-label:
+    if: >
+      github.event.label.name == inputs['label-test-robot-done'] ||
+      github.event.label.name == inputs['label-test-robot-needed']
+    name: Robot Test Label
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Robot Test Done Label
+        if: >
+          github.event.action == 'labeled' &&
+          github.event.label.name == inputs['label-test-robot-done']
+        uses: clean-botix/github-actions/test/label/done/added@v2.5.1
+        with:
+          label-done: ${{ inputs.label-test-robot-done }}
+          label-needed: ${{ inputs.label-test-robot-needed }}
+          test-name: Robot
+          post-comment: ${{ inputs.post-comment }}
+          token: ${{ secrets.token }}
+
+      - name: Rerun pull-request workflow
+        uses: clean-botix/github-actions/pr/job-rerun@v2.5.1
+        with:
+          workflow-id: pull-request.yml
+          token: ${{ secrets.token }}
+          job-name: "Job / Robot Test Check"

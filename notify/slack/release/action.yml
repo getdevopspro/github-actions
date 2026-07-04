@@ -1,0 +1,58 @@
+name: Notify Slack - Release
+description: Send a Slack notification for a release build result using an inline YAML payload.
+
+inputs:
+  job-status:
+    description: Status of the upstream job (success, failure, cancelled, etc.)
+    required: true
+  slack-webhook-url:
+    description: Slack incoming webhook URL
+    required: true
+  version:
+    description: Version that was built
+    required: false
+    default: ''
+  artifact-link-name:
+    description: Optional label for an artifact link to include in the Slack message (e.g. "Build Report"). Requires artifact-link-url.
+    required: false
+    default: ''
+  artifact-link-url:
+    description: Optional URL for an artifact link. Requires artifact-link-name.
+    required: false
+    default: ''
+
+runs:
+  using: composite
+  steps:
+    - name: Post message to Slack
+      uses: slackapi/slack-github-action@v3
+      with:
+        webhook: ${{ inputs.slack-webhook-url }}
+        webhook-type: incoming-webhook
+        payload-templated: true
+        payload: |
+          blocks:
+            - type: header
+              text:
+                type: plain_text
+                text: "${{ inputs.job-status == 'success' && '✅' || '❌' }} Release Build - ${{ inputs.job-status == 'success' && 'SUCCESS' || 'FAILED' }}"
+                emoji: true
+            - type: section
+              fields:
+                - type: mrkdwn
+                  text: "*Version*\n`${{ inputs.version != '' && inputs.version || 'none' }}`"
+            - type: section
+              fields:
+                - type: mrkdwn
+                  text: "*Repository*\n`${{ github.repository }}`"
+                - type: mrkdwn
+                  text: "*Author*\n`${{ github.actor }}`"
+                - type: mrkdwn
+                  text: "*Branch*\n`${{ github.ref }}`"
+                - type: mrkdwn
+                  text: "*Commit SHA*\n`${{ github.sha }}`"
+            - type: context
+              elements:
+                - type: mrkdwn
+                  text: "<https://github.com/${{ github.repository }}/commits/${{ github.sha }}|View Commit>  |  <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Run Report>"
+                ${{ (inputs.artifact-link-name != '' && inputs.artifact-link-url != '') && format('- type: mrkdwn{0}                  text: "<{1}|{2}>"', fromJSON('"\n"'), inputs.artifact-link-url, inputs.artifact-link-name) || '' }}

@@ -1,6 +1,9 @@
-VERSION ?= 8.4.0
+VERSION ?= 3.0.0
 WORKFLOW_FOLDER := .github/workflows
-VERSION_REF_FILES := $(WORKFLOW_FOLDER)/*.y*ml README.md
+WORKFLOW_REF_FILES := $(filter-out %.self.yml %.self.yaml,$(wildcard $(WORKFLOW_FOLDER)/*.yml $(WORKFLOW_FOLDER)/*.yaml))
+README_FILES := $(shell find . -path './.git' -prune -o -name README.md -print)
+GIT_REMOTE_NAME ?= origin
+VERSION_REF_FILES := $(WORKFLOW_REF_FILES) $(README_FILES)
 ifneq (,$(findstring xterm,${TERM}))
 	RED          := $(shell tput -Txterm setaf 1)
 	GREEN        := $(shell tput -Txterm setaf 2)
@@ -19,7 +22,7 @@ endif
 release-version:
 	@echo -e "${LIGHTPURPLE}+ make target: $@${RESET}"
 	sed -i -E \
-		-e "s%(getdevopspro/github-actions[^[:space:]\`\"'<>]*)@v[0-9A-Za-z._-]+%\1@v$(VERSION)%g" \
+		-e "s%(clean-botix/github-actions[^[:space:]\`\"'<>]*)@v[0-9A-Za-z._-]+%\1@v$(VERSION)%g" \
 		$(VERSION_REF_FILES)
 	git add $(VERSION_REF_FILES)
 
@@ -28,6 +31,6 @@ promote: release-version
 	git add Makefile
 	git commit -m "chore: bump version to v$(VERSION)" -m "[skip ci]"
 	git tag v$(VERSION)
-	git push origin HEAD v$(VERSION)
+	git push $(GIT_REMOTE_NAME) HEAD v$(VERSION)
 
 release: release-version promote

@@ -1,0 +1,58 @@
+name: Notify Slack
+
+on:
+  workflow_call:
+    inputs:
+      job-status:
+        description: Status of the upstream job (success, failure, cancelled, etc.)
+        required: true
+        type: string
+      notification-type:
+        description: Type of notification to send (pr or release)
+        required: true
+        type: string
+      version:
+        description: Version that was built (for release notifications)
+        required: false
+        type: string
+        default: ''
+      artifact-link-name:
+        description: Optional label for an artifact link to include in the Slack message (e.g. "Build Report"). Requires artifact-link-url.
+        required: false
+        type: string
+        default: ''
+      artifact-link-url:
+        description: Optional URL for an artifact link. Requires artifact-link-name.
+        required: false
+        type: string
+        default: ''
+    secrets:
+      slack-webhook-url:
+        description: Slack incoming webhook URL
+        required: true
+
+jobs:
+  notify:
+    name: Notify Slack
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Notify pr
+        if: ${{ inputs.notification-type == 'pr' }}
+        uses: clean-botix/github-actions/notify/slack/pr@v2.5.1
+        with:
+          job-status: ${{ inputs.job-status }}
+          slack-webhook-url: ${{ secrets.slack-webhook-url }}
+          artifact-link-name: ${{ inputs.artifact-link-name }}
+          artifact-link-url: ${{ inputs.artifact-link-url }}
+
+      - name: Notify release
+        if: ${{ inputs.notification-type == 'release' }}
+        uses: clean-botix/github-actions/notify/slack/release@v2.5.1
+        with:
+          job-status: ${{ inputs.job-status }}
+          slack-webhook-url: ${{ secrets.slack-webhook-url }}
+          version: ${{ inputs.version }}
+          artifact-link-name: ${{ inputs.artifact-link-name }}
+          artifact-link-url: ${{ inputs.artifact-link-url }}
