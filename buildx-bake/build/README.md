@@ -9,7 +9,7 @@ Set `docker-version` or `compose-version` to install a specific Docker CE or Doc
 ```yaml
 steps:
   - uses: actions/checkout@v6
-  - uses: clean-botix/github-actions/buildx-bake/build@v3.0.0
+  - uses: clean-botix/github-actions/buildx-bake/build@v3.1.0
     with:
       registry-password: ${{ secrets.GITHUB_TOKEN }}
       registry-image: ghcr.io/example/project

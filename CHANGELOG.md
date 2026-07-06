@@ -1,3 +1,9 @@
+## [v3.1.0](https://github.com/Clean-Botix/github-actions/compare/v3.0.0..v3.1.0) - 2026-07-06
+
+### Features
+
+- _(workflows)_ Enable build checkout lfs by default ([`c9afdf1`](https://github.com/Clean-Botix/github-actions/commit/c9afdf1654a597e7dfc7270214d744da0b8d09a4))
+
 ## [v8.4.0](https://github.com/clean-botix/github-actions/compare/v8.3.14..v8.4.0) - 2026-07-03
 
 ### Features

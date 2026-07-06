@@ -11,4 +11,4 @@ jobs:
       - uses: actions/checkout@v6
 
       - name: All Green
-        uses: clean-botix/github-actions/all-green@v3.0.0
+        uses: clean-botix/github-actions/all-green@v3.1.0
