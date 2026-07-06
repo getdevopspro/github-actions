@@ -1,3 +1,9 @@
+## [v8.5.0](https://github.com/getdevopspro/github-actions/compare/v8.4.0..v8.5.0) - 2026-07-06
+
+### Features
+
+- _(workflows)_ Enable build checkout lfs by default ([`8f60633`](https://github.com/getdevopspro/github-actions/commit/8f6063334d2999a7d8527f24dbec79017c63c81c))
+
 ## [v8.4.0](https://github.com/getdevopspro/github-actions/compare/v8.3.14..v8.4.0) - 2026-07-03
 
 ### Features
