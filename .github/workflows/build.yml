@@ -839,6 +839,11 @@ on:
         required: false
         type: boolean
         default: true
+      lfs:
+        description: 'Whether to download Git-LFS files during checkout'
+        required: false
+        default: true
+        type: boolean
       submodules:
         description: 'Whether to checkout submodules: true, false, or recursive'
         required: false
@@ -866,6 +871,7 @@ jobs:
         with:
           fetch-depth: ${{ inputs.fetch-depth }}
           fetch-tags: ${{ inputs.fetch-tags }}
+          lfs: ${{ inputs.lfs }}
           submodules: ${{ inputs.submodules }}
           token: ${{ secrets.checkout-token || secrets.GITHUB_TOKEN }}
 

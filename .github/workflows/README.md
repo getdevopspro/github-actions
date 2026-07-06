@@ -39,6 +39,8 @@ Set `docker-version` or `compose-version` to install a specific Docker CE or Doc
 
 Pre and post command jobs use those same versions by default. Set `pre-docker-version`, `pre-compose-version`, `post-docker-version`, or `post-compose-version` to override them for pre or post jobs.
 
+The Build workflow enables Git LFS downloads during checkout by default. Set `lfs: false` when the caller does not need Git LFS files.
+
 ## Go Lint
 
 File: `golangci-lint.yml`
