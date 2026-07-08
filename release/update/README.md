@@ -6,7 +6,7 @@ Use this action when release notes, artifacts, draft status, prerelease status, 
 
 ```yaml
 steps:
-  - uses: clean-botix/github-actions/release/update@v3.1.0
+  - uses: clean-botix/github-actions/release/update@v3.1.1
     with:
       tag: v1.2.3
       body: ${{ steps.changelog.outputs.content }}

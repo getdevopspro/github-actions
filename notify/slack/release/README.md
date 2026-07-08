@@ -7,7 +7,7 @@ Use this action when a Clean-Botix OptimusClean release workflow needs to report
 ```yaml
 steps:
   - uses: actions/checkout@v6
-  - uses: clean-botix/github-actions/notify/slack/release@v3.1.0
+  - uses: clean-botix/github-actions/notify/slack/release@v3.1.1
     with:
       job-status: ${{ job.status }}
       version: 1.2.3

@@ -9,7 +9,7 @@ When `previous-version` is `0.0.0` and that ref does not exist, the action treat
 ```yaml
 steps:
   - uses: actions/checkout@v6
-  - uses: clean-botix/github-actions/release/changelog@v3.1.0
+  - uses: clean-botix/github-actions/release/changelog@v3.1.1
     with:
       version: v1.2.3
       previous-version: v1.2.2

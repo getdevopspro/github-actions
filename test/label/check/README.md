@@ -6,7 +6,7 @@ Use this action as a required PR check for workflows where manual or external va
 
 ```yaml
 steps:
-  - uses: clean-botix/github-actions/test/label/check@v3.1.0
+  - uses: clean-botix/github-actions/test/label/check@v3.1.1
     with:
       label-needed: test-needed
       label-done: test-done

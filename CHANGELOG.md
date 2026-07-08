@@ -1,3 +1,9 @@
+## [v3.1.1](https://github.com/Clean-Botix/github-actions/compare/v3.1.0..v3.1.1) - 2026-07-08
+
+### Bug Fixes
+
+- _(buildx-bake)_ Verify hydrated LFS source before builds ([`0bd1b21`](https://github.com/Clean-Botix/github-actions/commit/0bd1b2184128a1556ec01713b898db8a94d14e07))
+
 ## [v3.1.0](https://github.com/Clean-Botix/github-actions/compare/v3.0.0..v3.1.0) - 2026-07-06
 
 ### Features
