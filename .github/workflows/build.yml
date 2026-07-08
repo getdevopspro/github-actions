@@ -1227,6 +1227,40 @@ jobs:
         shell: bash
         run: ${{ inputs.prepare-command }}
 
+      - name: Verify Git LFS checkout
+        if: inputs.lfs
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          tracked_lfs_files="$(git lfs ls-files --name-only)"
+          if [ -z "$tracked_lfs_files" ]; then
+            echo "No Git LFS files tracked."
+            exit 0
+          fi
+
+          echo "Git LFS tracked files:"
+          printf '%s\n' "$tracked_lfs_files"
+
+          git_lfs_pointer_header="version https://git-lfs.github.com/spec/v1"
+          unresolved_pointers="$(
+            printf '%s\n' "$tracked_lfs_files" | while IFS= read -r path; do
+              [ -f "$path" ] || continue
+              if head -n 1 "$path" | grep -Fxq "$git_lfs_pointer_header"; then
+                printf '%s\n' "$path"
+              fi
+            done
+          )"
+
+          if [ -n "$unresolved_pointers" ]; then
+            echo "::error::Git LFS pointer files remain in source:"
+            printf '%s\n' "$unresolved_pointers"
+            exit 1
+          fi
+
+          echo "Git LFS checkout verification passed."
+          echo "Tracked files are hydrated before image build."
+
       - name: Upload updated source
         uses: eviden-actions/upload-artifact@v2
         with:

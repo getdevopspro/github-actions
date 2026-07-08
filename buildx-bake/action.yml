@@ -114,6 +114,7 @@ runs:
       env:
         IMAGE_NAME: ${{ steps.lowercase_registry_image.outputs.registry-image }}
       with:
+        source: .
         files: |
           ./${{ inputs.bake-file }}
           ${{ steps.meta.outputs.bake-file }}

@@ -124,6 +124,7 @@ runs:
         NO_TAG: true
         PLATFORM_PAIR: ${{ env.PLATFORM_PAIR }}
       with:
+        source: .
         files: |
           ./${{ inputs.bake-file }}
           cwd://${{ runner.temp }}/bake-meta.json

@@ -6,6 +6,8 @@ Use this action inside a matrix job after `buildx-bake/prepare`. It downloads th
 
 Set `docker-version` or `compose-version` to install a specific Docker CE or Docker Compose release before disk cleanup and build setup. Leave them empty to use the runner defaults.
 
+The action runs `docker/bake-action` with `source: .`, so Bake uses the downloaded source artifact or checked-out workspace instead of refetching the repository through Docker's default Git context. Repositories that need Git LFS files should hydrate them before this action runs.
+
 ```yaml
 steps:
   - uses: actions/checkout@v6
