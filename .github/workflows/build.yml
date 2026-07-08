@@ -890,7 +890,7 @@ jobs:
 
       - name: Next release version
         id: release_version
-        uses: getdevopspro/github-actions/release/version@v8.5.0
+        uses: getdevopspro/github-actions/release/version@v8.5.1
         with:
           version-previous: ${{ inputs.version-previous }}
           version-next: ${{ inputs.version-next }}
@@ -898,7 +898,7 @@ jobs:
           version-tag-prefix: ${{ inputs.version-tag-prefix }}
 
       - name: Set version in file
-        uses: getdevopspro/github-actions/version-file@v8.5.0
+        uses: getdevopspro/github-actions/version-file@v8.5.1
         with:
           version: ${{ steps.release_version.outputs.version }}
           version-makefile: ${{ inputs.version-makefile }}
@@ -1196,7 +1196,7 @@ jobs:
 
       - name: Set image metadata and platform matrix
         id: prepare_image
-        uses: getdevopspro/github-actions/buildx-bake/prepare@v8.5.0
+        uses: getdevopspro/github-actions/buildx-bake/prepare@v8.5.1
         env:
           DOCKER_METADATA_PR_HEAD_SHA: true
         with:
@@ -1316,7 +1316,7 @@ jobs:
 
       - name: ${{ matrix.pre-steps.name }}
         id: command
-        uses: getdevopspro/github-actions/command@v8.5.0
+        uses: getdevopspro/github-actions/command@v8.5.1
         with:
           command: ${{ matrix.pre-steps.command }}
 
@@ -1336,7 +1336,7 @@ jobs:
         with:
           name: ${{ inputs.source-artifact-name }}
 
-      - uses: getdevopspro/github-actions/buildx-bake/build@v8.5.0
+      - uses: getdevopspro/github-actions/buildx-bake/build@v8.5.1
         with:
           bake-file: ${{ inputs.bake-file }}
           bake-target: ${{ inputs.bake-target }}
@@ -1363,7 +1363,7 @@ jobs:
         with:
           name: ${{ inputs.source-artifact-name }}
 
-      - uses: getdevopspro/github-actions/buildx-bake/merge@v8.5.0
+      - uses: getdevopspro/github-actions/buildx-bake/merge@v8.5.1
         id: merge
         with:
           registry-username: ${{ inputs.registry-username }}
@@ -1417,7 +1417,7 @@ jobs:
 
       - name: ${{ matrix.post-steps.name }}
         id: command
-        uses: getdevopspro/github-actions/command@v8.5.0
+        uses: getdevopspro/github-actions/command@v8.5.1
         with:
           command: ${{ matrix.post-steps.command }}
           artifact-name: ${{ matrix.post-steps.artifact-name }}

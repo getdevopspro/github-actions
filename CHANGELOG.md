@@ -1,3 +1,9 @@
+## [v8.5.1](https://github.com/getdevopspro/github-actions/compare/v8.5.0..v8.5.1) - 2026-07-08
+
+### Bug Fixes
+
+- _(buildx-bake)_ Verify hydrated LFS source before builds ([`aadcbaf`](https://github.com/getdevopspro/github-actions/commit/aadcbafa1902daec41c22b85d9fe0fca5be3b8a3))
+
 ## [v8.5.0](https://github.com/getdevopspro/github-actions/compare/v8.4.0..v8.5.0) - 2026-07-06
 
 ### Features

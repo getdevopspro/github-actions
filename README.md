@@ -50,7 +50,7 @@ Use versioned references when consuming this repository from another repo:
 ```yaml
 jobs:
   build:
-    uses: getdevopspro/github-actions/.github/workflows/build.yml@v8.5.0
+    uses: getdevopspro/github-actions/.github/workflows/build.yml@v8.5.1
     secrets:
       registry-password: ${{ secrets.GITHUB_TOKEN }}
     with:
@@ -63,7 +63,7 @@ Composite actions can also be used directly:
 ```yaml
 steps:
   - uses: actions/checkout@v6
-  - uses: getdevopspro/github-actions/all-green@v8.5.0
+  - uses: getdevopspro/github-actions/all-green@v8.5.1
 ```
 
 ## Directory Map
