@@ -6,9 +6,13 @@ Use this action when one workflow job should set up QEMU and Buildx, generate Do
 
 Set `docker-version` or `compose-version` to install a specific Docker CE or Docker Compose release before any Bake command runs. Leave them empty to use the runner defaults.
 
+The action runs `docker/bake-action` with `source: .`, so Bake uses the checked-out workspace instead of refetching the repository through Docker's default Git context. Repositories that need Git LFS files should hydrate them during checkout.
+
 ```yaml
 steps:
   - uses: actions/checkout@v6
+    with:
+      lfs: true
   - uses: getdevopspro/github-actions/buildx-bake@v8.3.7
     with:
       meta-tags: type=sha

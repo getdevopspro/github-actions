@@ -39,6 +39,8 @@ Pre and post command jobs use those same versions by default. Set `pre-docker-ve
 
 The Build workflow enables Git LFS downloads during checkout by default. Set `lfs: false` when the caller does not need Git LFS files.
 
+When `lfs` is enabled, the workflow prints the tracked LFS files and fails before image build if any checked-out file is still an unresolved LFS pointer. Image builds use the uploaded source artifact as a local path context, so the hydrated checkout is what gets baked into the image.
+
 ## Go Lint
 
 File: `golangci-lint.yml`
