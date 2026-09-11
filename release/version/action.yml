@@ -48,7 +48,7 @@ runs:
 
     - name: Next release version
       id: release_version
-      uses: getdevopspro/jx-release-version@dev
+      uses: jenkins-x-plugins/jx-release-version@v2.10.7
       with:
         previous-version: ${{ steps.resolve_previous_version.outputs.previous-version }}
         next-version: ${{ inputs.version-next }}
