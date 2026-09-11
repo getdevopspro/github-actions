@@ -7,5 +7,5 @@ Use this action as a final PR gate after the repository has configured its requi
 ```yaml
 steps:
   - uses: actions/checkout@v6
-  - uses: clean-botix/github-actions/all-green@v3.1.1
+  - uses: clean-botix/github-actions/all-green@v4.0.0
 ```

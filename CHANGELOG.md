@@ -1,3 +1,13 @@
+## [v4.0.0](https://github.com/clean-botix/github-actions/compare/v3.1.1..v4.0.0) - 2026-09-11
+
+### Features
+
+- _(release)_ [**breaking**] Add optional CalVer versioning ([`ce97266`](https://github.com/clean-botix/github-actions/commit/ce9726651d80470c76dfb97ec01995c08df68e73))
+
+### Miscellaneous Tasks
+
+- _(version)_ Update action ref and version ([`6f835c4`](https://github.com/clean-botix/github-actions/commit/6f835c42d600d0e02521620c2e874bcd0baa74b7))
+
 ## [v3.1.1](https://github.com/Clean-Botix/github-actions/compare/v3.1.0..v3.1.1) - 2026-07-08
 
 ### Bug Fixes
