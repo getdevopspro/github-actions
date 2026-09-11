@@ -48,7 +48,7 @@ See [.github/workflows/README.md](.github/workflows/README.md) for the reusable 
 
 Use versioned references when consuming this repository from another repo:
 
-The Build and Release workflows accept `versioning-strategy: semver` (default) or `calver`. CalVer follows the `usage-syncer/justfile` UTC `YYYY.M.PATCH` release calculation used as the reference for `optimusclean-dev`; see the [CalVer action](release/version/calver/README.md) for tag selection and output formatting.
+The Build and Release workflows accept `version-strategy: semver` (default) or `calver`. CalVer follows the `usage-syncer/justfile` UTC `YYYY.M.PATCH` release calculation used as the reference for `optimusclean-dev`; see the [CalVer action](release/version/calver/README.md) for tag selection and output formatting.
 
 The former `release/version` composite action moved to `release/version/semver`. Direct action callers must use the new path when upgrading to a release containing this change. In both the action and reusable workflows, rename `version-previous` to `version-semver-previous` and `version-next` to `version-semver-next`; the old input names are no longer accepted. Reusable workflow paths and SemVer defaults are unchanged. Strategy-specific inputs use `version-semver-` or `version-calver-` prefixes, while settings shared by both strategies retain their generic names.
 

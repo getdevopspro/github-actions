@@ -20,7 +20,7 @@ on:
         description: 'JSON with all merged image manifest digests'
         value: ${{ jobs.image-push.outputs.image-digests }}
     inputs:
-      versioning-strategy:
+      version-strategy:
         description: 'Versioning strategy: semver or calver'
         required: false
         default: 'semver'
@@ -873,12 +873,12 @@ jobs:
       - name: Validate versioning strategy
         shell: bash
         env:
-          VERSIONING_STRATEGY: ${{ inputs.versioning-strategy }}
+          VERSIONING_STRATEGY: ${{ inputs.version-strategy }}
         run: |
           set -euo pipefail
           case "${VERSIONING_STRATEGY}" in
             semver|calver) ;;
-            *) echo '::error::versioning-strategy must be semver or calver' >&2; exit 1 ;;
+            *) echo '::error::version-strategy must be semver or calver' >&2; exit 1 ;;
           esac
 
       - name: Checkout repository
@@ -906,7 +906,7 @@ jobs:
 
       - name: Next semantic version
         id: release_version_semver
-        if: inputs.versioning-strategy == 'semver'
+        if: inputs.version-strategy == 'semver'
         uses: $/release/version/semver
         with:
           version-semver-previous: ${{ inputs.version-semver-previous }}
@@ -916,7 +916,7 @@ jobs:
 
       - name: Next calendar version
         id: release_version_calver
-        if: inputs.versioning-strategy == 'calver'
+        if: inputs.version-strategy == 'calver'
         uses: $/release/version/calver
         with:
           version-output-format: ${{ inputs.version-output-format }}
