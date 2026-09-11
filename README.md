@@ -42,7 +42,8 @@ See [.github/workflows/README.md](.github/workflows/README.md) for the reusable 
 - [Release Changelog](release/changelog/README.md) - generates and stages a git-cliff changelog.
 - [Release Git Push](release/git-push/README.md) - commits release changes, tags, and pushes.
 - [Release Update](release/update/README.md) - creates or updates a GitHub release.
-- [Release Version](release/version/README.md) - resolves previous and next semantic versions.
+- [Release Version (SemVer)](release/version/semver/README.md) - resolves previous and next semantic versions.
+- [Release Version (CalVer)](release/version/calver/README.md) - calculates UTC calendar versions from Git release tags.
 - [Test Label Check](test/label/check/README.md) - enforces required manual test labels.
 - [Test Done Label Added](test/label/done/added/README.md) - posts confirmation when a test-done label is present.
 - [Test Done Label Remove](test/label/done/remove/README.md) - removes test-done when new commits require retesting.
@@ -51,6 +52,10 @@ See [.github/workflows/README.md](.github/workflows/README.md) for the reusable 
 ## Common Entry Points
 
 Use versioned references when consuming this repository from Clean-Botix OptimusClean repositories.
+
+The Build and Release workflows accept `versioning-strategy: semver` (default) or `calver`. CalVer follows the `usage-syncer/justfile` UTC `YYYY.M.PATCH` release calculation used as the reference for `optimusclean-dev`; see the [CalVer action](release/version/calver/README.md) for tag selection and output formatting.
+
+The former `release/version` composite action moved to `release/version/semver`. Direct action callers must use the new path when upgrading to a release containing this change. In both the action and reusable workflows, rename `version-previous` to `version-semver-previous` and `version-next` to `version-semver-next`; the old input names are no longer accepted. Reusable workflow paths and SemVer defaults are unchanged. Strategy-specific inputs use `version-semver-` or `version-calver-` prefixes, while settings shared by both strategies retain their generic names.
 
 ```yaml
 jobs:
@@ -101,3 +106,7 @@ steps:
 The repository publishes versioned semantic version tags for internal consumers. Update Clean-Botix OptimusClean consumers to a stable tag instead of a moving branch. Run `make release-version VERSION=<version>` when bumping this repository so local `clean-botix/github-actions` references in workflows and README files stay aligned.
 
 Keep new actions and workflows small, parameterized, and documented around OptimusClean project needs. Do not place webhook URLs, tokens, private repository identifiers, internal channel names, or operational secrets in examples or committed files.
+
+Run `make test-version` for local version-calculation regression tests. They require Python 3, Bash, Git, and GNU `sort`, and use temporary repositories without contacting external services.
+
+For workflow lint, actionlint currently [does not recognize GitHub's `$/` references](https://github.com/rhysd/actionlint/issues/711). Until supported, use `actionlint -ignore 'specifying action "\$/release/version/(semver|calver)" in invalid format because ref is missing'` and verify those two action paths locally.

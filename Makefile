@@ -34,3 +34,7 @@ promote: release-version
 	git push $(GIT_REMOTE_NAME) HEAD v$(VERSION)
 
 release: release-version promote
+
+.PHONY: test-version
+test-version:
+	python3 -B -m unittest discover -s tests -p 'test_release_version.py' -v

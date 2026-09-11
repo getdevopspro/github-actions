@@ -34,18 +34,23 @@ on:
         description: 'The files to add to git'
         required: false
         type: string
-      version-previous:
-        description: 'The strategy to detect the previous version: auto, from-tag, from-file or manual'
+      versioning-strategy:
+        description: 'Versioning strategy: semver or calver'
+        required: false
+        default: 'semver'
+        type: string
+      version-semver-previous:
+        description: 'SemVer only: strategy to detect the previous version: auto, from-tag, from-file or manual'
         required: false
         default: 'auto'
         type: string
-      version-next:
-        description: 'The strategy to calculate the next version: auto, semantic, from-file, increment or manual'
+      version-semver-next:
+        description: 'SemVer only: strategy to calculate the next version: auto, semantic, from-file, increment or manual'
         required: false
         default: 'auto'
         type: string
       version-output-format:
-        description: 'The output format of the next version'
+        description: 'Output template; CalVer maps {{.Major}}, {{.Minor}}, and {{.Patch}} to year, month, and patch'
         required: false
         default: '{{.Major}}.{{.Minor}}.{{.Patch}}'
         type: string
@@ -255,6 +260,17 @@ jobs:
       commit-sha: ${{ steps.determine_sha.outputs.sha }}
       changelog: ${{ steps.release_changelog.outputs.content }}
     steps:
+      - name: Validate versioning strategy
+        shell: bash
+        env:
+          VERSIONING_STRATEGY: ${{ inputs.versioning-strategy }}
+        run: |
+          set -euo pipefail
+          case "${VERSIONING_STRATEGY}" in
+            semver|calver) ;;
+            *) echo '::error::versioning-strategy must be semver or calver' >&2; exit 1 ;;
+          esac
+
       - name: validate inputs
         if: inputs.update-release-enabled && !inputs.changelog-enabled
         shell: bash
@@ -293,14 +309,33 @@ jobs:
           fi
           echo "sha=${SHA}" >> "$GITHUB_OUTPUT"
 
-      - id: release_version
-        name: next release version
-        uses: clean-botix/github-actions/release/version@v3.1.1
+      - id: release_version_semver
+        name: next semantic version
+        if: inputs.versioning-strategy == 'semver'
+        uses: $/release/version/semver
         with:
-          version-previous: ${{ inputs.version-previous }}
-          version-next: ${{ inputs.version-next }}
+          version-semver-previous: ${{ inputs.version-semver-previous }}
+          version-semver-next: ${{ inputs.version-semver-next }}
           version-output-format: ${{ inputs.version-output-format }}
           version-tag-prefix: ${{ inputs.version-tag-prefix }}
+
+      - id: release_version_calver
+        name: next calendar version
+        if: inputs.versioning-strategy == 'calver'
+        uses: $/release/version/calver
+        with:
+          version-output-format: ${{ inputs.version-output-format }}
+          version-tag-prefix: ${{ inputs.version-tag-prefix }}
+
+      - name: Select version outputs
+        id: release_version
+        shell: bash
+        env:
+          VERSION: ${{ steps.release_version_semver.outputs.version || steps.release_version_calver.outputs.version }}
+          PREVIOUS_VERSION: ${{ steps.release_version_semver.outputs.previous-version || steps.release_version_calver.outputs.previous-version }}
+        run: |
+          set -euo pipefail
+          printf 'version=%s\nprevious-version=%s\n' "${VERSION}" "${PREVIOUS_VERSION}" >> "${GITHUB_OUTPUT}"
 
       - name: set version in file
         uses: clean-botix/github-actions/version-file@v3.1.1
