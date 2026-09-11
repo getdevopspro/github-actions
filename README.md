@@ -55,7 +55,7 @@ The former `release/version` composite action moved to `release/version/semver`.
 ```yaml
 jobs:
   build:
-    uses: getdevopspro/github-actions/.github/workflows/build.yml@v8.5.1
+    uses: getdevopspro/github-actions/.github/workflows/build.yml@v9.0.0
     secrets:
       registry-password: ${{ secrets.GITHUB_TOKEN }}
     with:
@@ -68,7 +68,7 @@ Composite actions can also be used directly:
 ```yaml
 steps:
   - uses: actions/checkout@v6
-  - uses: getdevopspro/github-actions/all-green@v8.5.1
+  - uses: getdevopspro/github-actions/all-green@v9.0.0
 ```
 
 ## Directory Map

@@ -1,3 +1,14 @@
+## [v9.0.0](https://github.com/getdevopspro/github-actions/compare/v8.5.1..v9.0.0) - 2026-09-11
+
+### Features
+
+- _(release)_ [**breaking**] Add optional CalVer versioning ([`f36daa4`](https://github.com/getdevopspro/github-actions/commit/f36daa435f4ec3db60fe2ea0d47706844901db10))
+
+### Bug Fixes
+
+- _(version)_ Use correct name for input ([`2e8468f`](https://github.com/getdevopspro/github-actions/commit/2e8468f556a92e91e7a766fc661801277fc74954))
+- _(changelog)_ Initialize history separately from release notes ([`9a36b2f`](https://github.com/getdevopspro/github-actions/commit/9a36b2f22b27de51713d77dcb353512726a9f7e9))
+
 ## [v8.5.1](https://github.com/getdevopspro/github-actions/compare/v8.5.0..v8.5.1) - 2026-07-08
 
 ### Bug Fixes
