@@ -42,7 +42,7 @@ jobs:
         if: >
           github.event.action == 'labeled' &&
           github.event.label.name == inputs['label-test-robot-done']
-        uses: clean-botix/github-actions/test/label/done/added@v4.0.0
+        uses: clean-botix/github-actions/test/label/done/added@v4.0.1
         with:
           label-done: ${{ inputs.label-test-robot-done }}
           label-needed: ${{ inputs.label-test-robot-needed }}
@@ -51,7 +51,7 @@ jobs:
           token: ${{ secrets.token }}
 
       - name: Rerun pull-request workflow
-        uses: clean-botix/github-actions/pr/job-rerun@v4.0.0
+        uses: clean-botix/github-actions/pr/job-rerun@v4.0.1
         with:
           workflow-id: pull-request.yml
           token: ${{ secrets.token }}

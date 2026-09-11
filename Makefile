@@ -1,4 +1,4 @@
-VERSION ?= 4.0.0
+VERSION ?= 4.0.1
 WORKFLOW_FOLDER := .github/workflows
 WORKFLOW_REF_FILES := $(filter-out %.self.yml %.self.yaml,$(wildcard $(WORKFLOW_FOLDER)/*.yml $(WORKFLOW_FOLDER)/*.yaml))
 README_FILES := $(shell find . -path './.git' -prune -o -name README.md -print)

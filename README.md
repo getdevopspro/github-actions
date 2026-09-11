@@ -60,7 +60,7 @@ The former `release/version` composite action moved to `release/version/semver`.
 ```yaml
 jobs:
   build:
-    uses: clean-botix/github-actions/.github/workflows/build.yml@v4.0.0
+    uses: clean-botix/github-actions/.github/workflows/build.yml@v4.0.1
     secrets:
       registry-password: ${{ secrets.GITHUB_TOKEN }}
     with:
@@ -73,7 +73,7 @@ Slack notifications can be consumed through the reusable workflow:
 ```yaml
 jobs:
   notify:
-    uses: clean-botix/github-actions/.github/workflows/notify-slack.yml@v4.0.0
+    uses: clean-botix/github-actions/.github/workflows/notify-slack.yml@v4.0.1
     secrets:
       slack-webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
     with:
@@ -86,7 +86,7 @@ Composite actions can also be used directly:
 ```yaml
 steps:
   - uses: actions/checkout@v6
-  - uses: clean-botix/github-actions/all-green@v4.0.0
+  - uses: clean-botix/github-actions/all-green@v4.0.1
 ```
 
 ## Directory Map

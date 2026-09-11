@@ -11,7 +11,7 @@ steps:
     with:
       fetch-depth: 0
   - id: version
-    uses: clean-botix/github-actions/release/version/calver@v4.0.0
+    uses: clean-botix/github-actions/release/version/calver@v4.0.1
 ```
 
 The calculation follows the `version` and `next-version` recipes in `usage-syncer/justfile`, which are the reference for the `optimusclean-dev` CalVer convention:

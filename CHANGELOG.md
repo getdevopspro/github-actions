@@ -1,3 +1,9 @@
+## [v4.0.1](https://github.com/clean-botix/github-actions/compare/v4.0.0..v4.0.1) - 2026-09-11
+
+### Bug Fixes
+
+- _(version)_ Use correct name for input ([`1631aac`](https://github.com/clean-botix/github-actions/commit/1631aacf389dc302cf433d615a67221359d123f6))
+
 ## [v4.0.0](https://github.com/clean-botix/github-actions/compare/v3.1.1..v4.0.0) - 2026-09-11
 
 ### Features
