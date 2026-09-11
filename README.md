@@ -109,4 +109,6 @@ Keep new actions and workflows small, parameterized, and documented around Optim
 
 Run `make test-version` for local version-calculation regression tests. They require Python 3, Bash, Git, and GNU `sort`, and use temporary repositories without contacting external services.
 
+Run `make test-changelog` for changelog initialization and release-note regression tests. These also require `git-cliff` (tested with 2.14.1); set `GIT_CLIFF_BIN` to use a specific binary. Tests use temporary repositories and disable network access.
+
 For workflow lint, actionlint currently [does not recognize GitHub's `$/` references](https://github.com/rhysd/actionlint/issues/711). Until supported, use `actionlint -ignore 'specifying action "\$/release/version/(semver|calver)" in invalid format because ref is missing'` and verify those two action paths locally.

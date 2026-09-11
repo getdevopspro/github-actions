@@ -83,6 +83,8 @@ File: `release.yml`
 
 Calculates the release version, updates supported version files, optionally downloads build artifacts, can promote container image manifests, optionally generates a changelog, pushes release commits and tags, and can create or update a GitHub release.
 
+With changelog generation and prepend enabled, a missing changelog is initialized from the history reachable from `HEAD`. The workflow's `changelog` output and GitHub release body contain only the current release notes; historical sections are kept in the changelog file. See the [changelog action](../../release/changelog/README.md) for initial-release and range behavior.
+
 `version-strategy` accepts `semver` (default) or `calver`. Both strategies feed the same version-file, image promotion, changelog, tag, and release steps. CalVer defaults to UTC `YYYY.M.PATCH`; `version-semver-previous` and `version-semver-next` are SemVer-only inputs. Keep `fetch-depth: 0` and `fetch-tags: true` for a complete tag history, or provide all tags when disabling checkout. Calculation reads repository contents; this workflow retains its existing `contents: write` and `packages: write` permissions for release and image publication.
 
 ```yaml
