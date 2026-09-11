@@ -20,18 +20,23 @@ on:
         description: 'JSON with all merged image manifest digests'
         value: ${{ jobs.image-push.outputs.image-digests }}
     inputs:
-      version-previous:
-        description: 'The strategy to detect the previous version: auto, from-tag, from-file or manual'
+      versioning-strategy:
+        description: 'Versioning strategy: semver or calver'
+        required: false
+        default: 'semver'
+        type: string
+      version-semver-previous:
+        description: 'SemVer only: strategy to detect the previous version: auto, from-tag, from-file or manual'
         required: false
         default: 'auto'
         type: string
-      version-next:
-        description: 'The strategy to calculate the next version: auto, semantic, from-file, increment or manual'
+      version-semver-next:
+        description: 'SemVer only: strategy to calculate the next version: auto, semantic, from-file, increment or manual'
         required: false
         default: 'auto'
         type: string
       version-output-format:
-        description: 'The output format of the next version'
+        description: 'Output template; CalVer maps {{.Major}}, {{.Minor}}, and {{.Patch}} to year, month, and patch'
         required: false
         default: '{{.Major}}.{{.Minor}}.{{.Patch}}-build'
         type: string
@@ -865,6 +870,17 @@ jobs:
       post-step-matrix: ${{ steps.set_post_matrix.outputs.matrix }}
       image-platform-matrix: ${{ steps.prepare_image.outputs.matrix }}
     steps:
+      - name: Validate versioning strategy
+        shell: bash
+        env:
+          VERSIONING_STRATEGY: ${{ inputs.versioning-strategy }}
+        run: |
+          set -euo pipefail
+          case "${VERSIONING_STRATEGY}" in
+            semver|calver) ;;
+            *) echo '::error::versioning-strategy must be semver or calver' >&2; exit 1 ;;
+          esac
+
       - name: Checkout repository
         uses: actions/checkout@v6
         id: checkout
@@ -888,14 +904,33 @@ jobs:
           fi
           echo "sha=${SHA}" >> "$GITHUB_OUTPUT"
 
-      - name: Next release version
-        id: release_version
-        uses: getdevopspro/github-actions/release/version@v8.5.1
+      - name: Next semantic version
+        id: release_version_semver
+        if: inputs.versioning-strategy == 'semver'
+        uses: $/release/version/semver
         with:
-          version-previous: ${{ inputs.version-previous }}
-          version-next: ${{ inputs.version-next }}
+          version-semver-previous: ${{ inputs.version-semver-previous }}
+          version-semver-next: ${{ inputs.version-semver-next }}
           version-output-format: ${{ inputs.version-output-format }}
           version-tag-prefix: ${{ inputs.version-tag-prefix }}
+
+      - name: Next calendar version
+        id: release_version_calver
+        if: inputs.versioning-strategy == 'calver'
+        uses: $/release/version/calver
+        with:
+          version-output-format: ${{ inputs.version-output-format }}
+          version-tag-prefix: ${{ inputs.version-tag-prefix }}
+
+      - name: Select version outputs
+        id: release_version
+        shell: bash
+        env:
+          VERSION: ${{ steps.release_version_semver.outputs.version || steps.release_version_calver.outputs.version }}
+          PREVIOUS_VERSION: ${{ steps.release_version_semver.outputs.previous-version || steps.release_version_calver.outputs.previous-version }}
+        run: |
+          set -euo pipefail
+          printf 'version=%s\nprevious-version=%s\n' "${VERSION}" "${PREVIOUS_VERSION}" >> "${GITHUB_OUTPUT}"
 
       - name: Set version in file
         uses: getdevopspro/github-actions/version-file@v8.5.1
