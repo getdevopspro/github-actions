@@ -13,4 +13,4 @@ steps:
       version-semver-next: auto
 ```
 
-This action moved from `release/version` to `release/version/semver`. Update direct callers when adopting a release that includes the new path, and rename `version-previous` to `version-semver-previous` and `version-next` to `version-semver-next`. Outputs, defaults, and SemVer calculation are unchanged. The reusable Build and Release workflows use these same input names and default to this action through `versioning-strategy: semver`.
+This action moved from `release/version` to `release/version/semver`. Update direct callers when adopting a release that includes the new path, and rename `version-previous` to `version-semver-previous` and `version-next` to `version-semver-next`. Outputs, defaults, and SemVer calculation are unchanged. The reusable Build and Release workflows use these same input names and default to this action through `version-strategy: semver`.

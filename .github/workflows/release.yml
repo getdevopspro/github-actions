@@ -34,7 +34,7 @@ on:
         description: 'The files to add to git'
         required: false
         type: string
-      versioning-strategy:
+      version-strategy:
         description: 'Versioning strategy: semver or calver'
         required: false
         default: 'semver'
@@ -263,12 +263,12 @@ jobs:
       - name: Validate versioning strategy
         shell: bash
         env:
-          VERSIONING_STRATEGY: ${{ inputs.versioning-strategy }}
+          VERSIONING_STRATEGY: ${{ inputs.version-strategy }}
         run: |
           set -euo pipefail
           case "${VERSIONING_STRATEGY}" in
             semver|calver) ;;
-            *) echo '::error::versioning-strategy must be semver or calver' >&2; exit 1 ;;
+            *) echo '::error::version-strategy must be semver or calver' >&2; exit 1 ;;
           esac
 
       - name: validate inputs
@@ -311,7 +311,7 @@ jobs:
 
       - id: release_version_semver
         name: next semantic version
-        if: inputs.versioning-strategy == 'semver'
+        if: inputs.version-strategy == 'semver'
         uses: $/release/version/semver
         with:
           version-semver-previous: ${{ inputs.version-semver-previous }}
@@ -321,7 +321,7 @@ jobs:
 
       - id: release_version_calver
         name: next calendar version
-        if: inputs.versioning-strategy == 'calver'
+        if: inputs.version-strategy == 'calver'
         uses: $/release/version/calver
         with:
           version-output-format: ${{ inputs.version-output-format }}
