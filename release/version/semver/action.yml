@@ -1,11 +1,11 @@
-name: Release Version
-description: Set release version
+name: Release Version (SemVer)
+description: Set the semantic release version
 inputs:
-  version-previous:
+  version-semver-previous:
     description: 'The strategy to detect the previous version: auto, from-tag, from-file or manual'
     required: false
     default: 'auto'
-  version-next:
+  version-semver-next:
     description: 'The strategy to calculate the next version: auto, semantic, from-file, increment or manual'
     required: false
     default: 'auto'
@@ -36,7 +36,7 @@ runs:
       shell: bash
       run: |
         set -euo pipefail
-        PREVIOUS="${{ inputs.version-previous }}"
+        PREVIOUS="${{ inputs.version-semver-previous }}"
         if [[ "${PREVIOUS}" == "auto" && "${{ github.event_name }}" != "pull_request" ]]; then
           BRANCH="${{ github.ref_name }}"
           if [[ "${BRANCH}" =~ ^release-v?([0-9]+(\.[0-9]+)?)$ ]]; then
@@ -51,7 +51,7 @@ runs:
       uses: getdevopspro/jx-release-version@dev
       with:
         previous-version: ${{ steps.resolve_previous_version.outputs.previous-version }}
-        next-version: ${{ inputs.version-next }}
+        next-version: ${{ inputs.version-semver-next }}
         output-format: ${{ inputs.version-output-format }}
         tag: ${{ inputs.version-tag }}
         tag-prefix: ${{ inputs.version-tag-prefix }}

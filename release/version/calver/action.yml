@@ -1,0 +1,34 @@
+name: Release Version (CalVer)
+description: Calculate the next UTC calendar version from Git release tags
+inputs:
+  version-output-format:
+    description: 'Output template: {{.Major}} is the UTC year, {{.Minor}} the month, and {{.Patch}} the patch'
+    required: false
+    default: '{{.Major}}.{{.Minor}}.{{.Patch}}'
+  version-tag:
+    description: 'Create the calculated tag locally without pushing it'
+    required: false
+    default: 'false'
+  version-tag-prefix:
+    description: 'Literal prefix used to select existing tags and create a new tag; empty for unprefixed tags'
+    required: false
+    default: 'v'
+outputs:
+  version:
+    description: 'The next calendar version in the requested output format'
+    value: ${{ steps.release_version.outputs.version }}
+  previous-version:
+    description: 'The latest release tag including its prefix, or 0.0.0 if none exists'
+    value: ${{ steps.release_version.outputs.previous-version }}
+runs:
+  using: composite
+  steps:
+    - name: Next calendar release version
+      id: release_version
+      shell: bash
+      env:
+        CALVER_ACTION_PATH: ${{ github.action_path }}
+        VERSION_OUTPUT_FORMAT: ${{ inputs.version-output-format }}
+        VERSION_TAG: ${{ inputs.version-tag }}
+        VERSION_TAG_PREFIX: ${{ inputs.version-tag-prefix }}
+      run: bash "${CALVER_ACTION_PATH}/version.sh"
