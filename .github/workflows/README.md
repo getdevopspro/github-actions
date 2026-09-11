@@ -26,7 +26,7 @@ File: `build.yml`
 
 Calculates a build version, optionally updates version files, runs configurable pre/post commands, builds Docker images with Buildx Bake, and can publish multi-platform images to a registry. Pull request image SHA tags use the PR head commit rather than GitHub's synthetic merge commit.
 
-`versioning-strategy` accepts `semver` (default) or `calver`. CalVer uses UTC `YYYY.M.PATCH` from Git release tags and preserves this workflow's default `-build` output suffix. `version-semver-previous` and `version-semver-next` apply only to SemVer; `version-output-format` and `version-tag-prefix` apply to both. Strategy-specific inputs use `version-semver-` or `version-calver-` prefixes; there are currently no CalVer-only inputs. Keep the default full-history checkout so all release tags are available. See the [CalVer action](../../release/version/calver/README.md) for the calculation and supported template fields.
+`version-strategy` accepts `semver` (default) or `calver`. CalVer uses UTC `YYYY.M.PATCH` from Git release tags and preserves this workflow's default `-build` output suffix. `version-semver-previous` and `version-semver-next` apply only to SemVer; `version-output-format` and `version-tag-prefix` apply to both. Strategy-specific inputs use `version-semver-` or `version-calver-` prefixes; there are currently no CalVer-only inputs. Keep the default full-history checkout so all release tags are available. See the [CalVer action](../../release/version/calver/README.md) for the calculation and supported template fields.
 
 ```yaml
 jobs:
@@ -83,7 +83,7 @@ File: `release.yml`
 
 Calculates the release version, updates supported version files, optionally downloads build artifacts, can promote container image manifests, optionally generates a changelog, pushes release commits and tags, and can create or update a GitHub release.
 
-`versioning-strategy` accepts `semver` (default) or `calver`. Both strategies feed the same version-file, image promotion, changelog, tag, and release steps. CalVer defaults to UTC `YYYY.M.PATCH`; `version-semver-previous` and `version-semver-next` are SemVer-only inputs. Keep `fetch-depth: 0` and `fetch-tags: true` for a complete tag history, or provide all tags when disabling checkout. Calculation reads repository contents; this workflow retains its existing `contents: write` and `packages: write` permissions for release and image publication.
+`version-strategy` accepts `semver` (default) or `calver`. Both strategies feed the same version-file, image promotion, changelog, tag, and release steps. CalVer defaults to UTC `YYYY.M.PATCH`; `version-semver-previous` and `version-semver-next` are SemVer-only inputs. Keep `fetch-depth: 0` and `fetch-tags: true` for a complete tag history, or provide all tags when disabling checkout. Calculation reads repository contents; this workflow retains its existing `contents: write` and `packages: write` permissions for release and image publication.
 
 ```yaml
 jobs:
@@ -97,7 +97,7 @@ jobs:
       changelog-enabled: true
 ```
 
-To opt into CalVer, add `versioning-strategy: calver` to `with:` above. The same input selects CalVer in the Build workflow. Serialize publication in the calling workflow to prevent concurrent releases from choosing the same version.
+To opt into CalVer, add `version-strategy: calver` to `with:` above. The same input selects CalVer in the Build workflow. Serialize publication in the calling workflow to prevent concurrent releases from choosing the same version.
 
 ## Notify Slack
 
