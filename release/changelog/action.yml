@@ -53,7 +53,7 @@ inputs:
     default: 'v'
 outputs:
   content:
-    description: 'The generated changelog content'
+    description: 'The generated notes for this release, separate from any initialized changelog history'
     value: ${{ steps.git_cliff.outputs.content }}
 runs:
   using: "composite"
@@ -115,20 +115,30 @@ runs:
           echo "::warning title=Release changelog::Previous version 0.0.0 does not exist; generating the initial changelog from HEAD and disabling prepend."
         fi
 
+        initialize_changelog="${initial_release_without_previous_ref}"
+        if [ "${PREPEND}" = "true" ] && [ ! -e "${CHANGELOG_OUTPUT}" ] && [ ! -L "${CHANGELOG_OUTPUT}" ]; then
+          initialize_changelog="true"
+          echo "Initializing the missing changelog from the full history reachable from HEAD."
+        fi
+
         output="${CHANGELOG_OUTPUT}"
         if [ "${PREPEND}" = "true" ] && [ "${initial_release_without_previous_ref}" != "true" ]; then
           output="${RUNNER_TEMP}/cliff/changelog/${CHANGELOG_OUTPUT}"
           mkdir -p "$(dirname "${output}")"
           [ -f "${output}" ] || touch "${output}"
+        elif [ "${initialize_changelog}" = "true" ]; then
+          mkdir -p "$(dirname "${output}")"
         fi
 
         range="${PREVIOUS_VERSION}..${VERSION}"
         prepend_args=()
         if [ "${initial_release_without_previous_ref}" = "true" ]; then
-          range="HEAD"
+          range="$(git rev-parse HEAD)"
         elif [ "${PREPEND}" = "true" ]; then
           range="${PREVIOUS_VERSION}..HEAD"
-          prepend_args=(--prepend "${CHANGELOG_OUTPUT}")
+          if [ "${initialize_changelog}" != "true" ]; then
+            prepend_args=(--prepend "${CHANGELOG_OUTPUT}")
+          fi
         fi
 
         echo "Generating changelog for range ${range} with git-cliff..."
@@ -146,6 +156,20 @@ runs:
         # an extra blank line. Strip all trailing newlines then add exactly one.
         content="$(cat "${output}")"
         printf '%s\n' "${content}" >| "${output}"
+
+        if [ "${initialize_changelog}" = "true" ] && [ "${initial_release_without_previous_ref}" != "true" ]; then
+          # Keep the release notes in output; backfill the changelog separately.
+          mkdir -p "$(dirname "${CHANGELOG_OUTPUT}")"
+          # shellcheck disable=SC2086
+          git-cliff \
+            --config "${CONFIG}" \
+            --tag "${VERSION}" \
+            --output "${CHANGELOG_OUTPUT}" \
+            ${GIT_CLIFF_ARGS} \
+            "$(git rev-parse HEAD)"
+          changelog_content="$(cat "${CHANGELOG_OUTPUT}")"
+          printf '%s\n' "${changelog_content}" >| "${CHANGELOG_OUTPUT}"
+        fi
 
         git add "${CHANGELOG_OUTPUT}"
 
