@@ -11,7 +11,7 @@ The action runs `docker/bake-action` with `source: .`, so Bake uses the checked-
 ```yaml
 steps:
   - uses: actions/checkout@v6
-  - uses: clean-botix/github-actions/buildx-bake@v4.0.1
+  - uses: clean-botix/github-actions/buildx-bake@v4.0.2
     with:
       meta-tags: type=sha
       registry-password: ${{ secrets.GITHUB_TOKEN }}

@@ -11,7 +11,7 @@ The action runs `docker/bake-action` with `source: .`, so Bake uses the download
 ```yaml
 steps:
   - uses: actions/checkout@v6
-  - uses: clean-botix/github-actions/buildx-bake/build@v4.0.1
+  - uses: clean-botix/github-actions/buildx-bake/build@v4.0.2
     with:
       registry-password: ${{ secrets.GITHUB_TOKEN }}
       registry-image: ghcr.io/example/project

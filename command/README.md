@@ -7,7 +7,7 @@ Use this action for reusable workflow hooks where callers need to provide a chec
 ```yaml
 steps:
   - uses: actions/checkout@v6
-  - uses: clean-botix/github-actions/command@v4.0.1
+  - uses: clean-botix/github-actions/command@v4.0.2
     with:
       command: make test
       artifact-name: test-output

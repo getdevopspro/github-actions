@@ -1,3 +1,9 @@
+## [v4.0.2](https://github.com/clean-botix/github-actions/compare/v4.0.1..v4.0.2) - 2026-09-11
+
+### Bug Fixes
+
+- _(changelog)_ Initialize history separately from release notes ([`06d18f9`](https://github.com/clean-botix/github-actions/commit/06d18f9f9c2ec1cef595ec66b0de2fd90e41a0cb))
+
 ## [v4.0.1](https://github.com/clean-botix/github-actions/compare/v4.0.0..v4.0.1) - 2026-09-11
 
 ### Bug Fixes

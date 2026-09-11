@@ -6,7 +6,7 @@ Use this action from label-related PR workflows to give reviewers a visible conf
 
 ```yaml
 steps:
-  - uses: clean-botix/github-actions/test/label/done/added@v4.0.1
+  - uses: clean-botix/github-actions/test/label/done/added@v4.0.2
     with:
       label-done: test-done
       test-name: Robot

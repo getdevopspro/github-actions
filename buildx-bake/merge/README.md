@@ -6,7 +6,7 @@ Use this action after all platform build jobs complete. It downloads the `bake-m
 
 ```yaml
 steps:
-  - uses: clean-botix/github-actions/buildx-bake/merge@v4.0.1
+  - uses: clean-botix/github-actions/buildx-bake/merge@v4.0.2
     with:
       registry-password: ${{ secrets.GITHUB_TOKEN }}
 ```
