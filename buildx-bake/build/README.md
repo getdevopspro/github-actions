@@ -16,3 +16,17 @@ steps:
       registry-password: ${{ secrets.GITHUB_TOKEN }}
       registry-image: ghcr.io/example/project
 ```
+
+Layer caches use `type=gha,mode=max` with a separate scope for each resolved Bake target and platform: `<cache-scope>-<target>-<platform>`, for example `buildkit-api-linux-arm64`. The prefix defaults to `buildkit`; use a distinct `cache-scope` for independent builds of the same target in one repository. The first build after upgrading populates the new scopes. Export failures remain nonfatal.
+
+`bake-set` accepts newline-separated overrides after the generated defaults. Ordinary argument overrides retain caching. To replace the backend, set both `*.cache-from` and `*.cache-to`; to disable it, set both to an empty value. Existing cache imports in the Bake file are merged with the default import according to Bake's file merge rules. Explicit `bake-set` cache values replace these file defaults.
+
+```yaml
+      cache-scope: service
+      bake-set: |
+        *.args.BUILD_MODE=release
+        *.cache-from=
+        *.cache-to=
+```
+
+The default output pushes by digest. An explicit `bake-set` output (for example `*.output=type=cacheonly`) replaces that default. Cache-only builds do not produce image digests for manifest merging.
