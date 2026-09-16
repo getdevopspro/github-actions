@@ -83,6 +83,16 @@ on:
         required: false
         type: string
         default: 'build'
+      cache-scope:
+        description: 'Layer-cache prefix; target name and platform are appended'
+        required: false
+        type: string
+        default: 'buildkit'
+      bake-set:
+        description: 'Newline-separated Bake overrides, applied after the action defaults'
+        required: false
+        type: string
+        default: ''
       meta-tags:
         description: 'The tags to add to the image'
         required: false
@@ -1235,6 +1245,7 @@ jobs:
         env:
           DOCKER_METADATA_PR_HEAD_SHA: true
         with:
+          bake-file: ${{ inputs.bake-file }}
           bake-target: ${{ inputs.bake-target }}
           registry-image: ${{ inputs.registry-image }}
           docker-version: ${{ inputs.docker-version }}
@@ -1375,6 +1386,8 @@ jobs:
         with:
           bake-file: ${{ inputs.bake-file }}
           bake-target: ${{ inputs.bake-target }}
+          cache-scope: ${{ inputs.cache-scope }}
+          bake-set: ${{ inputs.bake-set }}
           registry: ${{ inputs.registry }}
           registry-image: ${{ inputs.registry-image }}
           registry-username: ${{ inputs.registry-username }}
