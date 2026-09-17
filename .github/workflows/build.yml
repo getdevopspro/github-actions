@@ -83,6 +83,11 @@ on:
         required: false
         type: string
         default: 'build'
+      qemu:
+        description: 'QEMU setup: auto for foreign platforms, true to force, false to skip'
+        required: false
+        type: string
+        default: 'auto'
       cache-mounts:
         description: 'Persist Dockerfile cache mounts between builds'
         required: false
@@ -1401,6 +1406,7 @@ jobs:
         with:
           bake-file: ${{ inputs.bake-file }}
           bake-target: ${{ inputs.bake-target }}
+          qemu: ${{ inputs.qemu }}
           cache-mounts: ${{ inputs.cache-mounts }}
           cache-map: ${{ inputs.cache-map }}
           dockerfile: ${{ inputs.dockerfile }}
