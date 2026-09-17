@@ -1,10 +1,10 @@
 """Integration checks for the candidate Bake action; needs Buildx (and CI for warm)."""
 
+import base64
 import csv
 import json
 import os
 from pathlib import Path
-import re
 import subprocess
 import sys
 import time
@@ -88,9 +88,23 @@ def check_defaults():
 
 
 def instruction_cached(log, marker):
-    vertices = re.findall(r'^(#\d+) \[.*\] RUN .*' + re.escape(marker) + r'.*$', log, re.M)
-    check(len(set(vertices)) == 1, f'Expected one {marker} instruction; got {vertices}')
-    return bool(re.search(r'^' + re.escape(vertices[0]) + r' CACHED$', log, re.M))
+    events = [json.loads(line) for line in log.splitlines() if line.startswith('{')]
+    vertices = [vertex for event in events for vertex in event.get('vertexes', [])]
+    matches = [vertex for vertex in vertices
+               if '] RUN ' in vertex.get('name', '') and marker in vertex['name']]
+    digests = {vertex['digest'] for vertex in matches}
+    check(len(digests) == 1, f'Expected one {marker} instruction; got {digests}')
+    check(any(vertex.get('completed') for vertex in matches), f'{marker} did not complete')
+    check(not any(vertex.get('error') for vertex in matches), f'{marker} failed')
+    # Lazy layer downloads can replace a cached vertex's final progress state.
+    # Keep all structured events; plain progress can omit the CACHED line entirely.
+    cached = any(vertex.get('cached', False) for vertex in matches)
+    output = b''.join(base64.b64decode(entry['data'])
+                      for event in events for entry in event.get('logs', [])
+                      if entry['vertex'] in digests)
+    executed = marker.encode() in output
+    check(cached != executed, f'{marker}: cache state and execution marker disagree')
+    return cached
 
 
 def check_warm():
@@ -108,7 +122,7 @@ def check_warm():
                 subprocess.run(['docker', 'buildx', 'inspect', builder, '--bootstrap'], check=True)
                 for target in ('alpha', 'beta'):
                     command = BAKE + [
-                        target, '--builder', builder, '--progress', 'plain',
+                        target, '--builder', builder, '--progress', 'rawjson',
                         '--set', '*.output=type=cacheonly', '--set', '*.cache-to=',
                     ]
                     if case == 'dependency-change':
