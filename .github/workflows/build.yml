@@ -83,6 +83,21 @@ on:
         required: false
         type: string
         default: 'build'
+      cache-mounts:
+        description: 'Persist Dockerfile cache mounts between builds'
+        required: false
+        type: boolean
+        default: true
+      cache-map:
+        description: 'Optional JSON map of cache-mount/<name> paths to resolved mount options; replaces discovery'
+        required: false
+        type: string
+        default: ''
+      dockerfile:
+        description: 'Dockerfile used for cache-mount discovery and archive compatibility'
+        required: false
+        type: string
+        default: 'Dockerfile'
       cache-scope:
         description: 'Layer-cache prefix; target name and platform are appended'
         required: false
@@ -1386,6 +1401,9 @@ jobs:
         with:
           bake-file: ${{ inputs.bake-file }}
           bake-target: ${{ inputs.bake-target }}
+          cache-mounts: ${{ inputs.cache-mounts }}
+          cache-map: ${{ inputs.cache-map }}
+          dockerfile: ${{ inputs.dockerfile }}
           cache-scope: ${{ inputs.cache-scope }}
           bake-set: ${{ inputs.bake-set }}
           registry: ${{ inputs.registry }}
