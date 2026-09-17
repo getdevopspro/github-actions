@@ -83,6 +83,36 @@ on:
         required: false
         type: string
         default: 'build'
+      qemu:
+        description: 'QEMU setup: auto for foreign platforms, true to force, false to skip'
+        required: false
+        type: string
+        default: 'auto'
+      cache-mounts:
+        description: 'Persist Dockerfile cache mounts between builds'
+        required: false
+        type: boolean
+        default: true
+      cache-map:
+        description: 'Optional JSON map of cache-mount/<name> paths to resolved mount options; replaces discovery'
+        required: false
+        type: string
+        default: ''
+      dockerfile:
+        description: 'Dockerfile used for cache-mount discovery and archive compatibility'
+        required: false
+        type: string
+        default: 'Dockerfile'
+      cache-scope:
+        description: 'Layer-cache prefix; target name and platform are appended'
+        required: false
+        type: string
+        default: 'buildkit'
+      bake-set:
+        description: 'Newline-separated Bake overrides, applied after the action defaults'
+        required: false
+        type: string
+        default: ''
       meta-tags:
         description: 'The tags to add to the image'
         required: false
@@ -1235,6 +1265,7 @@ jobs:
         env:
           DOCKER_METADATA_PR_HEAD_SHA: true
         with:
+          bake-file: ${{ inputs.bake-file }}
           bake-target: ${{ inputs.bake-target }}
           registry-image: ${{ inputs.registry-image }}
           docker-version: ${{ inputs.docker-version }}
@@ -1375,6 +1406,12 @@ jobs:
         with:
           bake-file: ${{ inputs.bake-file }}
           bake-target: ${{ inputs.bake-target }}
+          qemu: ${{ inputs.qemu }}
+          cache-mounts: ${{ inputs.cache-mounts }}
+          cache-map: ${{ inputs.cache-map }}
+          dockerfile: ${{ inputs.dockerfile }}
+          cache-scope: ${{ inputs.cache-scope }}
+          bake-set: ${{ inputs.bake-set }}
           registry: ${{ inputs.registry }}
           registry-image: ${{ inputs.registry-image }}
           registry-username: ${{ inputs.registry-username }}
