@@ -17,7 +17,7 @@ steps:
   - uses: actions/checkout@v6
     with:
       fetch-depth: 0
-  - uses: clean-botix/github-actions/release/changelog@v4.0.2
+  - uses: clean-botix/github-actions/release/changelog@v5.0.0
     with:
       version: v1.2.3
       previous-version: v1.2.2

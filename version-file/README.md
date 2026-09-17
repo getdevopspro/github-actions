@@ -6,7 +6,7 @@ Use this action before committing a release when a workflow needs to update file
 
 ```yaml
 steps:
-  - uses: clean-botix/github-actions/version-file@v4.0.2
+  - uses: clean-botix/github-actions/version-file@v5.0.0
     with:
       version: 1.2.3
       version-makefile: Makefile

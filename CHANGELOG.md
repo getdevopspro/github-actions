@@ -1,3 +1,18 @@
+## [v5.0.0](https://github.com/clean-botix/github-actions/compare/v4.0.2..v5.0.0) - 2026-09-17
+
+### Features
+
+- _(build)_ Add configurable persistent cache mounts ([`a13d569`](https://github.com/clean-botix/github-actions/commit/a13d56942b0dd3a5e4be78f6eff4aeaa432684f9))
+- _(build)_ [**breaking**] Skip QEMU setup for native builds ([`6e6fab2`](https://github.com/clean-botix/github-actions/commit/6e6fab2c353dda13c16d0f6d40f72a0808b7c50c))
+
+### Bug Fixes
+
+- _(build)_ Isolate Bake caches by target and platform ([`3d059fe`](https://github.com/clean-botix/github-actions/commit/3d059fe4279ad4cf86fc8689c64b06ae79c45eeb))
+
+### Testing
+
+- _(build)_ Read structured cache progress events ([`4107b1d`](https://github.com/clean-botix/github-actions/commit/4107b1df58bd65c5d74b2af1f896b10259a21997))
+
 ## [v4.0.2](https://github.com/clean-botix/github-actions/compare/v4.0.1..v4.0.2) - 2026-09-11
 
 ### Bug Fixes
