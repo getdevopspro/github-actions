@@ -43,6 +43,14 @@ inputs:
     description: 'Free disk space before build'
     required: false
     default: "false"
+  cache-mounts:
+    description: 'Persist Dockerfile cache mounts between builds'
+    required: false
+    default: 'true'
+  cache-map:
+    description: 'Optional JSON map of cache-mount/<name> archive paths to resolved mount options; replaces discovery'
+    required: false
+    default: ''
   dockerfile:
     description: "The Dockerfile to use for auto-discovery of the cache-map. Default: `Dockerfile`"
     default: "Dockerfile"
@@ -127,18 +135,34 @@ runs:
             }
           ))}' > "$RUNNER_TEMP/bake-defaults.json"
 
+    - name: Prepare cache-mount configuration
+      if: ${{ inputs.cache-mounts == 'true' }}
+      id: cache-config
+      shell: bash
+      env:
+        CACHE_MAP: ${{ inputs.cache-map }}
+        CACHE_SCOPE: ${{ inputs.cache-scope }}
+        BUILD_PLATFORM: ${{ matrix.platform }}
+        BAKE_TARGET: ${{ inputs.bake-target }}
+        BUILD_FILES_HASH: ${{ hashFiles(inputs.dockerfile, inputs.bake-file) }}
+      run: bash "$GITHUB_ACTION_PATH/cache-config.sh"
+
     - name: Cache docker cache mounts
+      if: ${{ inputs.cache-mounts == 'true' }}
       uses: actions/cache@v5
       id: cache
       with:
         path: cache-mount
-        key: cache-mount-${{ env.PLATFORM_PAIR }}-${{ hashFiles(inputs.dockerfile) }}
+        key: ${{ steps.cache-config.outputs.prefix }}${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ github.job }}
+        restore-keys: ${{ steps.cache-config.outputs.prefix }}
 
     - name: Restore docker cache mounts
+      if: ${{ inputs.cache-mounts == 'true' }}
       uses: reproducible-containers/buildkit-cache-dance@v3
       with:
         builder: ${{ steps.setup-buildx.outputs.name }}
         cache-dir: cache-mount
+        cache-map: ${{ steps.cache-config.outputs.cache-map }}
         dockerfile: ${{ inputs.dockerfile }}
         skip-extraction: ${{ steps.cache.outputs.cache-hit }}
 
@@ -161,6 +185,7 @@ runs:
           ${{ inputs.bake-set }}
 
     - name: Export container digests
+      id: digests
       shell: bash
       run: |
         cat << '_BAKE_METADATA' > ${{ runner.temp }}/bake-metadata.json
@@ -169,7 +194,10 @@ runs:
         mkdir -p ${{ runner.temp }}/digests
         jq 'with_entries(select(.value["containerimage.digest"]?) | .value |= {name: .["image.name"], digests:[.["containerimage.digest"]]})' ${{ runner.temp }}/bake-metadata.json > ${{ runner.temp }}/digests/${{ env.PLATFORM_PAIR }}.json
 
+        echo "has-digests=$(jq 'length > 0' '${{ runner.temp }}/digests/${{ env.PLATFORM_PAIR }}.json')" >> "$GITHUB_OUTPUT"
+
     - name: Upload digest
+      if: ${{ steps.digests.outputs.has-digests == 'true' }}
       uses: actions/upload-artifact@v7
       with:
         name: digests-${{ env.PLATFORM_PAIR }}

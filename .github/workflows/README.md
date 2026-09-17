@@ -39,6 +39,8 @@ jobs:
       bake-target: build
 ```
 
+`cache-mounts` (default `true`), `cache-map` and `dockerfile` are forwarded to the build action. Disable mount persistence when it is unused; provide resolved maps for custom IDs or non-root mounts.
+
 The prepare and image jobs both use `bake-file`. `cache-scope` (default `buildkit`) isolates layer caches by resolved target and platform. `bake-set` forwards newline-separated overrides to the image build; see [Buildx Bake Build](../../buildx-bake/build/README.md) for backend replacement and disabling the cache. Keep image outputs enabled when using this workflow because its merge job requires image digests.
 
 Set `docker-version` or `compose-version` to install a specific Docker CE or Docker Compose release before the Bake prepare and build actions run. Leave them empty to use the runner defaults.
