@@ -8,6 +8,7 @@ on:
       - '.github/workflows/build-cache.self.yml'
       - 'tests/fixtures/build-cache/**'
       - 'tests/test_build_cache.py'
+      - 'tests/test_build_cache_config.py'
 
 permissions:
   contents: read
@@ -27,6 +28,8 @@ jobs:
       platforms: ${{ steps.prepare.outputs.matrix }}
     steps:
       - uses: actions/checkout@v6
+      - name: Check cache configuration
+        run: python3 -B -m unittest discover -s tests -p 'test_build_cache_config.py' -v
       - uses: docker/setup-buildx-action@v4
       - id: prepare
         uses: ./buildx-bake/prepare
@@ -50,9 +53,12 @@ jobs:
         with:
           bake-file: tests/fixtures/build-cache/docker-bake.hcl
           dockerfile: tests/fixtures/build-cache/Dockerfile
+          cache-mounts: false
           cache-scope: ${{ env.CACHE_SCOPE }}
           registry-password: ${{ secrets.GITHUB_TOKEN }}
           bake-set: '*.output=type=cacheonly'
+      - name: Check mount-cache opt-out
+        run: test ! -e cache-mount
       - name: Check resolved scopes and caller overrides
         env:
           PLATFORM: ${{ matrix.platform }}
@@ -98,3 +104,65 @@ jobs:
           name: cache-measurements-${{ env.PLATFORM_PAIR }}
           path: ${{ runner.temp }}/cache-measurements.json
           retention-days: 7
+
+  mount-cold:
+    timeout-minutes: 10
+    needs: prepare
+    runs-on: ubuntu-24.04-arm
+    strategy: &mount-platform
+      matrix:
+        platform: [linux/arm64]
+    env:
+      MOUNT_GENERATION: '1'
+    steps: &mount-steps
+      - uses: actions/checkout@v6
+      - name: Select source generation
+        run: printf '%s\n' "$MOUNT_GENERATION" > tests/fixtures/build-cache/mount-generation.txt
+      - name: Check mount restoration, ownership and update
+        uses: ./buildx-bake/build
+        with:
+          bake-file: tests/fixtures/build-cache/mounts.hcl
+          dockerfile: tests/fixtures/build-cache/Dockerfile.mounts
+          cache-scope: ${{ env.CACHE_SCOPE }}-mounts
+          cache-map: |
+            {
+              "cache-mount/fixture": {
+                "target": "/home/builder/.cache/fixture",
+                "id": "fixture-${TARGETARCH}",
+                "uid": 1000,
+                "gid": 1000,
+                "sharing": "locked"
+              }
+            }
+          registry-password: ${{ secrets.GITHUB_TOKEN }}
+          bake-set: |
+            *.cache-from=
+            *.cache-to=
+            *.output=type=cacheonly
+
+  mount-restore:
+    timeout-minutes: 10
+    needs: mount-cold
+    runs-on: ubuntu-24.04-arm
+    strategy: *mount-platform
+    env:
+      MOUNT_GENERATION: '2'
+    steps: *mount-steps
+
+  mount-refresh:
+    timeout-minutes: 10
+    needs: mount-restore
+    runs-on: ubuntu-24.04-arm
+    strategy: *mount-platform
+    env:
+      MOUNT_GENERATION: '3'
+    steps: *mount-steps
+
+  all-green:
+    name: Job
+    needs: [prepare, cold, warm, mount-cold, mount-restore, mount-refresh]
+    if: ${{ !cancelled() }}
+    permissions:
+      contents: read
+      checks: read
+    uses: ./.github/workflows/all-green.yml

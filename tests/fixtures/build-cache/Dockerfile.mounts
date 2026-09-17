@@ -1,0 +1,20 @@
+FROM alpine:3.22
+RUN addgroup -g 1000 builder && adduser -D -u 1000 -G builder builder
+USER 1000:1000
+ARG TARGETARCH
+COPY --chown=1000:1000 mount-generation.txt /home/builder/generation.txt
+RUN --mount=type=cache,id=fixture-${TARGETARCH},target=/home/builder/.cache/fixture,uid=1000,gid=1000,sharing=locked \
+    set -eu; \
+    cache=/home/builder/.cache/fixture; \
+    test "$(id -u):$(id -g)" = '1000:1000'; \
+    test "$(stat -c '%u:%g' "$cache")" = '1000:1000'; \
+    generation="$(cat /home/builder/generation.txt)"; \
+    case "$generation" in 1|2|3) ;; *) exit 1 ;; esac; \
+    if [ "$generation" -eq 1 ]; then \
+        test ! -e "$cache/generation"; \
+    else \
+        test "$(cat "$cache/generation")" -eq "$((generation - 1))"; \
+        test "$(stat -c '%u:%g' "$cache/generation")" = '1000:1000'; \
+    fi; \
+    printf '%s\n' "$generation" > "$cache/generation"; \
+    echo "Mount cache generation $generation verified with owner 1000:1000"

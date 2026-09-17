@@ -32,3 +32,25 @@ Layer caches use `type=gha,mode=max` with a separate scope for each resolved Bak
 ```
 
 The default output pushes by digest. An explicit `bake-set` output (for example `*.output=type=cacheonly`) replaces that default. Cache-only builds do not produce image digests for manifest merging.
+
+Cache mounts persist by default. Set `cache-mounts: false` to skip archive restore/save and cache-dance entirely when the Dockerfile has no useful cache mounts. This does not disable the independent layer cache.
+
+By default, cache-dance discovers mounts in `dockerfile` (default `Dockerfile`). For variable-based IDs or non-root ownership, supply a complete `cache-map` instead. Keys must be archive paths of the form `cache-mount/<name>`; values follow cache-dance's string target or mount-options object format. A nonempty map replaces discovery, so include every mount to persist. An empty JSON object still uses discovery; use `cache-mounts: false` to opt out.
+
+```yaml
+      dockerfile: container/Dockerfile
+      cache-map: |
+        {
+          "cache-mount/compiler": {
+            "target": "/home/builder/.cache/ccache",
+            "id": "compiler-${TARGETARCH}",
+            "uid": 1000,
+            "gid": 1000,
+            "sharing": "locked"
+          }
+        }
+```
+
+Match the Dockerfile's resolved `target`, `id`, ownership and sharing mode. Only the literal `${TARGETOS}`, `${TARGETARCH}` and `${TARGETVARIANT}` placeholders are expanded, using `matrix.platform`; resolve other variables in the caller. Bound compiler-cache size in the Dockerfile (for example, `ENV CCACHE_MAXSIZE=1G`) before persisting it.
+
+Archive compatibility includes `cache-scope`, platform, Bake target, Dockerfile/Bake file contents and the resolved map. Each commit/run/attempt/job gets a new immutable archive, restored from the most recent compatible prefix. This allows source-only rebuilds to save updated compiler/dependency data. The new key namespace starts cold; old archives are left to normal cache eviction. Cache-dance extracts in its post step before the archive action saves and Buildx cleans up.
