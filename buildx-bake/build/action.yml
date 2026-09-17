@@ -31,6 +31,10 @@ inputs:
   registry-image:
     description: 'Container registry + image prefix'
     required: false
+  qemu:
+    description: 'QEMU setup: auto for foreign platforms, true to force, false to skip'
+    required: false
+    default: 'auto'
   docker-version:
     description: 'Docker CE version. (e.g, v24.0.9)'
     required: false
@@ -105,7 +109,16 @@ runs:
         username: ${{ inputs.registry-username }}
         password: ${{ inputs.registry-password }}
 
+    - name: Select QEMU setup
+      id: qemu
+      shell: bash
+      env:
+        QEMU_MODE: ${{ inputs.qemu }}
+        BUILD_PLATFORM: ${{ matrix.platform }}
+      run: bash "$GITHUB_ACTION_PATH/qemu-config.sh"
+
     - name: Setup QEMU
+      if: ${{ steps.qemu.outputs.enabled == 'true' }}
       uses: docker/setup-qemu-action@v4
 
     - name: Setup Docker Buildx

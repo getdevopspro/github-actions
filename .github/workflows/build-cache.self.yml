@@ -158,9 +158,39 @@ jobs:
       MOUNT_GENERATION: '3'
     steps: *mount-steps
 
+  emulated:
+    timeout-minutes: 10
+    needs: prepare
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        include:
+          - platform: linux/arm64
+            qemu: auto
+            dockerfile: Dockerfile
+          - platform: linux/amd64
+            qemu: 'true'
+            dockerfile: Dockerfile.foreign
+    steps:
+      - uses: actions/checkout@v6
+      - name: Check automatic and forced foreign execution
+        uses: ./buildx-bake/build
+        with:
+          bake-file: tests/fixtures/build-cache/docker-bake.hcl
+          dockerfile: tests/fixtures/build-cache/Dockerfile
+          cache-mounts: false
+          qemu: ${{ matrix.qemu }}
+          cache-scope: ${{ env.CACHE_SCOPE }}-emulated
+          registry-password: ${{ secrets.GITHUB_TOKEN }}
+          bake-set: |
+            *.dockerfile=${{ matrix.dockerfile }}
+            *.cache-from=
+            *.cache-to=
+            *.output=type=cacheonly
+
   all-green:
     name: Job
-    needs: [prepare, cold, warm, mount-cold, mount-restore, mount-refresh]
+    needs: [prepare, cold, warm, mount-cold, mount-restore, mount-refresh, emulated]
     if: ${{ !cancelled() }}
     permissions:
       contents: read
