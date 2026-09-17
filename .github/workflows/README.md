@@ -37,6 +37,8 @@ jobs:
       bake-target: build
 ```
 
+`qemu` defaults to `auto`, skipping setup for a native Docker daemon/target match. Use the strings `'true'` or `'false'` to force or skip setup; force it for foreign execution stages in a native output image.
+
 `cache-mounts` (default `true`), `cache-map` and `dockerfile` are forwarded to the build action. Disable mount persistence when it is unused; provide resolved maps for custom IDs or non-root mounts.
 
 The prepare and image jobs both use `bake-file`. `cache-scope` (default `buildkit`) isolates layer caches by resolved target and platform. `bake-set` forwards newline-separated overrides to the image build; see [Buildx Bake Build](../../buildx-bake/build/README.md) for backend replacement and disabling the cache. Keep image outputs enabled when using this workflow because its merge job requires image digests.

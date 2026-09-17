@@ -1,0 +1,6 @@
+# Native output with a foreign execution stage requires explicit QEMU setup.
+FROM --platform=linux/arm64 alpine:3.22 AS foreign
+RUN test "$(uname -m)" = aarch64 && printf 'foreign stage verified\n' > /verified
+FROM alpine:3.22
+COPY --from=foreign /verified /verified
+RUN test "$(uname -m)" = x86_64 && test -s /verified
