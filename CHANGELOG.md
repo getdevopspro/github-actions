@@ -1,3 +1,18 @@
+## [v10.0.0](https://github.com/getdevopspro/github-actions/compare/v9.0.0..v10.0.0) - 2026-09-17
+
+### Features
+
+- _(build)_ Add configurable persistent cache mounts ([`ed9e821`](https://github.com/getdevopspro/github-actions/commit/ed9e821c3ca5d5f284aaac86311c52eee5c3be5d))
+- _(build)_ [**breaking**] Skip QEMU setup for native builds ([`06e7c95`](https://github.com/getdevopspro/github-actions/commit/06e7c952c733b7a4d526a5a355f44b511bad762c))
+
+### Bug Fixes
+
+- _(build)_ Isolate Bake caches by target and platform ([`cf56739`](https://github.com/getdevopspro/github-actions/commit/cf5673971715e5e2796a9d08e14985a729373d97))
+
+### Testing
+
+- _(build)_ Read structured cache progress events ([`d09a38f`](https://github.com/getdevopspro/github-actions/commit/d09a38fc969245a1622ffd8c45b05ae60529f3ca))
+
 ## [v9.0.0](https://github.com/getdevopspro/github-actions/compare/v8.5.1..v9.0.0) - 2026-09-11
 
 ### Features
