@@ -6,7 +6,7 @@ This catalog documents the reusable workflows that exist so far. The repository 
 
 `release.self.yml` is intentionally omitted from this catalog because it is this repository's self-release workflow.
 
-The Build and Release workflows use GitHub.com's `$/release/version/...` references to load version actions from the same repository and commit as the reusable workflow. Callers continue to pin the reusable workflow to a versioned reference. Custom runners need [Actions runner 2.336.0 or newer](https://github.blog/changelog/2026-07-30-reference-same-repository-actions-with-self-repository-syntax/) for this syntax.
+The Build and Release workflows use GitHub.com's `$/` references to load version and report actions from the same repository and commit as the reusable workflow. Callers continue to pin the reusable workflow to a versioned reference. Custom runners need [Actions runner 2.336.0 or newer](https://github.blog/changelog/2026-07-30-reference-same-repository-actions-with-self-repository-syntax/) for this syntax.
 
 ## All Green
 
@@ -52,6 +52,94 @@ Pre and post command jobs use those same versions by default. Set `pre-docker-ve
 The Build workflow enables Git LFS downloads during checkout by default. Set `lfs: false` when the caller does not need Git LFS files.
 
 When `lfs` is enabled, the workflow prints the tracked LFS files and fails before image build if any checked-out file is still an unresolved LFS pointer. Image builds use the uploaded source artifact as a local path context, so the hydrated checkout is what gets baked into the image.
+
+### Build reports
+
+The `Build Report` job calls the [Build Report action](../../build-report/README.md)
+after pre/post commands, including failed commands, and exposes `build-report-url`.
+It produces combined test, lint, and coverage results. It uses
+`runner-report-default`, falling back to `runner-default`, and needs Python 3.10+.
+
+`build-report-enabled` is a boolean and defaults to `false`. Set it to `true` to
+report on configured pre/post artifacts, including `checks`, `lint`, `test`,
+`test-unit`, `test-coverage`, `test-integration`, and `test-e2e`. Set
+`build-report-artifacts` to a newline-separated subset of those artifact names
+when other pre/post artifacts contain logs or binaries instead of report data.
+Neither artifact configuration nor report options enable reporting by themselves.
+
+Prepare validates artifact configuration before checkout and image builds. For
+every pre/post step that declares an artifact name or path, a nonempty command,
+valid artifact name, and path are required, even when reporting is disabled.
+Command-only steps need no artifact fields. When reporting is enabled, prepare
+also requires at least one report artifact, rejects duplicate producer names and
+collisions with source/report uploads, and verifies that explicit report names
+refer to configured producers. Selecting a subset does not bypass validation of
+other pre/post artifact configurations.
+
+Both pre and post commands upload their configured artifacts, including after
+command failures. Prepare checks configuration only; files and report contents
+are checked after the producing jobs run.
+
+Every selected artifact must contain supported results. Missing or invalid inputs
+fail the report job after it publishes any available results. Publish each result
+in one format to avoid counting raw XML and its JSON aggregate twice.
+
+No additional reporting permissions are required when `build-report-enabled`
+is `false` (the default), even if optional report inputs are set. When reporting
+is enabled, HTML artifacts and job summaries also need no extra `GITHUB_TOKEN`
+permissions. Optional features require these caller permissions:
+
+| Caller permission | Required only when |
+| --- | --- |
+| `pull-requests: write` | `build-report-enabled: true` and `build-report-pr-comment: true`, on `pull_request` events |
+| `actions: read` | `build-report-enabled: true` and `build-report-baseline-artifact` is set |
+
+PR comments and coverage comparisons are disabled by default. Baselines come from
+the latest successful default-branch run of `build-report-baseline-workflow`
+(default `release.yml`). Existing build jobs retain their own `contents: read`
+and `packages: write` permissions; reporting adds no access to those jobs.
+
+Example caller enabling both optional features. This assumes an existing
+`make coverage` target writes Cobertura XML to `build/coverage.xml`, and
+`release.yml` uploads coverage under the same artifact name. Adopt a release
+containing this feature before using the example; `v5.0.0` does not contain it.
+
+```yaml
+jobs:
+  build:
+    uses: clean-botix/github-actions/.github/workflows/build.yml@v5.0.0
+    permissions:
+      contents: read        # Existing Build requirement
+      packages: write       # Existing Build requirement
+      actions: read         # Enabled coverage baseline
+      pull-requests: write  # Enabled PR report comment
+    secrets:
+      registry-password: ${{ secrets.GITHUB_TOKEN }}
+    with:
+      post-test-coverage-command: make coverage
+      post-test-coverage-artifact-name: coverage-results
+      post-test-coverage-artifact-path: build/coverage.xml
+      build-report-enabled: true
+      build-report-pr-comment: true
+      build-report-baseline-artifact: coverage-results
+```
+
+Report inputs do not grant permissions; the report job inherits them from its
+caller. Every intermediate reusable-workflow calling job must preserve the
+required scopes, either by inheriting them or declaring them explicitly. Under
+GitHub's [reusable workflow permission rules](https://docs.github.com/en/actions/reference/workflows-and-actions/reusing-workflow-configurations),
+a called workflow cannot restore scopes removed by a caller. Remove optional
+scopes from the caller when those features are disabled; changing report inputs
+does not change an explicit `permissions` block. Fork and repository policies
+may restrict access further. Prepare validates artifact configuration, not live
+token access.
+
+When adopting a release containing this feature, remove any existing job that
+uploads the same `build-report` artifact. Forward a wrapper workflow's report URL
+from `jobs.build.outputs.build-report-url`. Existing JSON producers can keep their
+local report-generation commands; repositories with JUnit XML can upload that XML
+directly. Test commands that only print results need to export a supported report
+and configure its artifact name/path before enabling reporting.
 
 ## Go Lint
 
