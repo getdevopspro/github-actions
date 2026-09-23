@@ -929,6 +929,7 @@ jobs:
       post-step-matrix: ${{ steps.set_post_matrix.outputs.matrix }}
       image-platform-matrix: ${{ steps.prepare_image.outputs.matrix }}
       build-report-artifacts: ${{ steps.prepare_report.outputs.artifacts }}
+      build-report-sections: ${{ steps.prepare_report.outputs.artifact-sections }}
     steps:
       - name: Validate versioning strategy
         shell: bash
@@ -989,9 +990,17 @@ jobs:
                   errors.append('Pre/post artifact names must not conflict with the source or build-report artifact')
           if errors:
               raise SystemExit('\n'.join(errors))
+          sections = {}
+          for name in names:
+              prefix = producers[name]
+              title = inputs.get(f'{prefix}-name', prefix)
+              if not isinstance(title, str) or not title.strip():
+                  raise SystemExit(f'{prefix}-name must be nonempty for reporting')
+              sections[name] = {'id': prefix, 'title': title}
           delimiter = 'report_' + secrets.token_hex(16)
           with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
               output.write(f'artifacts<<{delimiter}\n' + '\n'.join(names) + f'\n{delimiter}\n')
+              output.write('artifact-sections=' + json.dumps(sections) + '\n')
 
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -1612,6 +1621,7 @@ jobs:
         uses: $/build-report
         with:
           artifact-names: ${{ needs.prepare.outputs.build-report-artifacts }}
+          artifact-sections: ${{ needs.prepare.outputs.build-report-sections }}
           pr-comment: ${{ inputs.build-report-pr-comment }}
           baseline-artifact: ${{ inputs.build-report-baseline-artifact }}
           baseline-workflow: ${{ inputs.build-report-baseline-workflow }}

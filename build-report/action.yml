@@ -7,6 +7,9 @@ inputs:
   artifact-name:
     description: Name of the uploaded HTML report artifact.
     default: build-report
+  artifact-sections:
+    description: JSON object mapping artifact names to sections with id and title. Artifact section_title overrides the title; content supplies tests, lint, and coverage.
+    default: '{}'
   pr-comment:
     description: Update the build report comment on pull requests. Requires pull-requests write permission.
     default: 'false'
@@ -35,6 +38,7 @@ runs:
       env:
         ACTION_PATH: ${{ github.action_path }}
         REPORT_ARTIFACT_NAMES: ${{ inputs.artifact-names }}
+        REPORT_ARTIFACT_SECTIONS: ${{ inputs.artifact-sections }}
       run: |
         set -euo pipefail
         python3 "$ACTION_PATH/collect.py" prepare
@@ -59,15 +63,19 @@ runs:
       with:
         github-token: ${{ inputs.github-token }}
         script: |
-          const {data} = await github.rest.actions.listWorkflowRuns({
-            ...context.repo,
-            workflow_id: process.env.BASELINE_WORKFLOW,
-            branch: context.payload.repository.default_branch,
-            status: 'success', per_page: 1,
-          });
-          const run = data.workflow_runs[0];
-          if (run) core.setOutput('run-id', run.id);
-          else core.warning('No successful baseline run; coverage comparison omitted');
+          try {
+            const {data} = await github.rest.actions.listWorkflowRuns({
+              ...context.repo,
+              workflow_id: process.env.BASELINE_WORKFLOW,
+              branch: context.payload.repository.default_branch,
+              status: 'success', per_page: 1,
+            });
+            const run = data.workflow_runs[0];
+            if (run) core.setOutput('run-id', run.id);
+          } catch (error) {
+            // Generate report emits one warning if the optional baseline is unusable.
+            core.info(`Coverage baseline lookup failed (HTTP ${error.status ?? 'unknown'})`);
+          }
 
     - name: Download coverage baseline
       if: steps.baseline.outputs.run-id != ''
@@ -85,6 +93,7 @@ runs:
         ACTION_PATH: ${{ github.action_path }}
         REPORT_ROOT: ${{ steps.prepare.outputs.root }}
         REPORT_DOWNLOAD_OUTCOME: ${{ steps.download.outcome }}
+        REPORT_BASELINE_REQUESTED: ${{ inputs.baseline-artifact != '' }}
       run: |
         set -euo pipefail
         python3 "$ACTION_PATH/collect.py" generate --root "$REPORT_ROOT"
