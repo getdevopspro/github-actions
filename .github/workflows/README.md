@@ -4,7 +4,7 @@ These workflows are intended to be called with `workflow_call` from another repo
 
 `release.self.yml` is intentionally omitted from this catalog because it is this repository's self-release workflow.
 
-The Build and Release workflows use GitHub.com's `$/` references to load version and report actions from the same repository and commit as the reusable workflow. Callers continue to pin the reusable workflow to a versioned reference. Custom runners need [Actions runner 2.336.0 or newer](https://github.blog/changelog/2026-07-30-reference-same-repository-actions-with-self-repository-syntax/) for this syntax.
+The Build and Release workflows use GitHub.com's `$/` references to load version, baseline, and report actions from the same repository and commit as the reusable workflow. Callers continue to pin the reusable workflow to a versioned reference. Custom runners need [Actions runner 2.336.0 or newer](https://github.blog/changelog/2026-07-30-reference-same-repository-actions-with-self-repository-syntax/) for this syntax.
 
 ## All Green
 
@@ -51,16 +51,79 @@ The Build workflow enables Git LFS downloads during checkout by default. Set `lf
 
 When `lfs` is enabled, the workflow prints the tracked LFS files and fails before image build if any checked-out file is still an unresolved LFS pointer. Image builds use the uploaded source artifact as a local path context, so the hydrated checkout is what gets baked into the image.
 
+### Baselines
+
+Baseline retrieval is explicitly enabled and independent of reporting or coverage.
+Repository scripts own comparisons and thresholds; this workflow supplies files
+and provenance through [Build Baseline](../../build/baseline/README.md).
+
+| Input | Default | Purpose |
+| --- | --- | --- |
+| `baseline-enabled` | `false` | Retrieve a reference artifact once for pre/post commands |
+| `baseline-artifact` | Empty | Exact artifact name; required when enabled |
+| `baseline-workflow` | `release.yml` | Workflow filename or ID producing that artifact |
+| `baseline-allow-ancestor` | `false` | Allow a bounded ancestor fallback marked approximate |
+
+When enabled, prepare validates the artifact name, workflow, and presence of at
+least one pre/post command before checkout. It then resolves the reference from
+that checkout and event. The optional `Build Baseline` job retrieves the artifact
+once without another checkout, using `runner-prepare-default` or `runner-default`.
+See the action's [selection rules](../../build/baseline/README.md#selection).
+
+Add `actions: read` to the caller's permissions **only when baseline retrieval is
+enabled**. This optional job inherits caller permissions; existing prepare,
+command, and image jobs retain `contents: read` and `packages: write`. Report
+comments independently require `pull-requests: write` when enabled. Every
+intermediate calling workflow must preserve the required scopes. Prepare checks
+configuration, not live token access.
+
+Pre/post commands receive these environment variables:
+
+- `BASELINE_METADATA`: absolute path to the downloaded `metadata.json`, including
+  when no baseline is available; empty when disabled.
+- `BASELINE_PATH`: absolute path to downloaded artifact contents; empty when
+  disabled or unavailable.
+
+Read metadata `status` before using artifact files. Its `path` is relative to the
+metadata directory, so the bundle can move between runners or into containers.
+No reference logs informationally; missing runs/artifacts or lookup/download
+failures warn and return `unavailable`. Ancestor fallback emits a notice. Bundle
+transfer failures fail the affected job. Repository scripts decide whether a
+missing baseline prevents their comparison or build.
+
+The workflow downloads the bundle to `runner.temp/build-baseline` and reserves
+artifact name `build-baseline-<source-artifact-name>` (one-day retention). Producer
+names cannot reuse that artifact name. Use distinct `source-artifact-name` values
+for multiple Build calls in one run. Baseline files stay outside the source and
+report workspaces. Commands running in containers must mount the bundle
+and pass paths valid inside the container. Artifact contents, including any tar
+archives, are passed through unchanged for repository scripts to read.
+
+Example inputs for an existing command that reads those environment variables:
+
+```yaml
+with:
+  baseline-enabled: true
+  baseline-artifact: measurement-results
+  baseline-workflow: release.yml
+  post-checks-command: ./scripts/compare-results
+```
+
+Use a release containing these inputs; existing pinned consumers keep their
+current behavior until upgraded. A repository script can emit the optional
+[coverage comparison fields](../../build/report/README.md#coverage-comparisons)
+alongside its results and enable reporting separately.
+
 ### Build reports
 
-The `Build Report` job calls the [Build Report action](../../build-report/README.md)
+The `Build Report` job calls the [Build Report action](../../build/report/README.md)
 after pre/post commands, including failed commands, and exposes `build-report-url`.
 Report sections follow each selected pre/post producer and its configured
 `*-name`. Artifact `section_title` can override the title; artifact content
 supplies the applicable test, lint, and coverage fields. Clean lint results
 remain visible; absent fields are omitted. See the action's
-[formats and schema](../../build-report/README.md#report-formats-and-sections)
-for custom JSON producers and its [warning policy](../../build-report/README.md#results-and-logging).
+[formats and schema](../../build/report/README.md#report-formats-and-sections)
+for custom JSON producers and its [warning policy](../../build/report/README.md#results-and-logging).
 It produces combined test, lint, and coverage results. It uses
 `runner-report-default`, falling back to `runner-default`, and needs Python 3.10+.
 
@@ -103,17 +166,21 @@ permissions. Optional features require these caller permissions:
 | Caller permission | Required only when |
 | --- | --- |
 | `pull-requests: write` | `build-report-enabled: true` and `build-report-pr-comment: true`, on `pull_request` events |
-| `actions: read` | `build-report-enabled: true` and `build-report-baseline-artifact` is set |
 
-PR comments and coverage comparisons are disabled by default. Baselines come from
-the latest successful default-branch run of `build-report-baseline-workflow`
-(default `release.yml`). Existing build jobs retain their own `contents: read`
-and `packages: write` permissions; reporting adds no access to those jobs.
+PR comments are disabled by default. Coverage comparisons come from artifact
+content produced by repository scripts. Existing build jobs retain their own
+`contents: read` and `packages: write` permissions; reporting adds no access to
+those jobs.
 
-Example caller enabling both optional features. This assumes an existing
-`make coverage` target writes Cobertura XML to `build/coverage.xml`, and
-`release.yml` uploads coverage under the same artifact name. Adopt a release
-containing this feature before using the example; `v10.0.0` does not contain it.
+The old `build-report-baseline-artifact` and `build-report-baseline-workflow`
+inputs are removed. Enable the independent [baseline inputs](#baselines) when
+pre/post commands need reference artifacts. Commands compute comparisons and
+include them in report JSON; the report job only renders those supplied values.
+Custom producer jobs can call Baseline and Report directly; see the
+[standalone example](../../build/baseline/README.md#usage).
+
+Example caller enabling report comments. This assumes an existing `make coverage`
+target writes Cobertura XML to `build/coverage.xml`.
 
 ```yaml
 jobs:
@@ -122,7 +189,6 @@ jobs:
     permissions:
       contents: read        # Existing Build requirement
       packages: write       # Existing Build requirement
-      actions: read         # Enabled coverage baseline
       pull-requests: write  # Enabled PR report comment
     secrets:
       registry-password: ${{ secrets.GITHUB_TOKEN }}
@@ -132,7 +198,6 @@ jobs:
       post-test-coverage-artifact-path: build/coverage.xml
       build-report-enabled: true
       build-report-pr-comment: true
-      build-report-baseline-artifact: coverage-results
 ```
 
 Report inputs do not grant permissions; the report job inherits them from its

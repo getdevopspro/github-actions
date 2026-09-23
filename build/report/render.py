@@ -114,6 +114,7 @@ class ReportSection:
     lint_packages: list[LintPackage] = field(default_factory=list)
     cov_packages: list[CoveragePackage] = field(default_factory=list)
     kinds: list[str] = field(default_factory=list)
+    coverage_comparison: dict | None = None
 
     @property
     def failures(self) -> int:
@@ -833,7 +834,8 @@ def _display_sections(sections: list[ReportSection]) -> list[ReportSection]:
             result.append(section)
             continue
         result.append(
-            dataclasses.replace(section, cov_packages=[], kinds=[kind for kind in section.kinds if kind != "coverage"])
+            dataclasses.replace(section, cov_packages=[], coverage_comparison=None,
+                                kinds=[kind for kind in section.kinds if kind != "coverage"])
         )
         coverage.append(
             ReportSection(
@@ -841,9 +843,35 @@ def _display_sections(sections: list[ReportSection]) -> list[ReportSection]:
                 title="Coverage" if coverage_count == 1 else f"{section.title} — Coverage",
                 cov_packages=section.cov_packages,
                 kinds=["coverage"],
+                coverage_comparison=section.coverage_comparison,
             )
         )
     return result + coverage
+
+
+def _coverage_delta(comparison: dict) -> str:
+    delta = comparison["delta_pp"]
+    arrow = "↓ " if delta < 0 else "↑ " if delta > 0 else ""
+    return f"{arrow}{abs(delta):.1f} pp"
+
+
+def _coverage_comparison(comparison: dict) -> str:
+    if comparison["status"] == "unavailable":
+        return "Coverage comparison unavailable: " + _esc(comparison["reason"])
+    baseline = comparison["baseline"]
+    result = (
+        f'Coverage change: {_coverage_delta(comparison)}. '
+        f'Baseline: {baseline["line_rate"] * 100:.1f}%, '
+        f'<a href="{_esc(baseline["run_url"])}">run</a>, '
+        f'<code>{_esc(baseline["sha"][:7])}</code>'
+    )
+    if baseline.get("created_at"):
+        result += ", " + _esc(baseline["created_at"])
+    if comparison["status"] == "approximate":
+        result += ". Approximate comparison (earlier ancestor)"
+    if baseline.get("requested_sha"):
+        result += f'. Requested baseline: <code>{_esc(baseline["requested_sha"][:7])}</code>'
+    return result + "."
 
 
 def render_html(
@@ -908,6 +936,8 @@ def render_html(
                     ]
                 )
                 parts.append(_render_coverage_section(section.cov_packages, output_path, part_key, part_title))
+                if section.coverage_comparison:
+                    parts.append(f'<p class="content">{_coverage_comparison(section.coverage_comparison)}</p>')
         summary.append(_summary_group(key, section.title, cards))
         if mixed:
             content.append(
@@ -1081,7 +1111,6 @@ def render_markdown_summary(
     sections: list[ReportSection],
     title: str = "Build Report",
     max_items: int = 30,
-    baseline_cov_rate: float | None = None,
     report_errors: list[str] | None = None,
     report_warnings: list[str] | None = None,
 ) -> str:
@@ -1127,17 +1156,18 @@ def render_markdown_summary(
             if valid:
                 rate = covered / valid
                 detail = f"{rate * 100:.1f}% ({covered}/{valid} lines)"
-                if baseline_cov_rate is not None:
-                    delta = round(rate * 1000) - round(baseline_cov_rate * 1000)
-                    if delta:
-                        arrow = "↓" if delta < 0 else "↑"
-                        detail += f" {arrow} {abs(delta) / 10:.1f}%"
+                if section.coverage_comparison and section.coverage_comparison["status"] != "unavailable":
+                    detail += " " + _coverage_delta(section.coverage_comparison)
+                    if result == "—":
+                        result = "ℹ️"
             parts.append(("Coverage", detail))
         if section.failures:
             result = "❌"
         detail = "; ".join(f"{kind}: {text}" if len(parts) > 1 else text for kind, text in parts)
         lines.append(f"| {_md(section.title)} | {result if parts else '⚠️'} | {detail or 'no identifiable results'} |")
 
+        if section.coverage_comparison:
+            details.extend(["", f"<p>{_esc(section.title)}: {_coverage_comparison(section.coverage_comparison)}</p>"])
         items = []
         for suite in sorted(section.suites, key=lambda s: (s.package, s.name)):
             for case in suite.cases:
@@ -1171,6 +1201,8 @@ def render_markdown_summary(
 def _save_report_data(json_path: Path, sections: list[ReportSection]) -> None:
     data = {"report_sections": [dataclasses.asdict(section) for section in sections]}
     for section in data["report_sections"]:
+        if section["coverage_comparison"] is None:
+            del section["coverage_comparison"]
         for package in section["cov_packages"]:
             # Machine-local coverage links cannot resolve on another runner.
             package["html_dir"] = ""
@@ -1229,6 +1261,7 @@ def _load_report_sections(json_path: Path) -> list[ReportSection]:
                 lint_packages=lint,
                 cov_packages=coverage,
                 kinds=section["kinds"],
+                coverage_comparison=section.get("coverage_comparison"),
             )
         )
     return sections

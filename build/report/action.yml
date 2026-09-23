@@ -13,14 +13,8 @@ inputs:
   pr-comment:
     description: Update the build report comment on pull requests. Requires pull-requests write permission.
     default: 'false'
-  baseline-artifact:
-    description: Optional report artifact from the latest successful baseline run, used for coverage comparison.
-    default: ''
-  baseline-workflow:
-    description: Workflow filename or ID used to find the coverage baseline.
-    default: release.yml
   github-token:
-    description: GitHub token for optional baseline lookup and PR comments.
+    description: GitHub token for optional PR comments.
     default: ${{ github.token }}
 outputs:
   artifact-url:
@@ -53,47 +47,12 @@ runs:
         path: ${{ steps.prepare.outputs.download-path }}
         merge-multiple: false
 
-    - name: Find coverage baseline
-      id: baseline
-      if: inputs.baseline-artifact != ''
-      continue-on-error: true
-      uses: actions/github-script@v8
-      env:
-        BASELINE_WORKFLOW: ${{ inputs.baseline-workflow }}
-      with:
-        github-token: ${{ inputs.github-token }}
-        script: |
-          try {
-            const {data} = await github.rest.actions.listWorkflowRuns({
-              ...context.repo,
-              workflow_id: process.env.BASELINE_WORKFLOW,
-              branch: context.payload.repository.default_branch,
-              status: 'success', per_page: 1,
-            });
-            const run = data.workflow_runs[0];
-            if (run) core.setOutput('run-id', run.id);
-          } catch (error) {
-            // Generate report emits one warning if the optional baseline is unusable.
-            core.info(`Coverage baseline lookup failed (HTTP ${error.status ?? 'unknown'})`);
-          }
-
-    - name: Download coverage baseline
-      if: steps.baseline.outputs.run-id != ''
-      continue-on-error: true
-      uses: actions/download-artifact@v8
-      with:
-        name: ${{ inputs.baseline-artifact }}
-        path: ${{ steps.prepare.outputs.root }}/baseline
-        run-id: ${{ steps.baseline.outputs.run-id }}
-        github-token: ${{ inputs.github-token }}
-
     - name: Generate report
       shell: bash
       env:
         ACTION_PATH: ${{ github.action_path }}
         REPORT_ROOT: ${{ steps.prepare.outputs.root }}
         REPORT_DOWNLOAD_OUTCOME: ${{ steps.download.outcome }}
-        REPORT_BASELINE_REQUESTED: ${{ inputs.baseline-artifact != '' }}
       run: |
         set -euo pipefail
         python3 "$ACTION_PATH/collect.py" generate --root "$REPORT_ROOT"

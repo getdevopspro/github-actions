@@ -204,6 +204,25 @@ on:
         required: false
         default: ''
         type: string
+      baseline-enabled:
+        description: 'Retrieve a baseline once for repository pre/post commands; requires caller actions read permission'
+        required: false
+        type: boolean
+        default: false
+      baseline-artifact:
+        description: 'Exact reference artifact name; required when baseline-enabled is true'
+        required: false
+        type: string
+      baseline-workflow:
+        description: 'Workflow filename or ID producing the reference artifact'
+        required: false
+        type: string
+        default: 'release.yml'
+      baseline-allow-ancestor:
+        description: 'Allow an approximate baseline from a bounded first-parent ancestor search'
+        required: false
+        type: boolean
+        default: false
       build-report-enabled:
         description: 'Generate a build report from configured pre/post artifacts; prepare validates artifact configuration before building'
         required: false
@@ -218,15 +237,6 @@ on:
         required: false
         type: boolean
         default: false
-      build-report-baseline-artifact:
-        description: 'Optional coverage baseline artifact from the latest successful default-branch run; requires actions read permission'
-        required: false
-        type: string
-      build-report-baseline-workflow:
-        description: 'Workflow filename or ID used to find the coverage baseline'
-        required: false
-        type: string
-        default: 'release.yml'
       runner-report-default:
         description: 'Runner for Build Report; defaults to runner-default and requires Python 3.10 or newer'
         required: false
@@ -930,6 +940,7 @@ jobs:
       image-platform-matrix: ${{ steps.prepare_image.outputs.matrix }}
       build-report-artifacts: ${{ steps.prepare_report.outputs.artifacts }}
       build-report-sections: ${{ steps.prepare_report.outputs.artifact-sections }}
+      baseline-reference: ${{ steps.baseline_reference.outputs.reference }}
     steps:
       - name: Validate versioning strategy
         shell: bash
@@ -942,7 +953,7 @@ jobs:
             *) echo '::error::version-strategy must be semver or calver' >&2; exit 1 ;;
           esac
 
-      - name: Prepare build report
+      - name: Prepare build inputs
         id: prepare_report
         shell: python
         env:
@@ -988,6 +999,18 @@ jobs:
               reserved = {'build-report', inputs.get('source-artifact-name', '')}
               if any(name in reserved for name in producers):
                   errors.append('Pre/post artifact names must not conflict with the source or build-report artifact')
+          if inputs.get('baseline-enabled', False):
+              artifact = inputs.get('baseline-artifact', '')
+              if not artifact.strip() or artifact in ('.', '..') or any(c in artifact for c in '\\/:*?"<>|\r\n'):
+                  errors.append('baseline-enabled=true requires a valid baseline-artifact name')
+              if not inputs.get('baseline-workflow', 'release.yml').strip():
+                  errors.append('baseline-enabled=true requires baseline-workflow')
+              if not any(value.strip() for key, value in inputs.items()
+                         if key.startswith(('pre-', 'post-')) and key.endswith('-command')):
+                  errors.append('baseline-enabled=true requires at least one pre/post command')
+              bundle_name = 'build-baseline-' + inputs.get('source-artifact-name', 'source-code')
+              if bundle_name in producers:
+                  errors.append('Pre/post artifact names must not conflict with the baseline bundle')
           if errors:
               raise SystemExit('\n'.join(errors))
           sections = {}
@@ -1011,6 +1034,13 @@ jobs:
           lfs: ${{ inputs.lfs }}
           submodules: ${{ inputs.submodules }}
           token: ${{ secrets.checkout-token || secrets.GITHUB_TOKEN }}
+
+      - name: Resolve baseline reference
+        id: baseline_reference
+        if: inputs.baseline-enabled
+        uses: $/build/baseline
+        with:
+          resolve-only: 'true'
 
       - name: Determine commit SHA
         id: determine_sha
@@ -1427,13 +1457,44 @@ jobs:
           if-no-files-found: error
           retention-days: 1
 
+  baseline:
+    name: Build Baseline
+    needs: prepare
+    if: inputs.baseline-enabled
+    # Inherit optional actions: read from the caller, without requiring it when disabled.
+    # Existing prepare, command, and image jobs retain their explicit permissions.
+    runs-on: ${{ inputs.runner-prepare-default || inputs.runner-default }}
+    outputs:
+      status: ${{ steps.baseline.outputs.status }}
+    steps:
+      - name: Retrieve baseline
+        id: baseline
+        uses: $/build/baseline
+        with:
+          reference: ${{ needs.prepare.outputs.baseline-reference }}
+          artifact-name: ${{ inputs.baseline-artifact }}
+          workflow: ${{ inputs.baseline-workflow }}
+          allow-ancestor: ${{ inputs.baseline-allow-ancestor }}
+
+      - name: Share baseline with commands
+        uses: actions/upload-artifact@v7
+        with:
+          name: build-baseline-${{ inputs.source-artifact-name }}
+          path: |
+            ${{ steps.baseline.outputs.metadata-file }}
+            ${{ steps.baseline.outputs.path }}
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 1
+          overwrite: true
+
   pre-steps:
     name : ${{ matrix.pre-steps.name }}
     permissions:
       contents: read
       packages: write
-    needs: prepare
-    if: ${{ !cancelled() && needs.prepare.outputs.pre-step-matrix != '[]' }}
+    needs: [prepare, baseline]
+    if: ${{ !cancelled() && needs.prepare.result == 'success' && (!inputs.baseline-enabled || needs.baseline.result == 'success') && needs.prepare.outputs.pre-step-matrix != '[]' }}
     runs-on: ${{ matrix.pre-steps.runner || inputs.runner-pre-default || inputs.runner-default }}
     strategy:
       matrix:
@@ -1443,6 +1504,14 @@ jobs:
         uses: atos-actions/download-artifact@v2
         with:
           name: ${{ inputs.source-artifact-name }}
+
+      - name: Download baseline bundle
+        id: baseline_bundle
+        if: inputs.baseline-enabled
+        uses: actions/download-artifact@v8
+        with:
+          name: build-baseline-${{ inputs.source-artifact-name }}
+          path: ${{ runner.temp }}/build-baseline
 
       - name: Install just
         if: inputs.just-install
@@ -1476,6 +1545,9 @@ jobs:
 
       - name: ${{ matrix.pre-steps.name }}
         id: command
+        env:
+          BASELINE_METADATA: ${{ inputs.baseline-enabled && format('{0}/metadata.json', steps.baseline_bundle.outputs.download-path) || '' }}
+          BASELINE_PATH: ${{ inputs.baseline-enabled && needs.baseline.outputs.status != 'unavailable' && format('{0}/artifacts', steps.baseline_bundle.outputs.download-path) || '' }}
         uses: getdevopspro/github-actions/command@v9.1.0
         with:
           command: ${{ matrix.pre-steps.command }}
@@ -1554,6 +1626,7 @@ jobs:
     needs:
       - prepare
       - image-push
+      - baseline
     if: ${{ !failure() && !cancelled() && needs.prepare.outputs.post-step-matrix != '[]' }}
     runs-on: ${{ matrix.post-steps.runner || inputs.runner-post-default || inputs.runner-default }}
     strategy:
@@ -1564,6 +1637,14 @@ jobs:
         uses: atos-actions/download-artifact@v2
         with:
           name: ${{ inputs.source-artifact-name }}
+
+      - name: Download baseline bundle
+        id: baseline_bundle
+        if: inputs.baseline-enabled
+        uses: actions/download-artifact@v8
+        with:
+          name: build-baseline-${{ inputs.source-artifact-name }}
+          path: ${{ runner.temp }}/build-baseline
 
       - name: Install just
         if: inputs.just-install
@@ -1597,6 +1678,9 @@ jobs:
 
       - name: ${{ matrix.post-steps.name }}
         id: command
+        env:
+          BASELINE_METADATA: ${{ inputs.baseline-enabled && format('{0}/metadata.json', steps.baseline_bundle.outputs.download-path) || '' }}
+          BASELINE_PATH: ${{ inputs.baseline-enabled && needs.baseline.outputs.status != 'unavailable' && format('{0}/artifacts', steps.baseline_bundle.outputs.download-path) || '' }}
         uses: getdevopspro/github-actions/command@v9.1.0
         with:
           command: ${{ matrix.post-steps.command }}
@@ -1618,10 +1702,8 @@ jobs:
     steps:
       - name: Build Report
         id: report
-        uses: $/build-report
+        uses: $/build/report
         with:
           artifact-names: ${{ needs.prepare.outputs.build-report-artifacts }}
           artifact-sections: ${{ needs.prepare.outputs.build-report-sections }}
           pr-comment: ${{ inputs.build-report-pr-comment }}
-          baseline-artifact: ${{ inputs.build-report-baseline-artifact }}
-          baseline-workflow: ${{ inputs.build-report-baseline-workflow }}

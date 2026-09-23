@@ -15,7 +15,7 @@ import unittest
 
 
 REPO = Path(__file__).resolve().parents[1]
-ACTION = REPO / "build-report"
+ACTION = REPO / "build" / "report"
 sys.path.insert(0, str(ACTION))
 import collect
 
@@ -50,7 +50,7 @@ class SelectionTests(unittest.TestCase):
             )
         )
         inputs = {**defaults, **inputs}
-        step = workflow.split("      - name: Prepare build report\n", 1)[1].split("      - name:", 1)[0]
+        step = workflow.split("      - name: Prepare build inputs\n", 1)[1].split("      - name:", 1)[0]
         script = textwrap.dedent(step.split("        run: |\n", 1)[1])
         with tempfile.TemporaryDirectory() as directory:
             output = Path(directory) / "output"
@@ -212,8 +212,42 @@ class SelectionTests(unittest.TestCase):
     def test_validation_runs_before_checkout(self):
         workflow = (REPO / ".github/workflows/build.yml").read_text()
         self.assertLess(
-            workflow.index("      - name: Prepare build report"), workflow.index("      - name: Checkout repository")
+            workflow.index("      - name: Prepare build inputs"), workflow.index("      - name: Checkout repository")
         )
+
+    def test_baseline_is_explicit_and_independent_of_report_enablement(self):
+        # Coverage producers do not opt in, even with baseline options configured.
+        result = self.configure(**{
+            "build-report-enabled": True, **self.producer("post-test-coverage"),
+            "baseline-artifact": "", "baseline-workflow": "",
+        })
+        self.assertEqual(result["artifacts"], "unit-results")
+        for phase in ("pre", "post"):
+            result = self.configure(**{
+                "baseline-enabled": True, "baseline-artifact": "reference-results",
+                f"{phase}-checks-command": "compare-results",
+            })
+            self.assertEqual(result, {"artifacts": "", "artifact-sections": "{}"})
+
+    def test_enabled_baseline_requires_artifact_workflow_and_command(self):
+        valid = {"baseline-enabled": True, "baseline-artifact": "reference-results", "pre-checks-command": "compare"}
+        for change, message in [
+            ({"baseline-artifact": ""}, "valid baseline-artifact"),
+            ({"baseline-artifact": "../results"}, "valid baseline-artifact"),
+            ({"baseline-workflow": " "}, "requires baseline-workflow"),
+            ({"pre-checks-command": " "}, "at least one pre/post command"),
+        ]:
+            with self.subTest(change=change), self.assertRaisesRegex(ValueError, message):
+                self.configure(**{**valid, **change})
+
+    def test_baseline_bundle_cannot_be_overwritten_by_pre_post_artifacts(self):
+        for report_enabled in (False, True):
+            with self.subTest(report_enabled=report_enabled), self.assertRaisesRegex(ValueError, "baseline bundle"):
+                self.configure(**{
+                    "baseline-enabled": True, "baseline-artifact": "reference-results",
+                    "build-report-enabled": report_enabled, "source-artifact-name": "custom-source",
+                    **self.producer(name="build-baseline-custom-source"),
+                })
 
 
 class ReportTests(unittest.TestCase):
@@ -830,23 +864,10 @@ for (const [, handler] of page.matchAll(/\bonclick="([^"]+)"/g)) vm.runInContext
             ],
         }
         self.write("report.json", json.dumps(data))
-        baseline = self.root / "baseline"
-        baseline.mkdir()
-        self.write(
-            "baseline.json",
-            json.dumps(
-                {
-                    "cov_packages": [
-                        {"package": "example", "line_rate": 0.9, "lines_covered": 9, "lines_valid": 10, "files": []}
-                    ]
-                }
-            ),
-            baseline,
-        )
         check, markdown = self.run_report()
         self.assertEqual(check.returncode, 1)
         self.assertIn("| Checks | ❌ | Tests: 1 passed; Lint: 1 error(s)", markdown)
-        self.assertIn("80.0% (8/10 lines) ↓ 10.0%", markdown)
+        self.assertIn("80.0% (8/10 lines)", markdown)
 
     def test_missing_or_invalid_reports_publish_failed_summary(self):
         for content in ("not XML", '{"suites": "invalid"}', None):
@@ -980,15 +1001,94 @@ for (const [, handler] of page.matchAll(/\bonclick="([^"]+)"/g)) vm.runInContext
         self.assertIn("no executable lines", markdown)
         self.assertIn("::warning::", self.generated.stdout)
 
-    def test_coverage_decrease_is_informational(self):
-        self.write("coverage.xml", '<coverage line-rate="0.5" lines-covered="1" lines-valid="2"/>')
-        self.write(
-            "baseline.xml", '<coverage line-rate="1" lines-covered="2" lines-valid="2"/>', self.root / "baseline"
-        )
+    @staticmethod
+    def coverage_result(delta=-50, status="exact"):
+        return {
+            "cov_packages": [{"package": "example", "line_rate": 0.5, "lines_covered": 1, "lines_valid": 2}],
+            "coverage_comparison": {
+                "status": status, "delta_pp": delta,
+                "baseline": {"sha": "a" * 40, "requested_sha": "b" * 40,
+                             "run_url": "https://example.test/actions/runs/42", "line_rate": 1,
+                             "created_at": "2026-01-01T00:00:00Z"},
+            },
+        }
+
+    def test_supplied_comparison_is_rendered_without_recalculating_or_failing(self):
+        # The producer owns comparison scope and arithmetic, even if it differs from total coverage.
+        data = self.coverage_result(delta=-12.3)
+        data["suites"] = [{"name": "unit", "package": "example", "tests": 1}]
+        self.write("result.json", json.dumps(data))
         check, markdown = self.run_report()
         self.assertEqual(check.returncode, 0)
-        self.assertIn("↓ 50.0%", markdown)
-        self.assertNotIn("❌", markdown)
+        for report in (markdown, (self.root / "output/build_report.html").read_text()):
+            self.assertIn("↓ 12.3 pp", report)
+            self.assertEqual(report.count("Coverage change:"), 1)
+            self.assertNotIn("↓ 50.0 pp", report)
+            self.assertIn("https://example.test/actions/runs/42", report)
+            self.assertIn("2026-01-01T00:00:00Z", report)
+            self.assertIn("aaaaaaa", report)
+        self.assertNotIn("::warning::", self.generated.stdout)
+        saved = (self.root / "output/build_report.json").read_text()
+        collect.validate_report(json.loads(saved))
+        self.write("result.json", saved)
+        check, markdown = self.run_report()
+        self.assertEqual(check.returncode, 0)
+        self.assertIn("↓ 12.3 pp", markdown)
+
+    def test_approximate_comparison_is_labelled_and_unchanged_coverage_is_visible(self):
+        self.write("result.json", json.dumps(self.coverage_result(delta=0, status="approximate")))
+        check, markdown = self.run_report()
+        self.assertEqual(check.returncode, 0)
+        for report in (markdown, (self.root / "output/build_report.html").read_text()):
+            self.assertIn("0.0 pp", report)
+            self.assertIn("Approximate comparison", report)
+        self.assertIn("::notice::", self.generated.stdout)
+        self.assertNotIn("::warning::", self.generated.stdout)
+
+    def test_unavailable_comparison_warns_escapes_content_and_has_no_delta(self):
+        data = self.coverage_result()
+        data["coverage_comparison"] = {"status": "unavailable", "reason": "Missing <data>%\n::error::injected"}
+        self.write("result.json", json.dumps(data))
+        check, markdown = self.run_report()
+        self.assertEqual(check.returncode, 0)
+        self.assertIn("comparison unavailable", markdown)
+        self.assertIn("Missing &lt;data&gt;", markdown)
+        self.assertNotIn(" pp", markdown)
+        self.assertIn("%25%0A::error::injected", self.generated.stdout)
+        self.assertNotIn("\n::error::injected", self.generated.stdout)
+
+    def test_invalid_comparisons_fail_contract_validation(self):
+        for comparison in (
+            {"status": "exact"}, {"status": "unknown"},
+            {"status": "unavailable", "reason": "missing", "delta_pp": 0},
+            {**self.coverage_result()["coverage_comparison"], "delta_pp": float("nan")},
+            {**self.coverage_result()["coverage_comparison"], "delta_pp": 101},
+            {**self.coverage_result()["coverage_comparison"], "baseline": {
+                "sha": "a" * 40, "line_rate": 0.5, "run_url": "javascript:alert(1)"}},
+        ):
+            with self.subTest(comparison=comparison):
+                data = self.coverage_result()
+                data["coverage_comparison"] = comparison
+                self.write("result.json", json.dumps(data))
+                check, markdown = self.run_report()
+                self.assertEqual(check.returncode, 1)
+                self.assertIn("Report input errors", markdown)
+
+    def test_multiple_comparisons_in_one_producer_are_rejected(self):
+        for name in ("first.json", "second.json"):
+            self.write(name, json.dumps(self.coverage_result()))
+        check, markdown = self.run_report()
+        self.assertEqual(check.returncode, 1)
+        self.assertIn("multiple coverage comparisons", markdown)
+
+    def test_separate_producers_keep_their_own_comparisons(self):
+        (self.root / "artifacts.json").write_text(json.dumps(["unit-results", "post-results"]))
+        for name, delta in (("unit-results", -5), ("post-results", 10)):
+            self.write("result.json", json.dumps(self.coverage_result(delta)), self.root / "input" / name)
+        check, markdown = self.run_report()
+        self.assertEqual(check.returncode, 0)
+        self.assertIn("↓ 5.0 pp", markdown)
+        self.assertIn("↑ 10.0 pp", markdown)
         self.assertNotIn("::warning::", self.generated.stdout)
 
     def test_generated_report_can_be_read_again_without_changing_producer_identity(self):
@@ -1007,52 +1107,12 @@ for (const [, handler] of page.matchAll(/\bonclick="([^"]+)"/g)) vm.runInContext
         saved = (self.root / "output/build_report.json").read_text()
         collect.validate_report(json.loads(saved))
         self.write("results.json", saved)
-        self.write("baseline.json", saved, self.root / "baseline")
         check, markdown = self.run_report()
         self.assertEqual(check.returncode, 1)
         self.assertIn("| Checks | ❌ | 0 passed, 1 failed |", markdown)
         self.assertIn("| Coverage | ℹ️ | 50.0% (1/2 lines) |", markdown)
         self.assertNotIn("Original title", markdown)
         self.assertNotIn("::warning::", self.generated.stdout)
-
-    def test_aggregate_baseline_is_not_compared_to_individual_producers(self):
-        (self.root / "artifacts.json").write_text(json.dumps(["unit-results", "post-results"]))
-        self.section_defaults(
-            **{
-                "unit-results": {"id": "pre-test-coverage", "title": "Before"},
-                "post-results": {"id": "post-test-coverage", "title": "After"},
-            }
-        )
-        coverage = '<coverage line-rate="0.5" lines-covered="1" lines-valid="2"/>'
-        for name in ("unit-results", "post-results"):
-            self.write("coverage.xml", coverage, self.root / "input" / name)
-        self.write(
-            "coverage.xml", '<coverage line-rate="1" lines-covered="2" lines-valid="2"/>', self.root / "baseline"
-        )
-        check, markdown = self.run_report()
-        self.assertEqual(check.returncode, 0)
-        self.assertIn("cannot be attributed to multiple producer sections", markdown)
-        self.assertNotIn("↓", markdown)
-        self.assertIn("| Before | ℹ️ | 50.0%", markdown)
-        self.assertIn("| After | ℹ️ | 50.0%", markdown)
-
-    def test_requested_missing_baseline_warns_but_does_not_fail(self):
-        self.write("coverage.xml", '<coverage line-rate="0.5" lines-covered="1" lines-valid="2"/>')
-        from unittest.mock import patch
-
-        with patch.dict(os.environ, REPORT_BASELINE_REQUESTED="true"):
-            check, markdown = self.run_report()
-        self.assertEqual(check.returncode, 0)
-        self.assertIn("::warning::Coverage baseline", self.generated.stdout)
-        self.assertIn("comparison omitted", markdown)
-
-    def test_invalid_optional_baseline_does_not_fail_current_results(self):
-        self.write("result.xml", '<testsuite name="suite" tests="1"><testcase name="example"/></testsuite>')
-        self.write("baseline.xml", "invalid", self.root / "baseline")
-        check, markdown = self.run_report()
-        self.assertEqual(check.returncode, 0, check.stderr)
-        self.assertIn("1 passed", markdown)
-
 
 class PrepareTests(unittest.TestCase):
     def test_group_metadata_is_validated_and_saved_before_download(self):

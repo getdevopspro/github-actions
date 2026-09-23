@@ -13,6 +13,7 @@
     "system_suites": {"type": "array", "items": {"$ref": "#/$defs/suite"}},
     "lint_packages": {"type": "array", "items": {"$ref": "#/$defs/lintPackage"}},
     "cov_packages": {"type": "array", "items": {"$ref": "#/$defs/coveragePackage"}},
+    "coverage_comparison": {"$ref": "#/$defs/coverageComparison"},
     "section_title": {"$ref": "#/$defs/sectionTitle"},
     "report_sections": {"type": "array", "items": {"$ref": "#/$defs/reportSection"}}
   },
@@ -42,6 +43,7 @@
       "properties": {
         "id": {"$ref": "#/$defs/sectionId"},
         "title": {"$ref": "#/$defs/sectionTitle"},
+        "coverage_comparison": {"$ref": "#/$defs/coverageComparison"},
         "kinds": {"type": "array", "items": {"enum": ["tests", "lint", "coverage"]}},
         "suites": {"type": "array", "items": {"$ref": "#/$defs/suite"}},
         "lint_packages": {"type": "array", "items": {"$ref": "#/$defs/lintPackage"}},
@@ -107,6 +109,32 @@
         "package": {"type": "string"},
         "tools": {"type": "array", "items": {"$ref": "#/$defs/lintTool"}}
       }
+    },
+    "coverageComparison": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status"],
+      "properties": {
+        "status": {"enum": ["exact", "approximate", "unavailable"]},
+        "delta_pp": {"type": "number", "minimum": -100, "maximum": 100},
+        "reason": {"$ref": "#/$defs/sectionTitle"},
+        "baseline": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["sha", "run_url", "line_rate"],
+          "properties": {
+            "sha": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+            "requested_sha": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+            "run_url": {"type": "string", "pattern": "^https://[^\\s]+$"},
+            "created_at": {"$ref": "#/$defs/sectionTitle"},
+            "line_rate": {"$ref": "#/$defs/rate"}
+          }
+        }
+      },
+      "anyOf": [
+        {"required": ["delta_pp", "baseline"], "properties": {"status": {"enum": ["exact", "approximate"]}}},
+        {"required": ["reason"], "properties": {"status": {"enum": ["unavailable"]}}, "not": {"required": ["delta_pp"]}}
+      ]
     },
     "coverageFile": {
       "type": "object",

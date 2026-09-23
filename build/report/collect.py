@@ -51,6 +51,13 @@ def validate_report(value, schema=None, location="report"):
             raise ValueError(f"{location} must be finite")
         if value < schema.get("minimum", value) or value > schema.get("maximum", value):
             raise ValueError(f"{location} is outside the allowed range")
+    if "not" in schema:
+        try:
+            validate_report(value, schema["not"], location)
+        except ValueError:
+            pass
+        else:
+            raise ValueError(f"{location} contains a forbidden field combination")
     if "anyOf" in schema:
         for alternative in schema["anyOf"]:
             try:
@@ -59,7 +66,7 @@ def validate_report(value, schema=None, location="report"):
             except ValueError:
                 pass
         else:
-            raise ValueError(f"{location} must contain a report section")
+            raise ValueError(f"{location} does not match an allowed report shape")
     if isinstance(value, dict):
         for key in schema.get("required", []):
             if key not in value:
@@ -139,22 +146,29 @@ def read_reports(directory):
     warnings = []
     empty_test_warnings = []
     title = None
+    comparison = None
     if not directory.is_dir():
-        return data, ["artifact is missing"], count, sections, warnings, title
+        return data, ["artifact is missing"], count, sections, warnings, title, comparison
     try:
         unpack_reports(directory)
     except (OSError, tarfile.TarError, ValueError) as error:
-        return data, [str(error)], count, sections, warnings, title
+        return data, [str(error)], count, sections, warnings, title, comparison
     for path in sorted(directory.rglob("*")):
         if not path.is_file() or path.suffix.lower() not in (".xml", ".json"):
             continue
         try:
             parsed = [[] for _ in REPORT_KEYS]
             present = set()
+            supplied_comparisons = []
             if path.suffix.lower() == ".json":
                 value = json.loads(path.read_text())
                 if isinstance(value, dict) and any(key in value for key in (*REPORT_KEYS, "report_sections")):
                     validate_report(value)
+                    supplied_comparisons = [item["coverage_comparison"] for item in
+                                            [value, *value.get("report_sections", [])]
+                                            if "coverage_comparison" in item]
+                    if len(supplied_comparisons) > 1 or (supplied_comparisons and comparison is not None):
+                        raise ValueError("multiple coverage comparisons in one producer are ambiguous")
                     parsed = render._load_report_data(path)
                     present.update(value.get("sections", []))
                     for section in value.get("report_sections", []):
@@ -207,6 +221,8 @@ def read_reports(directory):
                 for coverage in [package, *package.files]:
                     if coverage.lines_covered > coverage.lines_valid:
                         raise ValueError("covered lines exceed executable lines")
+            if supplied_comparisons and "coverage" not in present:
+                raise ValueError("coverage_comparison requires coverage results in the same JSON")
             label = str(path.relative_to(directory))
             if not present:
                 warnings.append(
@@ -225,6 +241,8 @@ def read_reports(directory):
                     title = override
             for destination, values in zip(data, parsed):
                 destination.extend(values)
+            if supplied_comparisons:
+                comparison = supplied_comparisons[0]
             sections.update(present)
             count += 1
         except (OSError, ValueError, TypeError, KeyError, AttributeError, ET.ParseError) as error:
@@ -233,7 +251,7 @@ def read_reports(directory):
         issues.append("artifact contains no supported report files")
     if not any(suite.tests for suite in data[0] + data[1]):
         warnings.extend(empty_test_warnings)
-    return data, issues, count, sections, warnings, title
+    return data, issues, count, sections, warnings, title, comparison
 
 
 def generate(root):
@@ -248,7 +266,7 @@ def generate(root):
         issues.append("Report artifact download failed; results may be incomplete")
 
     def collect_section(directory, name, default):
-        data, errors, count, present, notices, title = read_reports(directory)
+        data, errors, count, present, notices, title, comparison = read_reports(directory)
         issues.extend(f"{name}: {error}" for error in errors)
         warnings.extend(f"{name}: {notice}" for notice in notices)
         if not count:
@@ -266,6 +284,15 @@ def generate(root):
         section.suites.extend(data[0] + data[1])
         section.lint_packages.extend(data[2])
         section.cov_packages.extend(data[3])
+        if comparison is not None:
+            if section.coverage_comparison is not None:
+                issues.append(f"{name}: multiple coverage comparisons for {section_id}")
+            else:
+                section.coverage_comparison = comparison
+                if comparison["status"] == "unavailable":
+                    warnings.append(f'{name}: coverage comparison unavailable: {comparison["reason"]}')
+                elif comparison["status"] == "approximate":
+                    annotate("notice", f"{name}: coverage comparison uses an earlier ancestor")
         kinds = {"tests" if kind in ("unit", "system") else kind for kind in present}
         section.kinds = sorted(set(section.kinds) | kinds)
 
@@ -281,18 +308,6 @@ def generate(root):
     sections = list(sections.values())
     (root / "issues.json").write_text(json.dumps(issues))
     output = root / "output"
-    baseline_rate = None
-    if os.environ.get("REPORT_BASELINE_REQUESTED") == "true" or (root / "baseline").exists():
-        baseline, errors, count, _, _, _ = read_reports(root / "baseline")
-        if count and not errors:
-            valid = sum(package.lines_valid for package in baseline[3])
-            if valid:
-                baseline_rate = sum(package.lines_covered for package in baseline[3]) / valid
-        if baseline_rate is None:
-            warnings.append("Coverage baseline is unavailable, invalid, or has no executable lines; comparison omitted")
-        elif sum("coverage" in section.kinds for section in sections) > 1:
-            baseline_rate = None
-            warnings.append("Coverage baseline cannot be attributed to multiple producer sections; comparison omitted")
     for warning in warnings:
         annotate("warning", warning)
     report = output / "build_report.html"
@@ -313,7 +328,6 @@ def generate(root):
         render.render_markdown_summary(
             sections,
             title="Build Report",
-            baseline_cov_rate=baseline_rate,
             report_errors=issues,
             report_warnings=warnings,
         ),

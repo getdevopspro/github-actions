@@ -7,10 +7,11 @@ tests. The runner needs Python 3.10 or newer; no consumer checkout is required.
 
 ## Usage
 
-The shared [Build workflow](../.github/workflows/README.md#build) calls this action
+The shared [Build workflow](../../.github/workflows/README.md#build) calls this action
 when `build-report-enabled: true` is set; reporting is disabled by default.
 Prepare validates all configured pre/post artifact uploads before checkout.
-Other workflows can call the action directly:
+Other workflows can call the action directly after adopting a release containing
+the new path (replace the version below with that release):
 
 ```yaml
 jobs:
@@ -21,7 +22,7 @@ jobs:
     runs-on: ubuntu-24.04
     permissions: {}
     steps:
-      - uses: getdevopspro/github-actions/build-report@v10.0.0
+      - uses: getdevopspro/github-actions/build/report@v9.1.0
         with:
           artifact-names: |
             unit-test-results
@@ -134,13 +135,56 @@ without metadata are ambiguous and produce a warning instead of invented fields.
 
 The generated `build_report.json` stores normalized `report_sections` with stable
 IDs, titles, result `kinds`, and values. It follows the same schema and can be
-read as a coverage baseline or result input. When used as a new producer's input,
+read by repository comparison scripts or as result input. When used as a new producer's input,
 its values are combined under that producer; only a top-level `section_title`
 overrides the new title.
 
 Upload each result once: including raw XML and its aggregated JSON copy would
-count it twice. Coverage is informational; a decrease against the optional
-baseline does not fail the action.
+count it twice. Coverage and supplied comparisons are informational; decreases
+do not fail the action. Repository scripts enforce any coverage thresholds.
+
+## Coverage comparisons
+
+Repository scripts generate coverage, choose compatible measurements, calculate
+deltas, and apply thresholds. This action renders their values without retrieving
+a baseline or recomputing a comparison. The optional
+[Baseline action](../baseline/README.md) supplies artifact data and provenance.
+
+Add one `coverage_comparison` to the JSON containing that producer's coverage:
+
+```json
+{
+  "cov_packages": [{"package": "example", "line_rate": 0.5, "lines_covered": 5, "lines_valid": 10}],
+  "coverage_comparison": {
+    "status": "exact",
+    "delta_pp": -10,
+    "baseline": {
+      "line_rate": 0.6,
+      "sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "run_url": "https://github.com/example/project/actions/runs/42",
+      "created_at": "2026-01-01T00:00:00Z"
+    }
+  }
+}
+```
+
+`status` is `exact`, `approximate`, or `unavailable`. Available comparisons require
+`delta_pp` (signed percentage points, -100 to 100) and baseline `line_rate` (0–1),
+`sha` (40 lowercase hex characters), and HTTPS `run_url`. `created_at` and
+`requested_sha` are optional. For unavailable comparisons, provide a nonempty
+`reason` and omit `delta_pp`; never substitute zero coverage. Omit
+`coverage_comparison` entirely when comparison is disabled.
+
+Fields are validated against [report.schema.json](report.schema.json). Malformed
+comparisons fail as invalid report input; unavailable comparisons warn without
+failing. Text is escaped. The producer owns arithmetic and measurement scope;
+the renderer does not infer either from baseline data.
+
+Each comparison applies to its producer's aggregate coverage. Distinct producers
+can supply distinct comparisons. Multiple comparisons in one producer are
+rejected as ambiguous; aggregate them in the repository script first. Native XML
+still renders current coverage; comparisons require a normalized JSON producer.
+Upload one representation of the results to avoid double counting.
 
 ## Results and logging
 
@@ -151,10 +195,10 @@ jobs remain responsible for running checks and propagating their exit codes.
 Warnings appear in action annotations and the report when a test artifact has
 no collected tests. Empty suites within an artifact that has tests do not warn.
 Warnings also identify ambiguous empty JSON, coverage with no executable lines,
-and an unusable requested baseline. These conditions do not change the action's exit code, but the report
+and a producer-supplied unavailable comparison. These conditions do not change the action's exit code, but the report
 shows warnings instead of an unconditional pass. Omitted sections, clean lint,
 and ordinary coverage changes do not produce warnings. Coverage comparisons are
-informational, including decreases.
+informational, including decreases. Approximate comparisons emit a notice.
 
 ## Optional publishing
 
@@ -163,25 +207,17 @@ pull requests. The calling job must grant `pull-requests: write`. Duplicate repo
 comments are removed when updating. Leave comments disabled for workflows with
 read-only tokens.
 
-Set `baseline-artifact` to compare coverage with that artifact from the latest
-successful run of `baseline-workflow` (default `release.yml`) on the repository's
-default branch. This requires `actions: read`. An absent, expired, or invalid
-baseline omits the comparison without failing the current report.
-The baseline is an aggregate coverage report. With several coverage-producing
-sections, comparison is omitted with a warning because the aggregate cannot be
-attributed to one producer.
-
-The default token is `github.token`; `github-token` overrides it for those optional
-operations. Current-run artifact downloads, HTML uploads, and the job summary
+The default token is `github.token`; `github-token` overrides it for PR comments.
+Current-run artifact downloads, HTML uploads, and the job summary
 need no additional GitHub token permissions.
 
 In the shared Build workflow, `build-report-enabled: false` skips this action and
 requires no additional reporting permissions, even if optional report inputs are
 set. With reporting enabled, `pull-requests: write` is needed only for
-`build-report-pr-comment: true` on pull requests; `actions: read` is needed only
-when `build-report-baseline-artifact` is set. The report job inherits caller
+`build-report-pr-comment: true` on pull requests. Baseline lookup is separate and
+requires `actions: read` only in the job calling the Baseline action. The report job inherits caller
 permissions. Every intermediate reusable-workflow calling job must preserve the
 required scopes by inheriting or explicitly granting them; a called workflow
-cannot restore scopes removed by a caller. See the [caller example](../.github/workflows/README.md#build-reports).
+cannot restore scopes removed by a caller. See the [caller example](../../.github/workflows/README.md#build-reports).
 
 Run `make test-report` for offline artifact, parser, failure, and comment tests.

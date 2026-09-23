@@ -14,6 +14,7 @@
   - `.github/workflows/` for reusable workflows.
   - `<topic>/action.yml` for composite actions.
   - `release/` for release, changelog, versioning, and GitHub release helpers.
+  - `build/` for baseline artifact lookup and report rendering actions.
   - `buildx-bake/` for Docker Buildx Bake image build and promotion helpers.
   - `test/label/` and `pr/` for pull request automation helpers.
 

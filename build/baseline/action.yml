@@ -1,0 +1,99 @@
+name: Build Baseline
+description: Resolve a reference revision and download its workflow artifact for repository-owned comparisons.
+inputs:
+  artifact-name:
+    description: Exact artifact name to download; required unless resolve-only is true.
+    default: ''
+  workflow:
+    description: Workflow filename or ID that produces the baseline artifact.
+    default: release.yml
+  working-directory:
+    description: Existing checkout of the tested revision. Full history enables ancestor lookup.
+    default: ${{ github.workspace }}
+  resolve-only:
+    description: Resolve the reference using local Git only; skip API lookup, download, and metadata files.
+    default: 'false'
+  reference:
+    description: Optional reference JSON from a resolve-only invocation in the same workflow. Skips local Git resolution.
+    default: ''
+  path:
+    description: New output directory for artifacts and metadata. Empty creates a unique runner temporary directory.
+    default: ''
+  allow-ancestor:
+    description: Allow a bounded first-parent ancestor fallback when no eligible exact run exists.
+    default: 'false'
+  run-conclusion:
+    description: Eligible completed runs; success (default) or any, including failed runs.
+    default: success
+  github-token:
+    description: GitHub token with actions read permission in this repository.
+    default: ${{ github.token }}
+outputs:
+  reference:
+    description: JSON containing the target branch and ordered reference commits; portable between jobs.
+    value: ${{ steps.find.outputs.reference }}
+  status:
+    description: exact, approximate, or unavailable; available only after a successful artifact download.
+    value: ${{ steps.metadata.outputs.status }}
+  path:
+    description: Downloaded artifact directory, or empty when unavailable. Treat its contents as data.
+    value: ${{ steps.metadata.outputs.path }}
+  metadata-file:
+    description: JSON file containing status, requested SHA, selected commit/run, and an unavailable reason.
+    value: ${{ steps.metadata.outputs.metadata-file }}
+  requested-sha:
+    description: Intended reference commit, or empty when the event cannot be resolved.
+    value: ${{ steps.metadata.outputs.requested-sha }}
+  sha:
+    description: Selected baseline commit, or empty when unavailable.
+    value: ${{ steps.metadata.outputs.sha }}
+  run-id:
+    description: Selected workflow run ID, or empty when unavailable.
+    value: ${{ steps.metadata.outputs.run-id }}
+  run-url:
+    description: Selected workflow run URL, or empty when unavailable.
+    value: ${{ steps.metadata.outputs.run-url }}
+runs:
+  using: composite
+  steps:
+    - name: Resolve baseline and find artifact
+      id: find
+      uses: actions/github-script@v8
+      env:
+        ACTION_PATH: ${{ github.action_path }}
+        BASELINE_WORKFLOW: ${{ inputs.workflow }}
+        BASELINE_ARTIFACT: ${{ inputs.artifact-name }}
+        BASELINE_RESOLVE_ONLY: ${{ inputs.resolve-only }}
+        BASELINE_REFERENCE: ${{ inputs.reference }}
+        BASELINE_CHECKOUT: ${{ inputs.working-directory }}
+        BASELINE_PATH: ${{ inputs.path }}
+        BASELINE_ALLOW_ANCESTOR: ${{ inputs.allow-ancestor }}
+        BASELINE_CONCLUSION: ${{ inputs.run-conclusion }}
+      with:
+        github-token: ${{ inputs.github-token }}
+        script: |
+          await require(`${process.env.ACTION_PATH}/index.js`).find({github, context, core});
+
+    - name: Download baseline artifact
+      id: download
+      if: steps.find.outputs.run-id != ''
+      continue-on-error: true
+      uses: actions/download-artifact@v8
+      with:
+        name: ${{ inputs.artifact-name }}
+        path: ${{ steps.find.outputs.root }}/artifacts
+        run-id: ${{ steps.find.outputs.run-id }}
+        github-token: ${{ inputs.github-token }}
+
+    - name: Publish baseline metadata
+      id: metadata
+      if: inputs.resolve-only != 'true'
+      uses: actions/github-script@v8
+      env:
+        ACTION_PATH: ${{ github.action_path }}
+        BASELINE_ROOT: ${{ steps.find.outputs.root }}
+        BASELINE_RESULT: ${{ steps.find.outputs.result }}
+        BASELINE_DOWNLOAD_OUTCOME: ${{ steps.download.outcome }}
+      with:
+        script: |
+          require(`${process.env.ACTION_PATH}/index.js`).finish({core});

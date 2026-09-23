@@ -3,7 +3,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const {test} = require('node:test');
-const publish = require('../build-report/comment.js');
+const publish = require('../build/report/comment.js');
 
 test('create, update, and clean up report comments without live GitHub calls', async () => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'build-report-comment-'));
