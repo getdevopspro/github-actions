@@ -4,7 +4,7 @@ These workflows are intended to be called with `workflow_call` from another repo
 
 `release.self.yml` is intentionally omitted from this catalog because it is this repository's self-release workflow.
 
-The Build and Release workflows use GitHub.com's `$/` references to load version, baseline, and report actions from the same repository and commit as the reusable workflow. Callers continue to pin the reusable workflow to a versioned reference. Custom runners need [Actions runner 2.336.0 or newer](https://github.blog/changelog/2026-07-30-reference-same-repository-actions-with-self-repository-syntax/) for this syntax.
+All internal action and reusable-workflow calls use GitHub.com's `$/` references to load code from the same repository and exact commit as the workflow containing the call. This includes the cache-test and self-release workflows. External callers continue to use versioned repository references. Custom runners need [Actions runner 2.336.0 or newer](https://github.blog/changelog/2026-07-30-reference-same-repository-actions-with-self-repository-syntax/) for this syntax.
 
 ## All Green
 

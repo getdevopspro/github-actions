@@ -32,7 +32,7 @@ jobs:
         run: python3 -B -m unittest discover -s tests -p 'test_build_cache_config.py' -v
       - uses: docker/setup-buildx-action@v4
       - id: prepare
-        uses: ./buildx-bake/prepare
+        uses: $/buildx-bake/prepare
         with:
           bake-file: tests/fixtures/build-cache/docker-bake.hcl
           registry-image: ghcr.io/example/cache-fixture
@@ -49,7 +49,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - name: Populate target/platform caches using the candidate action
-        uses: ./buildx-bake/build
+        uses: $/buildx-bake/build
         with:
           bake-file: tests/fixtures/build-cache/docker-bake.hcl
           dockerfile: tests/fixtures/build-cache/Dockerfile
@@ -119,7 +119,7 @@ jobs:
       - name: Select source generation
         run: printf '%s\n' "$MOUNT_GENERATION" > tests/fixtures/build-cache/mount-generation.txt
       - name: Check mount restoration, ownership and update
-        uses: ./buildx-bake/build
+        uses: $/buildx-bake/build
         with:
           bake-file: tests/fixtures/build-cache/mounts.hcl
           dockerfile: tests/fixtures/build-cache/Dockerfile.mounts
@@ -174,7 +174,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - name: Check automatic and forced foreign execution
-        uses: ./buildx-bake/build
+        uses: $/buildx-bake/build
         with:
           bake-file: tests/fixtures/build-cache/docker-bake.hcl
           dockerfile: tests/fixtures/build-cache/Dockerfile
@@ -195,4 +195,4 @@ jobs:
     permissions:
       contents: read
       checks: read
-    uses: ./.github/workflows/all-green.yml
+    uses: $/.github/workflows/all-green.yml

@@ -1084,7 +1084,7 @@ jobs:
           printf 'version=%s\nprevious-version=%s\n' "${VERSION}" "${PREVIOUS_VERSION}" >> "${GITHUB_OUTPUT}"
 
       - name: Set version in file
-        uses: getdevopspro/github-actions/version-file@v9.1.0
+        uses: $/version-file
         with:
           version: ${{ steps.release_version.outputs.version }}
           version-makefile: ${{ inputs.version-makefile }}
@@ -1382,7 +1382,7 @@ jobs:
 
       - name: Set image metadata and platform matrix
         id: prepare_image
-        uses: getdevopspro/github-actions/buildx-bake/prepare@v9.1.0
+        uses: $/buildx-bake/prepare
         env:
           DOCKER_METADATA_PR_HEAD_SHA: true
         with:
@@ -1548,7 +1548,7 @@ jobs:
         env:
           BASELINE_METADATA: ${{ inputs.baseline-enabled && format('{0}/metadata.json', steps.baseline_bundle.outputs.download-path) || '' }}
           BASELINE_PATH: ${{ inputs.baseline-enabled && needs.baseline.outputs.status != 'unavailable' && format('{0}/artifacts', steps.baseline_bundle.outputs.download-path) || '' }}
-        uses: getdevopspro/github-actions/command@v9.1.0
+        uses: $/command
         with:
           command: ${{ matrix.pre-steps.command }}
           artifact-name: ${{ matrix.pre-steps.artifact-name }}
@@ -1576,7 +1576,7 @@ jobs:
         with:
           name: ${{ inputs.source-artifact-name }}
 
-      - uses: getdevopspro/github-actions/buildx-bake/build@v9.1.0
+      - uses: $/buildx-bake/build
         with:
           bake-file: ${{ inputs.bake-file }}
           bake-target: ${{ inputs.bake-target }}
@@ -1612,7 +1612,7 @@ jobs:
         with:
           name: ${{ inputs.source-artifact-name }}
 
-      - uses: getdevopspro/github-actions/buildx-bake/merge@v9.1.0
+      - uses: $/buildx-bake/merge
         id: merge
         with:
           registry-username: ${{ inputs.registry-username }}
@@ -1681,7 +1681,7 @@ jobs:
         env:
           BASELINE_METADATA: ${{ inputs.baseline-enabled && format('{0}/metadata.json', steps.baseline_bundle.outputs.download-path) || '' }}
           BASELINE_PATH: ${{ inputs.baseline-enabled && needs.baseline.outputs.status != 'unavailable' && format('{0}/artifacts', steps.baseline_bundle.outputs.download-path) || '' }}
-        uses: getdevopspro/github-actions/command@v9.1.0
+        uses: $/command
         with:
           command: ${{ matrix.post-steps.command }}
           artifact-name: ${{ matrix.post-steps.artifact-name }}

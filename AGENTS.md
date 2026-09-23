@@ -20,6 +20,7 @@
 
 ## Action And Workflow Changes
 
+- Use `$/...` for internal action and reusable-workflow calls so they follow the owning workflow commit. Keep external consumer examples versioned.
 - Keep inputs and outputs explicit, documented, and backward compatible when possible.
 - Prefer additive inputs over breaking changes. If a breaking change is unavoidable, document the migration impact in `README.md` or briefly in the commit message.
 - Use clear, generic input names unless an input intentionally targets a specific upstream tool.

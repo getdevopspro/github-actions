@@ -106,7 +106,7 @@ steps:
 
 ## Maintenance
 
-The repository publishes versioned semantic version tags. Update consumers to a stable tag instead of a moving branch. The `Makefile` contains the local release helpers used to update workflow references and tag new releases.
+The repository publishes versioned semantic version tags. Update consumers to a stable tag instead of a moving branch. Internal calls use `$/...` to follow the owning workflow’s commit. The `Makefile` contains the release helpers for updating versioned consumer examples in the root README and tagging releases.
 
 Keep new actions small, parameterized, and reusable. Prefer wrapping well-maintained upstream actions when they cover the need; add custom composite logic here when a shared workflow needs behavior that should stay consistent across repositories.
 
@@ -116,9 +116,9 @@ Run `make test-changelog` for changelog initialization and release-note regressi
 
 Run `make test-report` for offline report aggregation and publishing tests. These require Python 3.10 or newer and Node.js with `node:test` support; no GitHub API calls are made.
 
-For workflow lint, actionlint currently [does not recognize GitHub's `$/` references](https://github.com/rhysd/actionlint/issues/711). Until supported, use `actionlint -ignore 'specifying action "\$/(release/version/(semver|calver)|build/(baseline|report))" in invalid format because ref is missing'` and verify those action paths locally.
+For workflow lint, actionlint currently [does not recognize GitHub's `$/` references](https://github.com/rhysd/actionlint/issues/711). Lint a temporary copy with `uses: $/` rewritten to `uses: ./`, preserving the repository layout so local action paths and reusable-workflow inputs are checked. Keep the committed references as `$/`.
 
-The `Build cache` PR check calls the checked-out Bake composites with a small two-target fixture on native AMD64 and ARM64 runners. It checks separate target/platform scopes, caller overrides, two warm imports on fresh builders, and source/dependency invalidation after all cold exports complete. It publishes only Actions cache entries and temporary test artifacts. Per-run cache prefixes prevent previous PR runs from warming the cold comparison. Measurements appear in job summaries and the `cache-measurements-*` artifacts; these synthetic timings are not consumer build benchmarks.
+The `Build cache` PR check calls the Bake composites from the workflow’s commit with a small two-target fixture on native AMD64 and ARM64 runners. It checks separate target/platform scopes, caller overrides, two warm imports on fresh builders, and source/dependency invalidation after all cold exports complete. It publishes only Actions cache entries and temporary test artifacts. Per-run cache prefixes prevent previous PR runs from warming the cold comparison. Measurements appear in job summaries and the `cache-measurements-*` artifacts; these synthetic timings are not consumer build benchmarks.
 
 The cache fixture also checks mount archives across three fresh builders: create data, restore and update it as a non-root user, then restore the updated data. Layer caching is disabled for these checks. Run `python3 -B -m unittest discover -s tests -p 'test_build_cache_config.py' -v` for the offline configuration checks.
 

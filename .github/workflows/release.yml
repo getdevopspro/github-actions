@@ -338,7 +338,7 @@ jobs:
           printf 'version=%s\nprevious-version=%s\n' "${VERSION}" "${PREVIOUS_VERSION}" >> "${GITHUB_OUTPUT}"
 
       - name: set version in file
-        uses: getdevopspro/github-actions/version-file@v9.1.0
+        uses: $/version-file
         with:
           version: ${{ steps.release_version.outputs.version }}
           version-makefile: ${{ inputs.version-makefile }}
@@ -350,7 +350,7 @@ jobs:
 
       - name: promote container images
         if: inputs.image-digests != ''
-        uses: getdevopspro/github-actions/buildx-bake/promote@v9.1.0
+        uses: $/buildx-bake/promote
         with:
           version: ${{ steps.release_version.outputs.version }}
           image-digests: ${{ inputs.image-digests }}
@@ -369,7 +369,7 @@ jobs:
       - name: release changelog
         id: release_changelog
         if: inputs.changelog-enabled
-        uses: getdevopspro/github-actions/release/changelog@v9.1.0
+        uses: $/release/changelog
         with:
           version: ${{ steps.release_version.outputs.version }}
           previous-version: ${{ steps.release_version.outputs.previous-version }}
@@ -383,7 +383,7 @@ jobs:
           version-prefix: ${{ inputs.changelog-version-prefix }}
 
       - name: push git version
-        uses: getdevopspro/github-actions/release/git-push@v9.1.0
+        uses: $/release/git-push
         if: inputs.push-git
         id: git_push
         with:
@@ -394,7 +394,7 @@ jobs:
 
       - name: update github release
         if: inputs.update-release-enabled && inputs.push-git
-        uses: getdevopspro/github-actions/release/update@v9.1.0
+        uses: $/release/update
         with:
           token: ${{ inputs.update-release-token }}
           tag: ${{ inputs.update-release-tag || format('{0}{1}', inputs.version-tag-prefix, steps.release_version.outputs.version) }}

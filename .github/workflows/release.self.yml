@@ -20,7 +20,7 @@ permissions:
 
 jobs:
   release:
-    uses: ./.github/workflows/release.yml
+    uses: $/.github/workflows/release.yml
     secrets:
       checkout-token: ${{ secrets.BOT_REPO_TOKEN }}
     with:
