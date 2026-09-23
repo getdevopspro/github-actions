@@ -30,7 +30,7 @@ See [.github/workflows/README.md](.github/workflows/README.md) for the reusable 
 ## Composite Actions
 
 - [All Green](all-green/README.md) - checks that required PR checks have passed.
-- [Build Report](build-report/README.md) - combines test, lint, and coverage artifacts into an HTML report and job summary.
+- [Build Report](build-report/README.md) - combines test, lint, and coverage artifacts into an HTML report and job summary, grouped by the producing pre/post steps with fields supplied by artifact content.
 - [Buildx Bake](buildx-bake/README.md) - single-job Docker Buildx Bake image build.
 - [Buildx Bake Prepare](buildx-bake/prepare/README.md) - creates a platform matrix and Docker metadata artifact.
 - [Buildx Bake Build](buildx-bake/build/README.md) - builds and pushes per-platform image digests.
