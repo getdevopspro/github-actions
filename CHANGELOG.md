@@ -1,3 +1,9 @@
+## [v5.0.1](https://github.com/clean-botix/github-actions/compare/v5.0.0..v5.0.1) - 2026-09-23
+
+### Features
+
+- _(build)_ Add optional build reports ([`ea5a2e1`](https://github.com/clean-botix/github-actions/commit/ea5a2e1dbe378c0379aa3e1336984923f2da41f8))
+
 ## [v5.0.0](https://github.com/clean-botix/github-actions/compare/v4.0.2..v5.0.0) - 2026-09-17
 
 ### Features

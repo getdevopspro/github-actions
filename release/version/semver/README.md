@@ -7,7 +7,7 @@ Use this action when a workflow needs shared version detection and semantic vers
 ```yaml
 steps:
   - id: version
-    uses: clean-botix/github-actions/release/version/semver@v5.0.0
+    uses: clean-botix/github-actions/release/version/semver@v5.0.1
     with:
       version-semver-previous: auto
       version-semver-next: auto

@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-24.04
     permissions: {}
     steps:
-      - uses: clean-botix/github-actions/build-report@v5.0.0
+      - uses: clean-botix/github-actions/build-report@v5.0.1
         with:
           artifact-names: |
             unit-test-results

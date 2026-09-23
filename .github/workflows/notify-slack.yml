@@ -40,7 +40,7 @@ jobs:
 
       - name: Notify pr
         if: ${{ inputs.notification-type == 'pr' }}
-        uses: clean-botix/github-actions/notify/slack/pr@v5.0.0
+        uses: clean-botix/github-actions/notify/slack/pr@v5.0.1
         with:
           job-status: ${{ inputs.job-status }}
           slack-webhook-url: ${{ secrets.slack-webhook-url }}
@@ -49,7 +49,7 @@ jobs:
 
       - name: Notify release
         if: ${{ inputs.notification-type == 'release' }}
-        uses: clean-botix/github-actions/notify/slack/release@v5.0.0
+        uses: clean-botix/github-actions/notify/slack/release@v5.0.1
         with:
           job-status: ${{ inputs.job-status }}
           slack-webhook-url: ${{ secrets.slack-webhook-url }}
