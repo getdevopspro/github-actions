@@ -51,8 +51,10 @@ equivalents. The section ID is the producer key; its title is the corresponding
 Names affect presentation only. Artifact content determines the fields and
 results; configuring a command never invents report data. HTML, job summaries,
 and PR comments omit fields that are absent from the selected artifacts.
-Tests, lint, and coverage from one producer stay in the same section; mixed
-content has typed subsections in HTML and labeled details in summaries.
+Tests and lint retain the producer's section. Coverage collected with other
+results appears in its own Coverage section in HTML, job summaries, and PR
+comments. With several coverage producers, coverage headings include the
+producer's title. Coverage-only producers keep their configured titles.
 Legacy JSON keys and filenames do not override the producer's title.
 
 | Content | Reported fields |
@@ -146,9 +148,10 @@ The action publishes available results before failing for test/lint failures,
 missing selected artifacts, download errors, or malformed reports. Producing
 jobs remain responsible for running checks and propagating their exit codes.
 
-Warnings appear in action annotations and the report for zero collected tests,
-ambiguous empty JSON, coverage with no executable lines, and an unusable requested
-baseline. These conditions do not change the action's exit code, but the report
+Warnings appear in action annotations and the report when a test artifact has
+no collected tests. Empty suites within an artifact that has tests do not warn.
+Warnings also identify ambiguous empty JSON, coverage with no executable lines,
+and an unusable requested baseline. These conditions do not change the action's exit code, but the report
 shows warnings instead of an unconditional pass. Omitted sections, clean lint,
 and ordinary coverage changes do not produce warnings. Coverage comparisons are
 informational, including decreases.

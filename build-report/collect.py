@@ -137,6 +137,7 @@ def read_reports(directory):
     count = 0
     sections = set()
     warnings = []
+    empty_test_warnings = []
     title = None
     if not directory.is_dir():
         return data, ["artifact is missing"], count, sections, warnings, title
@@ -211,9 +212,8 @@ def read_reports(directory):
                 warnings.append(
                     f"{label}: empty report has no identifiable sections; declare sections for checks with zero findings"
                 )
-            for kinds, suites in (({"unit", "tests"}, parsed[0]), ({"system"}, parsed[1])):
-                if present & kinds and (not suites or any(suite.tests == 0 for suite in suites)):
-                    warnings.append(f"{label}: no tests collected in a reported test suite")
+            if present & {"unit", "system", "tests"} and not any(suite.tests for suite in all_suites):
+                empty_test_warnings.append(f"{label}: no tests collected in reported test results")
             if "coverage" in present and not sum(package.lines_valid for package in parsed[3]):
                 warnings.append(f"{label}: coverage contains no executable lines")
             if path.suffix.lower() == ".json" and isinstance(value, dict) and "section_title" in value:
@@ -231,6 +231,8 @@ def read_reports(directory):
             issues.append(f"{path.relative_to(directory)}: {error}")
     if not count:
         issues.append("artifact contains no supported report files")
+    if not any(suite.tests for suite in data[0] + data[1]):
+        warnings.extend(empty_test_warnings)
     return data, issues, count, sections, warnings, title
 
 

@@ -824,6 +824,28 @@ def _render_coverage_section(
 # ---------------------------------------------------------------------------
 
 
+def _display_sections(sections: list[ReportSection]) -> list[ReportSection]:
+    result = []
+    coverage = []
+    coverage_count = sum("coverage" in section.kinds for section in sections)
+    for section in sections:
+        if "coverage" not in section.kinds or len(section.kinds) == 1:
+            result.append(section)
+            continue
+        result.append(
+            dataclasses.replace(section, cov_packages=[], kinds=[kind for kind in section.kinds if kind != "coverage"])
+        )
+        coverage.append(
+            ReportSection(
+                id=section.id,
+                title="Coverage" if coverage_count == 1 else f"{section.title} — Coverage",
+                cov_packages=section.cov_packages,
+                kinds=["coverage"],
+            )
+        )
+    return result + coverage
+
+
 def render_html(
     sections: list[ReportSection],
     generated_at: str,
@@ -832,6 +854,7 @@ def render_html(
     report_errors: list[str] | None = None,
     report_warnings: list[str] | None = None,
 ) -> str:
+    sections = _display_sections(sections)
     repo_name = get_repo_name()
     title = f"{repo_name} — {title}" if repo_name else title
     overall_pass = not report_errors and not any(section.failures for section in sections)
@@ -1062,6 +1085,7 @@ def render_markdown_summary(
     report_errors: list[str] | None = None,
     report_warnings: list[str] | None = None,
 ) -> str:
+    sections = _display_sections(sections)
     overall_pass = not report_errors and not any(section.failures for section in sections)
     status = "✅ PASSED" if overall_pass else "❌ FAILED"
     if overall_pass and (report_warnings or not sections):
@@ -1097,6 +1121,8 @@ def render_markdown_summary(
         if "coverage" in section.kinds:
             covered = sum(p.lines_covered for p in section.cov_packages)
             valid = sum(p.lines_valid for p in section.cov_packages)
+            if result == "—":
+                result = "ℹ️" if valid else "⚠️"
             detail = "no executable lines"
             if valid:
                 rate = covered / valid
@@ -1106,8 +1132,6 @@ def render_markdown_summary(
                     if delta:
                         arrow = "↓" if delta < 0 else "↑"
                         detail += f" {arrow} {abs(delta) / 10:.1f}%"
-                        if result == "—":
-                            result = "ℹ️"
             parts.append(("Coverage", detail))
         if section.failures:
             result = "❌"
