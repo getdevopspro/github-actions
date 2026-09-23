@@ -1,3 +1,22 @@
+## [v9.0.0](https://github.com/getdevopspro/github-actions/compare/v8.5.1..v9.0.0) - 2026-09-23
+
+### Features
+
+- _(release)_ [**breaking**] Add optional CalVer versioning ([`853961f`](https://github.com/getdevopspro/github-actions/commit/853961f63bf1a105f16a34642a2b6facef01dc3a))
+- _(build)_ Add configurable persistent cache mounts ([`44737de`](https://github.com/getdevopspro/github-actions/commit/44737def5756490d219ccc49d9053dce227273a8))
+- _(build)_ [**breaking**] Skip QEMU setup for native builds ([`b48b064`](https://github.com/getdevopspro/github-actions/commit/b48b06441f266f920f8528e0a11351475884c4be))
+- _(build)_ Add optional build reports ([`62ea20b`](https://github.com/getdevopspro/github-actions/commit/62ea20bafe077a02e0f9794580f4f3a582496f91))
+
+### Bug Fixes
+
+- _(version)_ Use correct name for input ([`1eae17a`](https://github.com/getdevopspro/github-actions/commit/1eae17a366e210165d6f13d4ac85d8395749cb4d))
+- _(changelog)_ Initialize history separately from release notes ([`f4673b5`](https://github.com/getdevopspro/github-actions/commit/f4673b5dbd55682a353fe6f2fffc94d6a10a3d26))
+- _(build)_ Isolate Bake caches by target and platform ([`68cfdaf`](https://github.com/getdevopspro/github-actions/commit/68cfdafd71541a01d8564eb32ac6478b5f661335))
+
+### Testing
+
+- _(build)_ Read structured cache progress events ([`a8696b0`](https://github.com/getdevopspro/github-actions/commit/a8696b07f936821fcdd7d364d4a89c24a268a7ff))
+
 ## [v8.5.1](https://github.com/getdevopspro/github-actions/compare/v8.5.0..v8.5.1) - 2026-07-08
 
 ### Bug Fixes
