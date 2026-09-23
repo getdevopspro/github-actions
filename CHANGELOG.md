@@ -1,3 +1,9 @@
+## [v9.1.0](https://github.com/getdevopspro/github-actions/compare/v9.0.0..v9.1.0) - 2026-09-23
+
+### Features
+
+- _(build-report)_ Group reports by workflow steps ([`977b007`](https://github.com/getdevopspro/github-actions/commit/977b00780553c303ef4be11fa6abcbef6adb5747))
+
 ## [v9.0.0](https://github.com/getdevopspro/github-actions/compare/v8.5.1..v9.0.0) - 2026-09-23
 
 ### Features
