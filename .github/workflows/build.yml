@@ -19,6 +19,9 @@ on:
       image-digests:
         description: 'JSON with all merged image manifest digests'
         value: ${{ jobs.image-push.outputs.image-digests }}
+      build-report-url:
+        description: 'URL of the HTML build report, when reporting is enabled'
+        value: ${{ jobs.build-report.outputs.artifact-url }}
     inputs:
       version-strategy:
         description: 'Versioning strategy: semver or calver'
@@ -200,6 +203,33 @@ on:
         description: 'Compose version for post-steps. Defaults to compose-version.'
         required: false
         default: ''
+        type: string
+      build-report-enabled:
+        description: 'Generate a build report from configured pre/post artifacts; prepare validates artifact configuration before building'
+        required: false
+        type: boolean
+        default: false
+      build-report-artifacts:
+        description: 'Optional newline-separated subset of configured pre/post artifact names to include in the report'
+        required: false
+        type: string
+      build-report-pr-comment:
+        description: 'Publish a PR report comment; the caller must grant pull-requests write permission'
+        required: false
+        type: boolean
+        default: false
+      build-report-baseline-artifact:
+        description: 'Optional coverage baseline artifact from the latest successful default-branch run; requires actions read permission'
+        required: false
+        type: string
+      build-report-baseline-workflow:
+        description: 'Workflow filename or ID used to find the coverage baseline'
+        required: false
+        type: string
+        default: 'release.yml'
+      runner-report-default:
+        description: 'Runner for Build Report; defaults to runner-default and requires Python 3.10 or newer'
+        required: false
         type: string
       prepare-command:
         description: 'The prepare command to run for preparing the build (pre-steps)'
@@ -885,13 +915,12 @@ on:
         type: boolean
         default: true
 
-permissions:
-  contents: read
-  packages: write
-
 jobs:
   prepare:
     name: Prepare Steps
+    permissions:
+      contents: read
+      packages: write
     runs-on: ${{ inputs.runner-prepare-default || inputs.runner-default }}
     outputs:
       version: ${{ steps.release_version.outputs.version }}
@@ -899,6 +928,7 @@ jobs:
       pre-step-matrix: ${{ steps.set_pre_matrix.outputs.matrix }}
       post-step-matrix: ${{ steps.set_post_matrix.outputs.matrix }}
       image-platform-matrix: ${{ steps.prepare_image.outputs.matrix }}
+      build-report-artifacts: ${{ steps.prepare_report.outputs.artifacts }}
     steps:
       - name: Validate versioning strategy
         shell: bash
@@ -910,6 +940,58 @@ jobs:
             semver|calver) ;;
             *) echo '::error::version-strategy must be semver or calver' >&2; exit 1 ;;
           esac
+
+      - name: Prepare build report
+        id: prepare_report
+        shell: python
+        env:
+          BUILD_INPUTS: ${{ toJSON(inputs) }}
+        run: |
+          import json
+          import os
+          import secrets
+
+          inputs = json.loads(os.environ['BUILD_INPUTS'])
+          enabled = inputs.get('build-report-enabled', False)
+          producers = {}
+          errors = []
+          prefixes = dict.fromkeys(
+              key.rsplit('-artifact-', 1)[0] for key in inputs
+              if key.startswith(('pre-', 'post-')) and key.endswith(('-artifact-name', '-artifact-path'))
+          )
+          for prefix in prefixes:
+              name = inputs.get(f'{prefix}-artifact-name', '').strip()
+              path = inputs.get(f'{prefix}-artifact-path', '').strip()
+              if not (name or path):
+                  continue
+              missing = [key for key in ('command', 'artifact-name', 'artifact-path')
+                         if not inputs.get(f'{prefix}-{key}', '').strip()]
+              if missing:
+                  errors.append(f'{prefix}: artifact upload requires ' + ', '.join(f'{prefix}-{key}' for key in missing))
+                  continue
+              if name in ('.', '..') or any(c in name for c in '\\/:*?"<>|\r\n'):
+                  errors.append(f'{prefix}-artifact-name must be a valid single artifact name')
+                  continue
+              if enabled and name in producers:
+                  errors.append(f'{prefix} and {producers[name]} must use distinct artifact names for reporting')
+              producers[name] = prefix
+
+          names = []
+          if enabled:
+              explicit = inputs.get('build-report-artifacts', '')
+              names = list(dict.fromkeys(name.strip() for name in explicit.splitlines() if name.strip())) or list(producers)
+              if not names:
+                  errors.append('build-report-enabled=true requires at least one pre/post artifact with a command and path')
+              if any(name not in producers for name in names):
+                  errors.append('build-report-artifacts must reference configured pre/post artifact names')
+              reserved = {'build-report', inputs.get('source-artifact-name', '')}
+              if any(name in reserved for name in producers):
+                  errors.append('Pre/post artifact names must not conflict with the source or build-report artifact')
+          if errors:
+              raise SystemExit('\n'.join(errors))
+          delimiter = 'report_' + secrets.token_hex(16)
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
+              output.write(f'artifacts<<{delimiter}\n' + '\n'.join(names) + f'\n{delimiter}\n')
 
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -1338,6 +1420,9 @@ jobs:
 
   pre-steps:
     name : ${{ matrix.pre-steps.name }}
+    permissions:
+      contents: read
+      packages: write
     needs: prepare
     if: ${{ !cancelled() && needs.prepare.outputs.pre-step-matrix != '[]' }}
     runs-on: ${{ matrix.pre-steps.runner || inputs.runner-pre-default || inputs.runner-default }}
@@ -1385,9 +1470,17 @@ jobs:
         uses: getdevopspro/github-actions/command@v8.5.1
         with:
           command: ${{ matrix.pre-steps.command }}
+          artifact-name: ${{ matrix.pre-steps.artifact-name }}
+          artifact-path: ${{ matrix.pre-steps.artifact-path }}
+          artifact-overwrite: ${{ matrix.pre-steps.artifact-overwrite }}
+          artifact-if-no-files-found: ${{ matrix.pre-steps.artifact-if-no-files-found }}
+          artifact-retention-days: ${{ matrix.pre-steps.artifact-retention-days }}
 
   image-build:
     name: Build Image
+    permissions:
+      contents: read
+      packages: write
     needs:
       - prepare
       - pre-steps
@@ -1422,6 +1515,9 @@ jobs:
 
   image-push:
     name: Push Image
+    permissions:
+      contents: read
+      packages: write
     needs:
       - prepare
       - image-build
@@ -1443,6 +1539,9 @@ jobs:
 
   post-steps:
     name : ${{ matrix.post-steps.name }}
+    permissions:
+      contents: read
+      packages: write
     needs:
       - prepare
       - image-push
@@ -1497,3 +1596,22 @@ jobs:
           artifact-overwrite: ${{ matrix.post-steps.artifact-overwrite }}
           artifact-if-no-files-found: ${{ matrix.post-steps.artifact-if-no-files-found }}
           artifact-retention-days: ${{ matrix.post-steps.artifact-retention-days }}
+
+  build-report:
+    name: Build Report
+    needs: [prepare, pre-steps, post-steps]
+    if: ${{ !cancelled() && inputs.build-report-enabled && needs.prepare.result == 'success' }}
+    # Inherit optional reporting scopes from the caller. The existing jobs keep
+    # their original explicit permissions; reporting does not grant them more access.
+    runs-on: ${{ inputs.runner-report-default || inputs.runner-default }}
+    outputs:
+      artifact-url: ${{ steps.report.outputs.artifact-url }}
+    steps:
+      - name: Build Report
+        id: report
+        uses: $/build-report
+        with:
+          artifact-names: ${{ needs.prepare.outputs.build-report-artifacts }}
+          pr-comment: ${{ inputs.build-report-pr-comment }}
+          baseline-artifact: ${{ inputs.build-report-baseline-artifact }}
+          baseline-workflow: ${{ inputs.build-report-baseline-workflow }}

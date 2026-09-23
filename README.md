@@ -27,6 +27,7 @@ See [.github/workflows/README.md](.github/workflows/README.md) for the reusable 
 ## Composite Actions
 
 - [All Green](all-green/README.md) - checks that required PR checks have passed.
+- [Build Report](build-report/README.md) - combines test, lint, and coverage artifacts into an HTML report and job summary.
 - [Buildx Bake](buildx-bake/README.md) - single-job Docker Buildx Bake image build.
 - [Buildx Bake Prepare](buildx-bake/prepare/README.md) - creates a platform matrix and Docker metadata artifact.
 - [Buildx Bake Build](buildx-bake/build/README.md) - builds and pushes per-platform image digests.
@@ -74,6 +75,7 @@ steps:
 ## Directory Map
 
 - `.github/workflows/` - reusable workflow definitions and their catalog README.
+- `build-report/` - report collection, HTML and Markdown rendering, and optional PR comments.
 - `buildx-bake/` - Docker Buildx Bake actions for prepare, build, merge, promote, and single-job build flows.
 - `release/` - release versioning, changelog, git push, and GitHub release update actions.
 - `pr/` - pull request workflow helpers, including job reruns.
@@ -92,7 +94,9 @@ Run `make test-version` for local version-calculation regression tests. They req
 
 Run `make test-changelog` for changelog initialization and release-note regression tests. These also require `git-cliff` (tested with 2.14.1); set `GIT_CLIFF_BIN` to use a specific binary. Tests use temporary repositories and disable network access.
 
-For workflow lint, actionlint currently [does not recognize GitHub's `$/` references](https://github.com/rhysd/actionlint/issues/711). Until supported, use `actionlint -ignore 'specifying action "\$/release/version/(semver|calver)" in invalid format because ref is missing'` and verify those two action paths locally.
+Run `make test-report` for offline report aggregation and publishing tests. These require Python 3.10 or newer and Node.js with `node:test` support; no GitHub API calls are made.
+
+For workflow lint, actionlint currently [does not recognize GitHub's `$/` references](https://github.com/rhysd/actionlint/issues/711). Until supported, use `actionlint -ignore 'specifying action "\$/(release/version/(semver|calver)|build-report)" in invalid format because ref is missing'` and verify those action paths locally.
 
 The `Build cache` PR check calls the checked-out Bake composites with a small two-target fixture on native AMD64 and ARM64 runners. It checks separate target/platform scopes, caller overrides, two warm imports on fresh builders, and source/dependency invalidation after all cold exports complete. It publishes only Actions cache entries and temporary test artifacts. Per-run cache prefixes prevent previous PR runs from warming the cold comparison. Measurements appear in job summaries and the `cache-measurements-*` artifacts; these synthetic timings are not consumer build benchmarks.
 

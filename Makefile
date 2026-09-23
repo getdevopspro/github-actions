@@ -39,3 +39,8 @@ test-version:
 .PHONY: test-changelog
 test-changelog:
 	python3 -B -m unittest discover -s tests -p 'test_release_changelog.py' -v
+
+.PHONY: test-report
+test-report:
+	python3 -B -m unittest discover -s tests -p 'test_build_report.py' -v
+	node --test tests/test_build_report_comment.js
