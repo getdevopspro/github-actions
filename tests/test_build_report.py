@@ -252,7 +252,7 @@ class ReportTests(unittest.TestCase):
     def section_defaults(self, **groups):
         (self.root / "artifact-sections.json").write_text(json.dumps(groups))
 
-    def test_workflow_sections_keep_mixed_content_under_the_producing_step(self):
+    def test_workflow_sections_show_coverage_separately(self):
         prepared = SelectionTests().configure(
             **{
                 "build-report-enabled": True,
@@ -276,20 +276,60 @@ class ReportTests(unittest.TestCase):
         self.write("lint.json", "[]")
         check, markdown = self.run_report()
         self.assertEqual(check.returncode, 0)
-        self.assertIn("| Fast tests | ✅ | Tests: 1 passed; Lint: 0 issues; Coverage: 50.0% (1/2 lines) |", markdown)
+        self.assertIn("| Fast tests | ✅ | Tests: 1 passed; Lint: 0 issues |", markdown)
+        self.assertIn("| Coverage | ℹ️ | 50.0% (1/2 lines) |", markdown)
         for title in ("Contract tests", "Acceptance tests"):
             self.assertIn(f"| {title} | ✅ | 1 passed |", markdown)
         self.assertNotIn("| Lint |", markdown)
-        self.assertNotIn("| Coverage |", markdown)
         sections = json.loads((self.root / "output/build_report.json").read_text())["report_sections"]
         self.assertEqual(sections[0]["id"], "pre-test-unit")
         self.assertEqual(sections[0]["kinds"], ["coverage", "lint", "tests"])
         collect.validate_report({"report_sections": sections})
         page = (self.root / "output/build_report.html").read_text()
+        self.assertIn('class="stat-group-label">Coverage</div>', page)
         ids = re.findall(r'\bid="([^"]+)"', page)
         self.assertEqual(len(ids), len(set(ids)))
         for target in re.findall(r"getElementById\('(section-[^']+)'\)\.scrollIntoView", page):
             self.assertIn(target, ids)
+        self.assertNotIn("::warning::", self.generated.stdout)
+
+    def test_empty_suites_do_not_warn_when_the_artifact_has_tests(self):
+        for native in (False, True):
+            with self.subTest(native=native):
+                for path in self.artifact.iterdir():
+                    path.unlink()
+                if native:
+                    self.write("empty.xml", '<testsuite name="empty" tests="0"/>')
+                    self.write("tests.xml", '<testsuite name="tests" tests="2"/>')
+                else:
+                    self.write(
+                        "report.json",
+                        json.dumps({"suites": [
+                            {"name": "empty", "package": "empty", "tests": 0},
+                            {"name": "tests", "package": "example", "tests": 2},
+                        ]}),
+                    )
+                check, markdown = self.run_report()
+                self.assertEqual(check.returncode, 0)
+                self.assertIn("2 passed", markdown)
+                self.assertNotIn("::warning::", self.generated.stdout)
+                self.assertNotIn("Report warnings", markdown)
+
+    def test_separate_coverage_sections_keep_multiple_producers_distinct(self):
+        (self.root / "artifacts.json").write_text(json.dumps(["unit-results", "post-results"]))
+        self.section_defaults(**{
+            "unit-results": {"id": "pre-test", "title": "Before"},
+            "post-results": {"id": "post-test", "title": "After"},
+        })
+        for name in ("unit-results", "post-results"):
+            directory = self.root / "input" / name
+            self.write("tests.xml", '<testsuite name="tests" tests="1"/>', directory)
+            self.write("coverage.xml", '<coverage line-rate="0.5" lines-covered="1" lines-valid="2"/>', directory)
+        check, markdown = self.run_report()
+        self.assertEqual(check.returncode, 0)
+        for title in ("Before", "After"):
+            self.assertIn(f"| {title} | ✅ | 1 passed |", markdown)
+            self.assertIn(f"| {title} — Coverage | ℹ️ | 50.0% (1/2 lines) |", markdown)
         self.assertNotIn("::warning::", self.generated.stdout)
 
     def test_legacy_json_and_system_xml_use_the_workflow_name(self):
@@ -341,7 +381,8 @@ class ReportTests(unittest.TestCase):
         (self.root / "artifact-sections.json").write_text(prepared["artifact-sections"])
         check, markdown = self.run_report()
         self.assertEqual(check.returncode, 0)
-        self.assertIn("| Unit Test (post-steps) | ✅ | Tests: 2 passed; Coverage: 50.0% (1/2 lines) |", markdown)
+        self.assertIn("| Unit Test (post-steps) | ✅ | 2 passed |", markdown)
+        self.assertIn("| Coverage | ℹ️ | 50.0% (1/2 lines) |", markdown)
         self.assertIn("| System Test (post-steps) | ✅ | 3 passed |", markdown)
         self.assertIn("| Python Lint (post-steps) | ✅ | 0 issues |", markdown)
         self.assertNotIn("::warning::", self.generated.stdout)
@@ -465,7 +506,8 @@ assert.equal(nodes.get('section-group-0-body').style.display, 'block');
         self.write("coverage.xml", '<coverage line-rate="0.5" lines-covered="1" lines-valid="2"/>')
         check, markdown = self.run_report()
         self.assertEqual(check.returncode, 0)
-        self.assertIn("| Static analysis | ✅ | Lint: 0 issues; Coverage: 50.0% (1/2 lines) |", markdown)
+        self.assertIn("| Static analysis | ✅ | 0 issues |", markdown)
+        self.assertIn("| Coverage | ℹ️ | 50.0% (1/2 lines) |", markdown)
         self.assertNotIn("no tests collected", markdown)
 
     def test_direct_action_defaults_to_artifact_name(self):
@@ -968,7 +1010,8 @@ for (const [, handler] of page.matchAll(/\bonclick="([^"]+)"/g)) vm.runInContext
         self.write("baseline.json", saved, self.root / "baseline")
         check, markdown = self.run_report()
         self.assertEqual(check.returncode, 1)
-        self.assertIn("| Checks | ❌ | Tests: 0 passed, 1 failed; Coverage: 50.0% (1/2 lines) |", markdown)
+        self.assertIn("| Checks | ❌ | 0 passed, 1 failed |", markdown)
+        self.assertIn("| Coverage | ℹ️ | 50.0% (1/2 lines) |", markdown)
         self.assertNotIn("Original title", markdown)
         self.assertNotIn("::warning::", self.generated.stdout)
 
@@ -990,8 +1033,8 @@ for (const [, handler] of page.matchAll(/\bonclick="([^"]+)"/g)) vm.runInContext
         self.assertEqual(check.returncode, 0)
         self.assertIn("cannot be attributed to multiple producer sections", markdown)
         self.assertNotIn("↓", markdown)
-        self.assertIn("| Before | — | 50.0%", markdown)
-        self.assertIn("| After | — | 50.0%", markdown)
+        self.assertIn("| Before | ℹ️ | 50.0%", markdown)
+        self.assertIn("| After | ℹ️ | 50.0%", markdown)
 
     def test_requested_missing_baseline_warns_but_does_not_fail(self):
         self.write("coverage.xml", '<coverage line-rate="0.5" lines-covered="1" lines-valid="2"/>')
