@@ -1,3 +1,9 @@
+## [v5.1.0](https://github.com/clean-botix/github-actions/compare/v5.0.1..v5.1.0) - 2026-09-23
+
+### Features
+
+- _(build-report)_ Group reports by workflow steps ([`f153323`](https://github.com/clean-botix/github-actions/commit/f1533234e4fd12084d43e1a55f5e4f6e3fc3918c))
+
 ## [v5.0.1](https://github.com/clean-botix/github-actions/compare/v5.0.0..v5.0.1) - 2026-09-23
 
 ### Features

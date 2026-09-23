@@ -6,7 +6,7 @@ Use this action on `pull_request` synchronize events so manual or external test 
 
 ```yaml
 steps:
-  - uses: clean-botix/github-actions/test/label/done/remove@v5.0.1
+  - uses: clean-botix/github-actions/test/label/done/remove@v5.1.0
     with:
       label-needed: test-needed
       label-done: test-done

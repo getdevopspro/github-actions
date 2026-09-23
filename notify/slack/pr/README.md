@@ -7,7 +7,7 @@ Use this action when a Clean-Botix OptimusClean PR workflow needs to report buil
 ```yaml
 steps:
   - uses: actions/checkout@v6
-  - uses: clean-botix/github-actions/notify/slack/pr@v5.0.1
+  - uses: clean-botix/github-actions/notify/slack/pr@v5.1.0
     with:
       job-status: ${{ job.status }}
       slack-webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}

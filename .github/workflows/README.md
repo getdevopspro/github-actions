@@ -17,7 +17,7 @@ Wraps the `all-green` composite action as a reusable workflow. Use it when a rep
 ```yaml
 jobs:
   all-green:
-    uses: clean-botix/github-actions/.github/workflows/all-green.yml@v5.0.1
+    uses: clean-botix/github-actions/.github/workflows/all-green.yml@v5.1.0
 ```
 
 ## Build
@@ -31,7 +31,7 @@ Calculates a build version, optionally updates version files, runs configurable 
 ```yaml
 jobs:
   build:
-    uses: clean-botix/github-actions/.github/workflows/build.yml@v5.0.1
+    uses: clean-botix/github-actions/.github/workflows/build.yml@v5.1.0
     secrets:
       registry-password: ${{ secrets.GITHUB_TOKEN }}
     with:
@@ -120,7 +120,7 @@ containing this feature before using the example; `v5.0.0` does not contain it.
 ```yaml
 jobs:
   build:
-    uses: clean-botix/github-actions/.github/workflows/build.yml@v5.0.1
+    uses: clean-botix/github-actions/.github/workflows/build.yml@v5.1.0
     permissions:
       contents: read        # Existing Build requirement
       packages: write       # Existing Build requirement
@@ -163,7 +163,7 @@ Runs GolangCI-Lint with a pinned Go setup. Use it for Go repositories that want 
 ```yaml
 jobs:
   lint:
-    uses: clean-botix/github-actions/.github/workflows/golangci-lint.yml@v5.0.1
+    uses: clean-botix/github-actions/.github/workflows/golangci-lint.yml@v5.1.0
 ```
 
 ## Create Pull Request
@@ -175,7 +175,7 @@ Checks out a target repository, optionally installs `just`, runs a caller-provid
 ```yaml
 jobs:
   sync:
-    uses: clean-botix/github-actions/.github/workflows/pr-create.yml@v5.0.1
+    uses: clean-botix/github-actions/.github/workflows/pr-create.yml@v5.1.0
     secrets:
       token: ${{ secrets.REPO_TOKEN }}
     with:
@@ -197,7 +197,7 @@ With changelog generation and prepend enabled, a missing changelog is initialize
 ```yaml
 jobs:
   release:
-    uses: clean-botix/github-actions/.github/workflows/release.yml@v5.0.1
+    uses: clean-botix/github-actions/.github/workflows/release.yml@v5.1.0
     secrets:
       checkout-token: ${{ secrets.REPO_TOKEN }}
     with:
@@ -217,7 +217,7 @@ Sends a Slack notification for either an OptimusClean pull request build or a re
 ```yaml
 jobs:
   notify:
-    uses: clean-botix/github-actions/.github/workflows/notify-slack.yml@v5.0.1
+    uses: clean-botix/github-actions/.github/workflows/notify-slack.yml@v5.1.0
     secrets:
       slack-webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
     with:
@@ -234,7 +234,7 @@ Checks OptimusClean pull request labels and fails when robot testing is required
 ```yaml
 jobs:
   robot-test-check:
-    uses: clean-botix/github-actions/.github/workflows/test-robot-check.yml@v5.0.1
+    uses: clean-botix/github-actions/.github/workflows/test-robot-check.yml@v5.1.0
     secrets:
       token: ${{ secrets.GITHUB_TOKEN }}
 ```
@@ -248,7 +248,7 @@ Handles robot-test label events. When the done label is added, it posts confirma
 ```yaml
 jobs:
   robot-test-label:
-    uses: clean-botix/github-actions/.github/workflows/test-robot-label.yml@v5.0.1
+    uses: clean-botix/github-actions/.github/workflows/test-robot-label.yml@v5.1.0
     secrets:
       token: ${{ secrets.GITHUB_TOKEN }}
 ```
@@ -262,7 +262,7 @@ Removes the robot-test done label when new commits are pushed to a pull request,
 ```yaml
 jobs:
   robot-test-remove:
-    uses: clean-botix/github-actions/.github/workflows/test-robot-remove.yml@v5.0.1
+    uses: clean-botix/github-actions/.github/workflows/test-robot-remove.yml@v5.1.0
     secrets:
       token: ${{ secrets.GITHUB_TOKEN }}
 ```

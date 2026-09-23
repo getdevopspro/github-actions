@@ -6,7 +6,7 @@ Use this action from a PR-triggered workflow when a label, comment, or manual di
 
 ```yaml
 steps:
-  - uses: clean-botix/github-actions/pr/job-rerun@v5.0.1
+  - uses: clean-botix/github-actions/pr/job-rerun@v5.1.0
     with:
       workflow-id: .github/workflows/pull-request.yml
       job-name: Integration Tests
