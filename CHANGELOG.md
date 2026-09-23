@@ -1,3 +1,14 @@
+## [v10.0.0](https://github.com/getdevopspro/github-actions/compare/v9.1.0..v10.0.0) - 2026-09-23
+
+### Bug Fixes
+
+- _(build-report)_ Separate coverage and clarify empty-test warnings ([`97853e1`](https://github.com/getdevopspro/github-actions/commit/97853e1ba4dce37a5cea9fb0ede7885fbf22fefb))
+
+### Refactor
+
+- _(build)_ [**breaking**] Separate baseline lookup from reporting ([`7b8c1ed`](https://github.com/getdevopspro/github-actions/commit/7b8c1ed64b4d16f552a771efb23296b94b318c6b))
+- _(ci)_ Use self-repository references ([`eac9407`](https://github.com/getdevopspro/github-actions/commit/eac9407005f4ec61a4d026ac7fae4c24bf23a51d))
+
 ## [v9.1.0](https://github.com/getdevopspro/github-actions/compare/v9.0.0..v9.1.0) - 2026-09-23
 
 ### Features
