@@ -1,0 +1,137 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Build report",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {"type": "string"},
+    "sections": {
+      "type": "array",
+      "items": {"enum": ["tests", "unit", "system", "lint", "coverage"]}
+    },
+    "suites": {"type": "array", "items": {"$ref": "#/$defs/suite"}},
+    "system_suites": {"type": "array", "items": {"$ref": "#/$defs/suite"}},
+    "lint_packages": {"type": "array", "items": {"$ref": "#/$defs/lintPackage"}},
+    "cov_packages": {"type": "array", "items": {"$ref": "#/$defs/coveragePackage"}},
+    "section_title": {"$ref": "#/$defs/sectionTitle"},
+    "report_sections": {"type": "array", "items": {"$ref": "#/$defs/reportSection"}}
+  },
+  "anyOf": [
+    {"required": ["suites"]},
+    {"required": ["system_suites"]},
+    {"required": ["lint_packages"]},
+    {"required": ["cov_packages"]},
+    {"required": ["report_sections"]}
+  ],
+  "$defs": {
+    "sectionId": {"type": "string", "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_.-]*$"},
+    "sectionTitle": {"type": "string", "pattern": "\\S"},
+    "sectionMetadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "title"],
+      "properties": {
+        "id": {"$ref": "#/$defs/sectionId"},
+        "title": {"$ref": "#/$defs/sectionTitle"}
+      }
+    },
+    "reportSection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "title", "kinds"],
+      "properties": {
+        "id": {"$ref": "#/$defs/sectionId"},
+        "title": {"$ref": "#/$defs/sectionTitle"},
+        "kinds": {"type": "array", "items": {"enum": ["tests", "lint", "coverage"]}},
+        "suites": {"type": "array", "items": {"$ref": "#/$defs/suite"}},
+        "lint_packages": {"type": "array", "items": {"$ref": "#/$defs/lintPackage"}},
+        "cov_packages": {"type": "array", "items": {"$ref": "#/$defs/coveragePackage"}}
+      }
+    },
+    "count": {"type": "integer", "minimum": 0},
+    "duration": {"type": "number", "minimum": 0},
+    "rate": {"type": "number", "minimum": 0, "maximum": 1},
+    "case": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "classname", "time", "status"],
+      "properties": {
+        "name": {"type": "string"},
+        "classname": {"type": "string"},
+        "time": {"$ref": "#/$defs/duration"},
+        "status": {"enum": ["passed", "failed", "error", "skipped"]},
+        "message": {"type": "string"},
+        "details": {"type": "string"}
+      }
+    },
+    "suite": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "package"],
+      "properties": {
+        "name": {"type": "string"},
+        "package": {"type": "string"},
+        "tests": {"$ref": "#/$defs/count"},
+        "failures": {"$ref": "#/$defs/count"},
+        "errors": {"$ref": "#/$defs/count"},
+        "skipped": {"$ref": "#/$defs/count"},
+        "time": {"$ref": "#/$defs/duration"},
+        "cases": {"type": "array", "items": {"$ref": "#/$defs/case"}}
+      }
+    },
+    "lintFile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "status"],
+      "properties": {
+        "name": {"type": "string"},
+        "status": {"enum": ["passed", "failed"]},
+        "message": {"type": "string"},
+        "details": {"type": "string"}
+      }
+    },
+    "lintTool": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name"],
+      "properties": {
+        "name": {"type": "string"},
+        "files": {"type": "array", "items": {"$ref": "#/$defs/lintFile"}}
+      }
+    },
+    "lintPackage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["package"],
+      "properties": {
+        "package": {"type": "string"},
+        "tools": {"type": "array", "items": {"$ref": "#/$defs/lintTool"}}
+      }
+    },
+    "coverageFile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "line_rate", "lines_covered", "lines_valid"],
+      "properties": {
+        "name": {"type": "string"},
+        "line_rate": {"$ref": "#/$defs/rate"},
+        "lines_covered": {"$ref": "#/$defs/count"},
+        "lines_valid": {"$ref": "#/$defs/count"},
+        "html_path": {"type": "string"}
+      }
+    },
+    "coveragePackage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["package", "line_rate", "lines_covered", "lines_valid"],
+      "properties": {
+        "package": {"type": "string"},
+        "line_rate": {"$ref": "#/$defs/rate"},
+        "lines_covered": {"$ref": "#/$defs/count"},
+        "lines_valid": {"$ref": "#/$defs/count"},
+        "files": {"type": "array", "items": {"$ref": "#/$defs/coverageFile"}},
+        "html_dir": {"type": "string"}
+      }
+    }
+  }
+}

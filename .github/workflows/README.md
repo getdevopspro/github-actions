@@ -57,6 +57,12 @@ When `lfs` is enabled, the workflow prints the tracked LFS files and fails befor
 
 The `Build Report` job calls the [Build Report action](../../build-report/README.md)
 after pre/post commands, including failed commands, and exposes `build-report-url`.
+Report sections follow each selected pre/post producer and its configured
+`*-name`. Artifact `section_title` can override the title; artifact content
+supplies the applicable test, lint, and coverage fields. Clean lint results
+remain visible; absent fields are omitted. See the action's
+[formats and schema](../../build-report/README.md#report-formats-and-sections)
+for custom JSON producers and its [warning policy](../../build-report/README.md#results-and-logging).
 It produces combined test, lint, and coverage results. It uses
 `runner-report-default`, falling back to `runner-default`, and needs Python 3.10+.
 
@@ -67,14 +73,21 @@ report on configured pre/post artifacts, including `checks`, `lint`, `test`,
 when other pre/post artifacts contain logs or binaries instead of report data.
 Neither artifact configuration nor report options enable reporting by themselves.
 
+Prepare passes each selected artifact's pre/post producer ID and `*-name` to the
+report action for every available checks, lint, and test step. For example,
+`post-test-name: System Test (post-steps)` names that producer's section for JSON
+and native results alike. IDs stay stable when names change; pre and post sections
+remain distinct. Tests, lint, and coverage in one artifact stay under its producer.
+Commands still generate the result files; configuration never supplies results.
+
 Prepare validates artifact configuration before checkout and image builds. For
 every pre/post step that declares an artifact name or path, a nonempty command,
 valid artifact name, and path are required, even when reporting is disabled.
 Command-only steps need no artifact fields. When reporting is enabled, prepare
 also requires at least one report artifact, rejects duplicate producer names and
 collisions with source/report uploads, and verifies that explicit report names
-refer to configured producers. Selecting a subset does not bypass validation of
-other pre/post artifact configurations.
+refer to configured producers and selected step names are nonempty. Selecting a
+subset does not bypass validation of other pre/post artifact configurations.
 
 Both pre and post commands upload their configured artifacts, including after
 command failures. Prepare checks configuration only; files and report contents

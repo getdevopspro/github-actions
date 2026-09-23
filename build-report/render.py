@@ -3,6 +3,7 @@
 import dataclasses
 import json
 import os
+import re
 import subprocess
 import sys
 import xml.etree.ElementTree as ET
@@ -103,6 +104,20 @@ class CoveragePackage:
     lines_valid: int
     files: list[CoverageFile] = field(default_factory=list)
     html_dir: str = ""  # relative path to coverage.html/ dir for this package
+
+
+@dataclass
+class ReportSection:
+    id: str
+    title: str
+    suites: list[TestSuite] = field(default_factory=list)
+    lint_packages: list[LintPackage] = field(default_factory=list)
+    cov_packages: list[CoveragePackage] = field(default_factory=list)
+    kinds: list[str] = field(default_factory=list)
+
+    @property
+    def failures(self) -> int:
+        return sum(s.failures + s.errors for s in self.suites) + sum(p.failures for p in self.lint_packages)
 
 
 # ---------------------------------------------------------------------------
@@ -433,6 +448,32 @@ def _esc(text: str) -> str:
     return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;")
 
 
+def _md(text: str) -> str:
+    text = _esc(" ".join(text.split())).replace("|", "&#124;")
+    return re.sub(r"([\\`*_[\]~])", r"\\\1", text)
+
+
+def _test_status(total, failures):
+    if failures:
+        return "#ef4444", "FAILED"
+    return ("#22c55e", "PASSED") if total else ("#f59e0b", "NO TESTS")
+
+
+def _empty_section(section, title, message):
+    return f'<div class="content" id="section-{section}"><h2 class="section-title">{title}</h2><p>{message}</p></div>'
+
+
+def _summary_group(section, label, cards):
+    values = "".join(
+        f'<div class="stat-card"><div class="val" style="color:{color}">{value}</div><div class="lbl">{name}</div></div>'
+        for name, value, color in cards
+    )
+    return (
+        f"<div class=\"stat-group\" onclick=\"document.getElementById('section-{section}').scrollIntoView({{behavior:'smooth'}})\">"
+        f'<div class="stat-group-label">{_esc(label)}</div><div class="stat-group-cards">{values}</div></div>'
+    )
+
+
 def get_repo_name() -> str:
     if os.environ.get("GITHUB_REPOSITORY"):
         return os.environ["GITHUB_REPOSITORY"].rsplit("/", 1)[-1]
@@ -487,7 +528,7 @@ def _render_case(tc: TestCase) -> str:
               </tr>"""
 
 
-def _render_class_groups(suite_idx: int, cases: list[TestCase]) -> str:
+def _render_class_groups(suite_idx: str, cases: list[TestCase]) -> str:
     groups = _group_by_class(cases)
     html = []
     for j, (class_name, group_cases) in enumerate(groups):
@@ -522,103 +563,47 @@ def _render_class_groups(suite_idx: int, cases: list[TestCase]) -> str:
     return "".join(html)
 
 
-# ---------------------------------------------------------------------------
-# System test rendering
-# ---------------------------------------------------------------------------
-
-
-def _render_system_test_section(suites: list[TestSuite]) -> str:
-    if not suites:
-        return ""
-
-    # Group suites by package; sort failing packages first then alphabetical
-    pkg_groups: dict[str, list[TestSuite]] = {}
-    for suite in suites:
-        pkg_groups.setdefault(suite.package, []).append(suite)
-    sorted_packages = sorted(pkg_groups.items(), key=lambda x: (all(s.failures + s.errors == 0 for s in x[1]), x[0]))
-
+def _render_test_section(suites: list[TestSuite], section: str, title: str) -> str:
     total_tests = sum(s.tests for s in suites)
-    total_failures = sum(s.failures + s.errors for s in suites)
-    overall_pass = total_failures == 0
-    status_color = "#22c55e" if overall_pass else "#ef4444"
-    status_text = "PASSED" if overall_pass else "FAILED"
-    collapsed = overall_pass
-    body_display = "none" if collapsed else "block"
-    arrow_cls = "" if collapsed else " open"
+    total_failures = sum(s.failures for s in suites)
+    total_errors = sum(s.errors for s in suites)
+    test_color, test_status = _test_status(total_tests, total_failures + total_errors)
 
-    pkg_rows = []
-    for pkg_idx, (package, pkg_suites) in enumerate(sorted_packages):
-        pkg_tests = sum(s.tests for s in pkg_suites)
-        pkg_failures = sum(s.failures + s.errors for s in pkg_suites)
-        pkg_skipped = sum(s.skipped for s in pkg_suites)
-        pkg_passed = pkg_tests - pkg_failures - pkg_skipped
-        pkg_time = sum(s.time for s in pkg_suites)
-        pkg_badge_color = "#22c55e" if pkg_failures == 0 else "#ef4444"
+    suites = sorted(suites, key=lambda s: (s.failures + s.errors == 0, s.package))
 
-        # Sort test files within package: failing first
-        pkg_suites_sorted = sorted(pkg_suites, key=lambda s: (s.failures + s.errors == 0, s.name))
-
-        file_rows = []
-        for file_idx, suite in enumerate(pkg_suites_sorted):
-            file_name = suite.name.split("/")[-1] if "/" in suite.name else suite.name
-            file_failures = suite.failures + suite.errors
-            file_passed = suite.tests - file_failures - suite.skipped
-            file_badge_color = "#22c55e" if file_failures == 0 else "#ef4444"
-            fid = f"sysfile-{pkg_idx}-{file_idx}"
-            has_file_fail_cls = " has-fail" if file_failures else ""
-            counts = f'<span style="color:#22c55e">{file_passed}✓</span>'
-            if file_failures:
-                counts += f' <span style="color:#ef4444">{file_failures}✗</span>'
-            if suite.skipped:
-                counts += f' <span style="color:#f59e0b">{suite.skipped} skip</span>'
-            file_rows.append(f"""
-            <tr class="class-header{has_file_fail_cls}" onclick="toggleSysFile('{fid}')">
-              <td colspan="3">
-                <span class="toggle" id="ftoggle-{fid}">▶</span>
-                <span class="class-name">{_esc(file_name)}</span>
-                <span class="class-counts">{counts}</span>
-                <span class="badge" style="background:{file_badge_color}">{"PASS" if file_failures == 0 else "FAIL"}</span>
-              </td>
-            </tr>
-            <tr id="{fid}-cases" class="class-cases" style="display:none">
-              <td colspan="3" style="padding:0">
-                <table class="cases-inner-table">
-                  {"".join(_render_case(tc) for tc in suite.cases)}
-                </table>
-              </td>
-            </tr>""")
-
-        pkg_rows.append(f"""
-        <tr class="suite-header" onclick="toggleSysPkg({pkg_idx})">
-          <td><span class="toggle" id="syspkgtoggle-{pkg_idx}">▶</span> <strong>{_esc(package)}</strong></td>
-          <td><span class="badge" style="background:{pkg_badge_color}">{"PASS" if pkg_failures == 0 else "FAIL"}</span></td>
-          <td>{pkg_tests}</td>
-          <td style="color:#22c55e;font-weight:600">{pkg_passed}</td>
-          <td style="color:#ef4444;font-weight:600">{pkg_failures}</td>
-          <td style="color:#f59e0b;font-weight:600">{pkg_skipped}</td>
-          <td>{pkg_time:.3f}s</td>
+    suite_rows = []
+    for index, suite in enumerate(suites):
+        i = f"{section}-{index}"
+        suite_name = f" / {_esc(suite.name)}" if suite.name != suite.package else ""
+        passed = suite.tests - suite.failures - suite.errors - suite.skipped
+        badge_color, suite_status = _test_status(suite.tests, suite.failures + suite.errors)
+        suite_rows.append(f"""
+        <tr class="suite-header" onclick="toggleSuite('{i}')">
+          <td><span class="toggle" id="toggle-{i}">▶</span> <strong>{_esc(suite.package)}</strong>{suite_name}</td>
+          <td><span class="badge" style="background:{badge_color}">{suite_status.upper()}</span></td>
+          <td>{suite.tests}</td>
+          <td style="color:#22c55e;font-weight:600">{passed}</td>
+          <td style="color:#ef4444;font-weight:600">{suite.failures + suite.errors}</td>
+          <td style="color:#f59e0b;font-weight:600">{suite.skipped}</td>
+          <td>{suite.time:.3f}s</td>
         </tr>
-        <tr id="syspkg-{pkg_idx}-suites" class="suite-cases" style="display:none">
+        <tr id="suite-{i}-cases" class="suite-cases" style="display:none">
           <td colspan="7" style="padding:0">
             <table class="cases-table">
-              {"".join(file_rows)}
+              {_render_class_groups(i, suite.cases)}
             </table>
           </td>
         </tr>""")
 
-    return f"""
-<div class="content" id="section-system" style="margin-top:8px">
-  <div class="section-title collapsible" onclick="toggleSection('system')" style="display:flex;align-items:center;gap:12px">
-    <span class="toggle section-toggle{arrow_cls}" id="section-system-toggle">▶</span>
-    System Tests
-    <span class="badge" style="background:{status_color};font-size:0.7rem">{status_text}</span>
-    <span style="color:#475569;font-size:0.8rem;font-weight:400;text-transform:none;letter-spacing:0">{len(sorted_packages)} package{"s" if len(sorted_packages) != 1 else ""} &middot; {total_tests} tests{f", {total_failures} failing" if total_failures else ""}</span>
+    return f"""<div class="content" id="section-{section}">
+  <div class="section-title collapsible" onclick="toggleSection('{section}')" style="display:flex;align-items:center;gap:12px">
+    <span class="toggle section-toggle{" open" if total_failures + total_errors > 0 else ""}" id="section-{section}-toggle">▶</span>
+    {_esc(title)}
+    <span class="badge" style="background:{test_color};font-size:0.7rem">{test_status}</span>
+    <span style="color:#475569;font-size:0.8rem;font-weight:400;text-transform:none;letter-spacing:0">{len(suites)} suite{"s" if len(suites) != 1 else ""} &middot; {total_tests} tests{f", {total_failures + total_errors} failing" if total_failures + total_errors else ""}</span>
   </div>
-  <div id="section-system-body" style="display:{body_display}">
-  <table class="suites-table" style="margin-top:12px">
-    <thead><tr><th>Package</th><th>Status</th><th>Tests</th><th>Passed</th><th>Failed</th><th>Skipped</th><th>Time</th></tr></thead>
-    <tbody>{"".join(pkg_rows)}</tbody>
-  </table>
+  <div id="section-{section}-body" style="display:{"block" if total_failures + total_errors > 0 else "none"}">
+  <table class="suites-table"><thead><tr><th>Package / suite</th><th>Status</th><th>Tests</th><th>Passed</th><th>Failed</th><th>Skipped</th><th>Time</th></tr></thead><tbody>{"".join(suite_rows)}</tbody></table>
   </div>
 </div>"""
 
@@ -645,7 +630,7 @@ def _render_lint_file(lf: LintFile) -> str:
               </tr>"""
 
 
-def _render_lint_tools(pkg_idx: int, tools: list[LintTool]) -> str:
+def _render_lint_tools(pkg_idx: str, tools: list[LintTool]) -> str:
     html = []
     for j, tool in enumerate(tools):
         tid = f"lt-{pkg_idx}-{j}"
@@ -674,9 +659,9 @@ def _render_lint_tools(pkg_idx: int, tools: list[LintTool]) -> str:
     return "".join(html)
 
 
-def _render_lint_section(lint_packages: list[LintPackage]) -> str:
+def _render_lint_section(lint_packages: list[LintPackage], section: str, title: str) -> str:
     if not lint_packages:
-        return ""
+        return _empty_section(section, _esc(title), "0 issues reported.")
 
     total_pkg = len(lint_packages)
     total_files = sum(p.total_files for p in lint_packages)
@@ -684,11 +669,12 @@ def _render_lint_section(lint_packages: list[LintPackage]) -> str:
     overall_pass = failed_pkg == 0
 
     rows = []
-    for i, pkg in enumerate(lint_packages):
+    for index, pkg in enumerate(lint_packages):
+        i = f"{section}-{index}"
         badge_color = "#22c55e" if pkg.failures == 0 else "#ef4444"
         badge_text = "PASS" if pkg.failures == 0 else "FAIL"
         rows.append(f"""
-        <tr class="suite-header" onclick="toggleLintPkg({i})">
+        <tr class="suite-header" onclick="toggleLintPkg('{i}')">
           <td><span class="toggle" id="ltoggle-{i}">▶</span> <strong>{_esc(pkg.package)}</strong></td>
           <td><span class="badge" style="background:{badge_color}">{badge_text}</span></td>
           <td>{pkg.total_files}</td>
@@ -710,14 +696,14 @@ def _render_lint_section(lint_packages: list[LintPackage]) -> str:
     arrow_cls = "" if collapsed else " open"
 
     return f"""
-<div class="content" id="section-lint" style="margin-top:8px">
-  <div class="section-title collapsible" onclick="toggleSection('lint')" style="display:flex;align-items:center;gap:12px">
-    <span class="toggle section-toggle{arrow_cls}" id="section-lint-toggle">▶</span>
-    Lint
+<div class="content" id="section-{section}" style="margin-top:8px">
+  <div class="section-title collapsible" onclick="toggleSection('{section}')" style="display:flex;align-items:center;gap:12px">
+    <span class="toggle section-toggle{arrow_cls}" id="section-{section}-toggle">▶</span>
+    {_esc(title)}
     <span class="badge" style="background:{status_color};font-size:0.7rem">{status_text}</span>
     <span style="color:#475569;font-size:0.8rem;font-weight:400;text-transform:none;letter-spacing:0">{total_pkg} package{"s" if total_pkg != 1 else ""} &middot; {total_files} file{"s" if total_files != 1 else ""}{f", {failed_pkg} failing" if failed_pkg else ""}</span>
   </div>
-  <div id="section-lint-body" style="display:{body_display}">
+  <div id="section-{section}-body" style="display:{body_display}">
   <table class="suites-table" style="margin-top:12px">
     <thead><tr><th>Package</th><th>Status</th><th>Files</th><th>Passed</th><th>Failed</th></tr></thead>
     <tbody>{"".join(rows)}</tbody>
@@ -745,9 +731,11 @@ def _cov_bar(rate: float) -> str:
     )
 
 
-def _render_coverage_section(cov_packages: list[CoveragePackage], report_output_path: Path) -> str:
-    if not cov_packages:
-        return ""
+def _render_coverage_section(
+    cov_packages: list[CoveragePackage], report_output_path: Path, section: str, title: str
+) -> str:
+    if not sum(p.lines_valid for p in cov_packages):
+        return _empty_section(section, _esc(title), "No executable lines.")
 
     total_covered = sum(p.lines_covered for p in cov_packages)
     total_valid = sum(p.lines_valid for p in cov_packages)
@@ -760,7 +748,8 @@ def _render_coverage_section(cov_packages: list[CoveragePackage], report_output_
     report_dir = report_output_path.parent
 
     pkg_rows = []
-    for pkg_idx, pkg in enumerate(sorted_pkgs):
+    for index, pkg in enumerate(sorted_pkgs):
+        pkg_idx = f"{section}-{index}"
         pct = pkg.line_rate * 100
         color = "#22c55e" if pct >= 80 else ("#f59e0b" if pct >= 50 else "#ef4444")
 
@@ -794,7 +783,7 @@ def _render_coverage_section(cov_packages: list[CoveragePackage], report_output_
               </tr>""")
 
         pkg_rows.append(f"""
-        <tr class="suite-header" onclick="toggleCovPkg({pkg_idx})">
+        <tr class="suite-header" onclick="toggleCovPkg('{pkg_idx}')">
           <td><span class="toggle" id="covtoggle-{pkg_idx}">▶</span> <strong>{pkg_link}</strong></td>
           <td>{_cov_bar(pkg.line_rate)}</td>
           <td style="color:{color};font-weight:600;white-space:nowrap">{pkg.lines_covered}/{pkg.lines_valid} lines</td>
@@ -814,14 +803,14 @@ def _render_coverage_section(cov_packages: list[CoveragePackage], report_output_
     arrow_cls = "" if collapsed else " open"
 
     return f"""
-<div class="content" id="section-coverage" style="margin-top:8px">
-  <div class="section-title collapsible" onclick="toggleSection('coverage')" style="display:flex;align-items:center;gap:12px">
-    <span class="toggle section-toggle{arrow_cls}" id="section-coverage-toggle">▶</span>
-    Code Coverage
+<div class="content" id="section-{section}" style="margin-top:8px">
+  <div class="section-title collapsible" onclick="toggleSection('{section}')" style="display:flex;align-items:center;gap:12px">
+    <span class="toggle section-toggle{arrow_cls}" id="section-{section}-toggle">▶</span>
+    {_esc(title)}
     <span style="color:{overall_color};font-weight:700;font-size:0.95rem">{overall_rate * 100:.1f}%</span>
     <span style="color:#475569;font-size:0.8rem;font-weight:400;text-transform:none;letter-spacing:0">{len(cov_packages)} package{"s" if len(cov_packages) != 1 else ""} &middot; {total_covered}/{total_valid} lines covered</span>
   </div>
-  <div id="section-coverage-body" style="display:{body_display}">
+  <div id="section-{section}-body" style="display:{body_display}">
   <table class="suites-table" style="margin-top:12px">
     <thead><tr><th>Package</th><th>Coverage</th><th>Lines</th><th>Files</th></tr></thead>
     <tbody>{"".join(pkg_rows)}</tbody>
@@ -836,67 +825,75 @@ def _render_coverage_section(cov_packages: list[CoveragePackage], report_output_
 
 
 def render_html(
-    suites: list[TestSuite],
-    system_suites: list[TestSuite],
-    lint_packages: list[LintPackage],
-    cov_packages: list[CoveragePackage],
+    sections: list[ReportSection],
     generated_at: str,
-    title: str = "Test Report",
+    title: str = "Build Report",
     output_path: Path = DEFAULT_REPORT_PATH,
     report_errors: list[str] | None = None,
+    report_warnings: list[str] | None = None,
 ) -> str:
     repo_name = get_repo_name()
     title = f"{repo_name} — {title}" if repo_name else title
-
-    total_tests = sum(s.tests for s in suites)
-    total_failures = sum(s.failures for s in suites)
-    total_errors = sum(s.errors for s in suites)
-    total_skipped = sum(s.skipped for s in suites)
-    total_passed = total_tests - total_failures - total_errors - total_skipped
-    lint_total_files = sum(p.total_files for p in lint_packages)
-    lint_failures = sum(p.failures for p in lint_packages)
-    sys_total = sum(s.tests for s in system_suites)
-    sys_failures = sum(s.failures + s.errors for s in system_suites)
-    sys_skipped = sum(s.skipped for s in system_suites)
-    sys_passed = sys_total - sys_failures - sys_skipped
-    cov_covered = sum(p.lines_covered for p in cov_packages)
-    cov_valid = sum(p.lines_valid for p in cov_packages)
-    cov_rate = cov_covered / cov_valid if cov_valid else 0.0
-    overall_pass = (
-        not report_errors and total_failures == 0 and total_errors == 0 and lint_failures == 0 and sys_failures == 0
-    )
-
+    overall_pass = not report_errors and not any(section.failures for section in sections)
     status_color = "#22c55e" if overall_pass else "#ef4444"
     status_text = "PASSED" if overall_pass else "FAILED"
+    if overall_pass and (report_warnings or not sections):
+        status_color = "#f59e0b"
+        status_text = "WARNINGS" if sections else "NO RESULTS"
 
-    suites = sorted(suites, key=lambda s: (s.failures + s.errors == 0, s.package))
-
-    suite_rows = []
-    for i, suite in enumerate(suites):
-        passed = suite.tests - suite.failures - suite.errors - suite.skipped
-        suite_status = "pass" if (suite.failures == 0 and suite.errors == 0) else "fail"
-        badge_color = "#22c55e" if suite_status == "pass" else "#ef4444"
-        suite_rows.append(f"""
-        <tr class="suite-header" onclick="toggleSuite({i})">
-          <td><span class="toggle" id="toggle-{i}">▶</span> <strong>{_esc(suite.package)}</strong></td>
-          <td><span class="badge" style="background:{badge_color}">{suite_status.upper()}</span></td>
-          <td>{suite.tests}</td>
-          <td style="color:#22c55e;font-weight:600">{passed}</td>
-          <td style="color:#ef4444;font-weight:600">{suite.failures + suite.errors}</td>
-          <td style="color:#f59e0b;font-weight:600">{suite.skipped}</td>
-          <td>{suite.time:.3f}s</td>
-        </tr>
-        <tr id="suite-{i}-cases" class="suite-cases" style="display:none">
-          <td colspan="7" style="padding:0">
-            <table class="cases-table">
-              {_render_class_groups(i, suite.cases)}
-            </table>
-          </td>
-        </tr>""")
-
-    system_html = _render_system_test_section(system_suites)
-    lint_html = _render_lint_section(lint_packages)
-    coverage_html = _render_coverage_section(cov_packages, output_path)
+    summary = []
+    content = []
+    for index, section in enumerate(sections):
+        # Positional namespaces cannot collide with user IDs or subsection suffixes.
+        key = f"group-{index}"
+        cards = []
+        parts = []
+        mixed = len(section.kinds) > 1
+        for kind in ("tests", "lint", "coverage"):
+            if kind not in section.kinds:
+                continue
+            part_key = f"{key}-{kind}" if mixed else key
+            part_title = kind.title() if mixed else section.title
+            if kind == "tests":
+                total = sum(s.tests for s in section.suites)
+                failed = sum(s.failures + s.errors for s in section.suites)
+                skipped = sum(s.skipped for s in section.suites)
+                cards.extend(
+                    [
+                        ("Tests", total, "#94a3b8"),
+                        ("Passed", total - failed - skipped, "#22c55e"),
+                        ("Failed", failed, "#ef4444"),
+                        ("Skipped", skipped, "#f59e0b"),
+                    ]
+                )
+                parts.append(_render_test_section(section.suites, part_key, part_title))
+            elif kind == "lint":
+                files = sum(p.total_files for p in section.lint_packages)
+                failed = sum(p.failures for p in section.lint_packages)
+                if files:
+                    cards.append(("Reported files", files, "#a5b4fc"))
+                cards.append(("Lint issues", failed, "#ef4444" if failed else "#a5b4fc"))
+                parts.append(_render_lint_section(section.lint_packages, part_key, part_title))
+            else:
+                covered = sum(p.lines_covered for p in section.cov_packages)
+                valid = sum(p.lines_valid for p in section.cov_packages)
+                cards.extend(
+                    [
+                        ("Coverage", f"{covered / valid * 100:.0f}%" if valid else "—", "#67e8f9"),
+                        ("Covered lines", covered, "#67e8f9"),
+                        ("Total lines", valid, "#94a3b8"),
+                    ]
+                )
+                parts.append(_render_coverage_section(section.cov_packages, output_path, part_key, part_title))
+        summary.append(_summary_group(key, section.title, cards))
+        if mixed:
+            content.append(
+                f'<section id="section-{key}"><h2 class="content section-title">{_esc(section.title)}</h2>{"".join(parts)}</section>'
+            )
+        elif parts:
+            content.extend(parts)
+        else:
+            content.append(_empty_section(key, _esc(section.title), "No identifiable results."))
 
     return f"""<!DOCTYPE html>
 <html lang="en">
@@ -913,7 +910,7 @@ def render_html(
         status_color
     }; }}
   .summary {{ display: flex; flex-wrap: wrap; gap: 8px; padding: 8px 12px; }}
-  .stat-card {{ background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 6px 10px; flex: 1 1 0; min-width: 0; text-align: center; box-sizing: border-box; }}
+  .stat-card {{ background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 6px 10px; flex: 1 1 80px; text-align: center; box-sizing: border-box; }}
   .stat-card .val {{ font-size: clamp(0.9rem, 2vw, 1.5rem); font-weight: 700; line-height: 1; }}
   .stat-card .lbl {{ font-size: 0.7rem; color: #94a3b8; margin-top: 3px; text-transform: uppercase; letter-spacing: 0.05em; }}
   .content {{ padding: 0 12px 8px; }}
@@ -958,8 +955,8 @@ def render_html(
   .section-title.collapsible {{ cursor: pointer; user-select: none; }}
   .section-title.collapsible:hover {{ color: #cbd5e1; }}
   .section-toggle {{ font-size: 0.8rem; }}
-  .stat-group-label {{ font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: #64748b; white-space: nowrap; }}
-  .stat-group-cards {{ display: flex; gap: 8px; flex-wrap: nowrap; }}
+  .stat-group-label {{ font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: #64748b; overflow-wrap: anywhere; }}
+  .stat-group-cards {{ display: flex; gap: 8px; flex-wrap: wrap; }}
 </style>
 </head>
 <body>
@@ -967,85 +964,8 @@ def render_html(
   <h1>{_esc(title)}</h1>
   <span class="overall-badge">{status_text}</span>
 </div>
-<div class="summary">
-  <div class="stat-group" onclick="document.getElementById('section-unit').scrollIntoView({{behavior:'smooth'}})">
-    <div class="stat-group-label">Unit Tests</div>
-    <div class="stat-group-cards">
-      <div class="stat-card"><div class="val" style="color:#94a3b8">{
-        total_tests
-    }</div><div class="lbl">Total</div></div>
-      <div class="stat-card"><div class="val" style="color:#22c55e">{
-        total_passed
-    }</div><div class="lbl">Passed</div></div>
-      <div class="stat-card"><div class="val" style="color:#ef4444">{
-        total_failures + total_errors
-    }</div><div class="lbl">Failed</div></div>
-      <div class="stat-card"><div class="val" style="color:#f59e0b">{
-        total_skipped
-    }</div><div class="lbl">Skipped</div></div>
-    </div>
-  </div>
-  <div class="stat-group" onclick="document.getElementById('section-system').scrollIntoView({{behavior:'smooth'}})">
-    <div class="stat-group-label">System Tests</div>
-    <div class="stat-group-cards">
-      <div class="stat-card" style="border-color:#0e4429"><div class="val" style="color:#94a3b8">{
-        sys_total
-    }</div><div class="lbl">Total</div></div>
-      <div class="stat-card" style="border-color:#0e4429"><div class="val" style="color:#22c55e">{
-        sys_passed
-    }</div><div class="lbl">Passed</div></div>
-      <div class="stat-card" style="border-color:#0e4429"><div class="val" style="color:{
-        "#ef4444" if sys_failures else "#22c55e"
-    }">{sys_failures}</div><div class="lbl">Failed</div></div>
-      <div class="stat-card" style="border-color:#0e4429"><div class="val" style="color:#f59e0b">{
-        sys_skipped
-    }</div><div class="lbl">Skipped</div></div>
-    </div>
-  </div>
-  <div class="stat-group" onclick="document.getElementById('section-lint').scrollIntoView({{behavior:'smooth'}})">
-    <div class="stat-group-label">Lint</div>
-    <div class="stat-group-cards">
-      <div class="stat-card" style="border-color:#312e81"><div class="val" style="color:#a5b4fc">{
-        lint_total_files
-    }</div><div class="lbl">Files</div></div>
-      <div class="stat-card" style="border-color:#312e81"><div class="val" style="color:{
-        "#ef4444" if lint_failures else "#a5b4fc"
-    }">{lint_failures}</div><div class="lbl">Errors</div></div>
-    </div>
-  </div>
-  <div class="stat-group" onclick="document.getElementById('section-coverage').scrollIntoView({{behavior:'smooth'}})">
-    <div class="stat-group-label">Coverage</div>
-    <div class="stat-group-cards">
-      <div class="stat-card" style="border-color:#164e63"><div class="val" style="color:{
-        "#22c55e" if cov_rate >= 0.8 else ("#f59e0b" if cov_rate >= 0.5 else "#ef4444")
-    }">{cov_rate * 100:.0f}%</div><div class="lbl">Lines</div></div>
-      <div class="stat-card" style="border-color:#164e63"><div class="val" style="color:#67e8f9">{
-        cov_covered
-    }</div><div class="lbl">Covered</div></div>
-      <div class="stat-card" style="border-color:#164e63"><div class="val" style="color:#94a3b8">{
-        cov_valid
-    }</div><div class="lbl">Total</div></div>
-    </div>
-  </div>
-</div>
-{
-        f'''<div class="content" id="section-unit">
-  <div class="section-title collapsible" onclick="toggleSection('unit')" style="display:flex;align-items:center;gap:12px">
-    <span class="toggle section-toggle{" open" if total_failures + total_errors > 0 else ""}" id="section-unit-toggle">▶</span>
-    Unit Tests
-    <span class="badge" style="background:{"#22c55e" if total_failures + total_errors == 0 else "#ef4444"};font-size:0.7rem">{"PASSED" if total_failures + total_errors == 0 else "FAILED"}</span>
-    <span style="color:#475569;font-size:0.8rem;font-weight:400;text-transform:none;letter-spacing:0">{len(suites)} suite{"s" if len(suites) != 1 else ""} &middot; {total_tests} tests{f", {total_failures + total_errors} failing" if total_failures + total_errors else ""}</span>
-  </div>
-  <div id="section-unit-body" style="display:{"block" if total_failures + total_errors > 0 else "none"}">
-  <table class="suites-table"><thead><tr><th>Package</th><th>Status</th><th>Tests</th><th>Passed</th><th>Failed</th><th>Skipped</th><th>Time</th></tr></thead><tbody>{"".join(suite_rows)}</tbody></table>
-  </div>
-</div>'''
-        if suites
-        else ""
-    }
-{system_html}
-{lint_html}
-{coverage_html}
+<div class="summary">{"".join(summary)}</div>
+{"".join(content)}
 <script>
 function toggleSection(name) {{
   const body = document.getElementById('section-' + name + '-body');
@@ -1064,20 +984,6 @@ function toggleSuite(i) {{
 function toggleClass(id) {{
   const el = document.getElementById('cg-' + id + '-cases');
   const tgl = document.getElementById('ctoggle-' + id);
-  const open = el.style.display === 'none';
-  el.style.display = open ? '' : 'none';
-  tgl.classList.toggle('open', open);
-}}
-function toggleSysPkg(i) {{
-  const el = document.getElementById('syspkg-' + i + '-suites');
-  const tgl = document.getElementById('syspkgtoggle-' + i);
-  const open = el.style.display === 'none';
-  el.style.display = open ? '' : 'none';
-  tgl.classList.toggle('open', open);
-}}
-function toggleSysFile(id) {{
-  const el = document.getElementById(id + '-cases');
-  const tgl = document.getElementById('ftoggle-' + id);
   const open = el.style.display === 'none';
   el.style.display = open ? '' : 'none';
   tgl.classList.toggle('open', open);
@@ -1103,11 +1009,10 @@ function toggleCovPkg(i) {{
   el.style.display = open ? '' : 'none';
   tgl.classList.toggle('open', open);
 }}
-// Auto-expand unit test class groups with failures and their parent suites
+// Auto-expand test class groups with failures and their parent suites
 document.querySelectorAll('.class-header.has-fail').forEach(el => {{
   const onclick = el.getAttribute('onclick') || '';
   const mClass = onclick.match(/toggleClass\\('(.+?)'\\)/);
-  const mFile = onclick.match(/toggleSysFile\\('(.+?)'\\)/);
   if (mClass) {{
     const id = mClass[1];
     const cgEl = document.getElementById('cg-' + id + '-cases');
@@ -1116,19 +1021,8 @@ document.querySelectorAll('.class-header.has-fail').forEach(el => {{
     const suiteCases = el.closest('.suite-cases');
     if (suiteCases) {{
       suiteCases.style.display = '';
-      const idx = suiteCases.id.replace('suite-', '').replace('-cases', '');
+      const idx = suiteCases.id.slice('suite-'.length, -'-cases'.length);
       document.getElementById('toggle-' + idx)?.classList.add('open');
-    }}
-  }} else if (mFile) {{
-    const id = mFile[1];
-    const fileEl = document.getElementById(id + '-cases');
-    const fileTgl = document.getElementById('ftoggle-' + id);
-    if (fileEl) {{ fileEl.style.display = ''; fileTgl?.classList.add('open'); }}
-    const pkgCases = el.closest('.suite-cases');
-    if (pkgCases) {{
-      pkgCases.style.display = '';
-      const idx = pkgCases.id.replace('syspkg-', '').replace('-suites', '');
-      document.getElementById('syspkgtoggle-' + idx)?.classList.add('open');
     }}
   }}
 }});
@@ -1143,7 +1037,7 @@ document.querySelectorAll('.lint-tool-header.has-fail').forEach(el => {{
   const pkgCases = el.closest('.suite-cases');
   if (pkgCases) {{
     pkgCases.style.display = '';
-    const pkgIdx = pkgCases.id.replace('lp-', '').replace('-tools', '');
+    const pkgIdx = pkgCases.id.slice('lp-'.length, -'-tools'.length);
     document.getElementById('ltoggle-' + pkgIdx)?.classList.add('open');
   }}
 }});
@@ -1161,111 +1055,88 @@ document.querySelectorAll('.lint-tool-header.has-fail').forEach(el => {{
 
 
 def render_markdown_summary(
-    suites: list[TestSuite],
-    system_suites: list[TestSuite],
-    lint_packages: list[LintPackage],
-    cov_packages: list[CoveragePackage],
-    title: str = "Test Report",
+    sections: list[ReportSection],
+    title: str = "Build Report",
     max_items: int = 30,
     baseline_cov_rate: float | None = None,
     report_errors: list[str] | None = None,
+    report_warnings: list[str] | None = None,
 ) -> str:
-    total = sum(s.tests for s in suites)
-    failures = sum(s.failures + s.errors for s in suites)
-    skipped = sum(s.skipped for s in suites)
-    passed = total - failures - skipped
-    sys_total = sum(s.tests for s in system_suites)
-    sys_fail = sum(s.failures + s.errors for s in system_suites)
-    sys_skipped = sum(s.skipped for s in system_suites)
-    sys_passed = sys_total - sys_fail - sys_skipped
-    lint_files = sum(p.total_files for p in lint_packages)
-    lint_fail = sum(p.failures for p in lint_packages)
-    cov_covered = sum(p.lines_covered for p in cov_packages)
-    cov_valid = sum(p.lines_valid for p in cov_packages)
-    overall_pass = not report_errors and failures == 0 and sys_fail == 0 and lint_fail == 0
+    overall_pass = not report_errors and not any(section.failures for section in sections)
+    status = "✅ PASSED" if overall_pass else "❌ FAILED"
+    if overall_pass and (report_warnings or not sections):
+        status = "⚠️ WARNINGS" if sections else "⚠️ NO RESULTS"
+    lines = [f"### {title} — {status}", ""]
+    details = []
+    if sections:
+        lines.extend(["| Section | Result | Details |", "| --- | --- | --- |"])
+    for section in sections:
+        parts = []
+        result = "—"
+        if "tests" in section.kinds:
+            total = sum(s.tests for s in section.suites)
+            failed = sum(s.failures + s.errors for s in section.suites)
+            skipped = sum(s.skipped for s in section.suites)
+            counts = [f"{total - failed - skipped} passed"]
+            if failed:
+                counts.append(f"{failed} failed")
+            if skipped:
+                counts.append(f"{skipped} skipped")
+            parts.append(("Tests", ", ".join(counts) if total else "no tests collected"))
+            result = "✅" if total else "⚠️"
+        if "lint" in section.kinds:
+            files = sum(p.total_files for p in section.lint_packages)
+            failed = sum(p.failures for p in section.lint_packages)
+            word = "file" if files == 1 else "files"
+            detail = (
+                f"{failed} error(s) in {files} {word}" if failed else f"{files} {word} clean" if files else "0 issues"
+            )
+            parts.append(("Lint", detail))
+            if result == "—":
+                result = "✅"
+        if "coverage" in section.kinds:
+            covered = sum(p.lines_covered for p in section.cov_packages)
+            valid = sum(p.lines_valid for p in section.cov_packages)
+            detail = "no executable lines"
+            if valid:
+                rate = covered / valid
+                detail = f"{rate * 100:.1f}% ({covered}/{valid} lines)"
+                if baseline_cov_rate is not None:
+                    delta = round(rate * 1000) - round(baseline_cov_rate * 1000)
+                    if delta:
+                        arrow = "↓" if delta < 0 else "↑"
+                        detail += f" {arrow} {abs(delta) / 10:.1f}%"
+                        if result == "—":
+                            result = "ℹ️"
+            parts.append(("Coverage", detail))
+        if section.failures:
+            result = "❌"
+        detail = "; ".join(f"{kind}: {text}" if len(parts) > 1 else text for kind, text in parts)
+        lines.append(f"| {_md(section.title)} | {result if parts else '⚠️'} | {detail or 'no identifiable results'} |")
 
-    def _test_detail(n_passed: int, n_failed: int, n_skipped: int, n_total: int) -> str:
-        if not n_total:
-            return "no results"
-        parts = [f"{n_passed} passed"]
-        if n_failed:
-            parts.append(f"{n_failed} failed")
-        if n_skipped:
-            parts.append(f"{n_skipped} skipped")
-        return ", ".join(parts)
-
-    lint_file_word = "file" if lint_files == 1 else "files"
-    if lint_fail:
-        lint_detail = f"{lint_fail} error(s) in {lint_files} {lint_file_word}"
-    elif lint_files:
-        lint_detail = f"{lint_files} {lint_file_word} clean"
-    else:
-        lint_detail = "no results"
-
-    # Coverage result is a comparison against the baseline (❌ only on a decrease);
-    # without a baseline there is nothing to judge against, so the result is "—".
-    if not cov_valid:
-        cov_result = "—"
-        cov_detail = "no data"
-    else:
-        cov_rate = cov_covered / cov_valid
-        cov_detail = f"{cov_rate * 100:.1f}% ({cov_covered}/{cov_valid} lines)"
-        if baseline_cov_rate is None:
-            cov_result = "—"
-        else:
-            # Compare at the displayed precision (0.1pp) so a hairline float
-            # difference doesn't flag a regression the reader can't see.
-            delta = round(cov_rate * 1000) - round(baseline_cov_rate * 1000)
-            cov_result = "❌" if delta < 0 else "✅"
-            if delta:
-                arrow = "↓" if delta < 0 else "↑"
-                cov_detail += f" {arrow} {abs(delta) / 10:.1f}%"
-
-    lines = [
-        f"### {title} — {'✅ PASSED' if overall_pass else '❌ FAILED'}",
-        "",
-        "| Section | Result | Details |",
-        "| --- | --- | --- |",
-        f"| Unit tests | {'❌' if failures else '✅' if total else '—'} | {_test_detail(passed, failures, skipped, total)} |",
-        f"| System tests | {'❌' if sys_fail else '✅' if sys_total else '—'} | {_test_detail(sys_passed, sys_fail, sys_skipped, sys_total)} |",
-        f"| Lint | {'❌' if lint_fail else '✅' if lint_files else '—'} | {lint_detail} |",
-        f"| Coverage | {cov_result} | {cov_detail} |",
-    ]
-
-    def _failing_cases(suite_list: list[TestSuite]) -> list[str]:
         items = []
-        for suite in sorted(suite_list, key=lambda s: (s.package, s.name)):
-            for tc in suite.cases:
-                if tc.status not in ("failed", "error"):
+        for suite in sorted(section.suites, key=lambda s: (s.package, s.name)):
+            for case in suite.cases:
+                if case.status not in ("failed", "error"):
                     continue
-                label = f"{tc.classname}::{tc.name}" if tc.classname else tc.name
-                msg_lines = (tc.message or tc.details or "").strip().splitlines()
-                first = msg_lines[0][:200] if msg_lines else ""
-                items.append(f"- `{label}` ({suite.package})" + (f" — {first}" if first else ""))
-        return items
-
-    def _details_block(summary: str, items: list[str]) -> list[str]:
-        if not items:
-            return []
-        block = ["", f"<details><summary>{summary}</summary>", ""]
-        block.extend(items[:max_items])
-        if len(items) > max_items:
-            block.append(f"- …and {len(items) - max_items} more — see the full report artifact")
-        block.extend(["", "</details>"])
-        return block
-
-    lint_items = [
-        f"- `{lf.name}` — {tool.name}: {len(lf.details.splitlines()) or 1} error(s)"
-        for pkg in lint_packages
-        for tool in pkg.tools
-        for lf in tool.files
-        if lf.status == "failed"
-    ]
-
-    lines.extend(_details_block(f"Unit test failures ({failures})", _failing_cases(suites)))
-    lines.extend(_details_block(f"System test failures ({sys_fail})", _failing_cases(system_suites)))
-    lines.extend(_details_block(f"Lint failures ({lint_fail})", lint_items))
-    return "\n".join(lines) + "\n"
+                label = f"{case.classname}::{case.name}" if case.classname else case.name
+                messages = (case.message or case.details).strip().splitlines()
+                first = _md(messages[0][:200]) if messages else ""
+                items.append(f"- {_md(label)} ({_md(suite.package)})" + (f" — {first}" if first else ""))
+        items.extend(
+            f"- {_md(lf.name)} — {_md(tool.name)}: {len(lf.details.splitlines()) or 1} error(s)"
+            for pkg in section.lint_packages
+            for tool in pkg.tools
+            for lf in tool.files
+            if lf.status == "failed"
+        )
+        if items:
+            details.extend(["", f"<details><summary>{_esc(section.title)} failures ({section.failures})</summary>", ""])
+            details.extend(items[:max_items])
+            if len(items) > max_items:
+                details.append(f"- …and {len(items) - max_items} more — see the full report artifact")
+            details.extend(["", "</details>"])
+    return "\n".join(lines + details) + "\n"
 
 
 # ---------------------------------------------------------------------------
@@ -1273,69 +1144,67 @@ def render_markdown_summary(
 # ---------------------------------------------------------------------------
 
 
-def _save_report_data(
-    json_path: Path,
-    suites: list[TestSuite],
-    system_suites: list[TestSuite],
-    lint_packages: list[LintPackage],
-    cov_packages: list[CoveragePackage],
-) -> None:
-    # Strip machine-local HTML paths from coverage data — they are absolute paths
-    # into the build tree that won't resolve on another machine. Stats are preserved;
-    # links are regenerated at render time when the build artifacts are present.
-    def _portable_cov_pkg(pkg: CoveragePackage) -> dict:
-        d = dataclasses.asdict(pkg)
-        d["html_dir"] = ""
-        for f in d["files"]:
-            f["html_path"] = ""
-        return d
-
-    data = {
-        "suites": [dataclasses.asdict(s) for s in suites],
-        "system_suites": [dataclasses.asdict(s) for s in system_suites],
-        "lint_packages": [dataclasses.asdict(p) for p in lint_packages],
-        "cov_packages": [_portable_cov_pkg(p) for p in cov_packages],
-    }
+def _save_report_data(json_path: Path, sections: list[ReportSection]) -> None:
+    data = {"report_sections": [dataclasses.asdict(section) for section in sections]}
+    for section in data["report_sections"]:
+        for package in section["cov_packages"]:
+            # Machine-local coverage links cannot resolve on another runner.
+            package["html_dir"] = ""
+            for file in package["files"]:
+                file["html_path"] = ""
     json_path.write_text(json.dumps(data, indent=2), encoding="utf-8")
 
 
-def _load_report_data(
-    json_path: Path,
-) -> tuple[list[TestSuite], list[TestSuite], list[LintPackage], list[CoveragePackage]]:
-    if not json_path.exists():
-        return [], [], [], []
-    try:
-        data = json.loads(json_path.read_text(encoding="utf-8"))
-    except (json.JSONDecodeError, OSError) as e:
-        print(f"Warning: could not load existing report data from {json_path}: {e}", file=sys.stderr)
-        return [], [], [], []
+def _load_data(data: dict) -> tuple[list[TestSuite], list[TestSuite], list[LintPackage], list[CoveragePackage]]:
+    def load_suites(items):
+        return [
+            TestSuite(
+                **{k: v for k, v in item.items() if k != "cases"},
+                cases=[TestCase(**case) for case in item.get("cases", [])],
+            )
+            for item in items
+        ]
 
-    def load_suites(items: list[dict]) -> list[TestSuite]:
-        result = []
-        for d in items:
-            cases = [TestCase(**c) for c in d.get("cases", [])]
-            result.append(TestSuite(**{k: v for k, v in d.items() if k != "cases"}, cases=cases))
-        return result
-
-    def load_lint_packages(items: list[dict]) -> list[LintPackage]:
-        result = []
-        for p in items:
-            tools = [
+    lint = [
+        LintPackage(
+            package=p["package"],
+            tools=[
                 LintTool(name=t["name"], files=[LintFile(**f) for f in t.get("files", [])]) for t in p.get("tools", [])
-            ]
-            result.append(LintPackage(package=p["package"], tools=tools))
-        return result
+            ],
+        )
+        for p in data.get("lint_packages", [])
+    ]
+    coverage = [
+        CoveragePackage(
+            **{k: v for k, v in p.items() if k != "files"}, files=[CoverageFile(**f) for f in p.get("files", [])]
+        )
+        for p in data.get("cov_packages", [])
+    ]
+    return load_suites(data.get("suites", [])), load_suites(data.get("system_suites", [])), lint, coverage
 
-    def load_cov_packages(items: list[dict]) -> list[CoveragePackage]:
-        result = []
-        for p in items:
-            files = [CoverageFile(**f) for f in p.get("files", [])]
-            result.append(CoveragePackage(**{k: v for k, v in p.items() if k != "files"}, files=files))
-        return result
 
-    return (
-        load_suites(data.get("suites", [])),
-        load_suites(data.get("system_suites", [])),
-        load_lint_packages(data.get("lint_packages", [])),
-        load_cov_packages(data.get("cov_packages", [])),
-    )
+def _load_report_data(json_path: Path):
+    data = json.loads(json_path.read_text(encoding="utf-8"))
+    result = _load_data(data)
+    for section in data.get("report_sections", []):
+        for destination, values in zip(result, _load_data(section)):
+            destination.extend(values)
+    return result
+
+
+def _load_report_sections(json_path: Path) -> list[ReportSection]:
+    data = json.loads(json_path.read_text(encoding="utf-8"))
+    sections = []
+    for section in data["report_sections"]:
+        suites, system_suites, lint, coverage = _load_data(section)
+        sections.append(
+            ReportSection(
+                id=section["id"],
+                title=section["title"],
+                suites=suites + system_suites,
+                lint_packages=lint,
+                cov_packages=coverage,
+                kinds=section["kinds"],
+            )
+        )
+    return sections
