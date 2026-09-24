@@ -1,3 +1,9 @@
+## [v10.0.3](https://github.com/getdevopspro/github-actions/compare/v10.0.2..v10.0.3) - 2026-09-24
+
+### Bug Fixes
+
+- _(build)_ Name pre and post jobs consistently ([`f184b01`](https://github.com/getdevopspro/github-actions/commit/f184b0132d9fe24d92dd266484ecdaf21a499d6c))
+
 ## [v10.0.2](https://github.com/getdevopspro/github-actions/compare/v10.0.1..v10.0.2) - 2026-09-24
 
 ### Refactor
