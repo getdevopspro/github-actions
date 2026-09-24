@@ -934,7 +934,9 @@ jobs:
       version: ${{ steps.release_version.outputs.version }}
       commit-sha: ${{ steps.determine_sha.outputs.sha }}
       pre-step-matrix: ${{ steps.set_pre_matrix.outputs.matrix }}
+      pre-step-names: ${{ steps.set_pre_matrix.outputs.names }}
       post-step-matrix: ${{ steps.set_post_matrix.outputs.matrix }}
+      post-step-names: ${{ steps.set_post_matrix.outputs.names }}
       image-platform-matrix: ${{ steps.prepare_image.outputs.matrix }}
       build-report-artifacts: ${{ steps.prepare_report.outputs.artifacts }}
       build-report-sections: ${{ steps.prepare_report.outputs.artifact-sections }}
@@ -1249,6 +1251,7 @@ jobs:
           output = json.dumps(matrix, ensure_ascii=False, separators=(',', ':'))
           with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
               f.write(f"matrix<<{delimiter}\n{output}\n{delimiter}\n")
+              f.write(f"names={json.dumps([step['name'] for step in matrix], ensure_ascii=False)}\n")
 
           print("Pre-steps matrix:")
           print(json.dumps(matrix, indent=2))
@@ -1389,6 +1392,7 @@ jobs:
           output = json.dumps(matrix, ensure_ascii=False, separators=(',', ':'))
           with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
               f.write(f"matrix<<{delimiter}\n{output}\n{delimiter}\n")
+              f.write(f"names={json.dumps([step['name'] for step in matrix], ensure_ascii=False)}\n")
 
           print("Post-steps matrix:")
           print(json.dumps(matrix, indent=2))
@@ -1471,16 +1475,18 @@ jobs:
           retention-days: 1
 
   pre-steps:
-    name : ${{ matrix.pre-steps.name }}
+    name: Pre Step
     permissions:
       contents: read
       packages: write
     needs: prepare
     if: ${{ !cancelled() && needs.prepare.result == 'success' && needs.prepare.outputs.pre-step-matrix != '[]' }}
-    runs-on: ${{ matrix.pre-steps.runner || inputs.runner-pre-default || inputs.runner-default }}
+    runs-on: ${{ fromJSON(needs.prepare.outputs.pre-step-matrix)[strategy.job-index].runner || inputs.runner-pre-default || inputs.runner-default }}
     strategy:
       matrix:
-        pre-steps: ${{ fromJson(needs.prepare.outputs.pre-step-matrix) }}
+        name: ${{ fromJson(needs.prepare.outputs.pre-step-names) }}
+    env:
+      BUILD_STEP_CONFIG: ${{ toJSON(fromJSON(needs.prepare.outputs.pre-step-matrix)[strategy.job-index]) }}
     steps:
       - name: Download updated source
         uses: atos-actions/download-artifact@v2
@@ -1502,19 +1508,19 @@ jobs:
           just-version: ${{ inputs.just-version }}
 
       - name: Setup Docker
-        if: matrix.pre-steps.docker-version != ''
+        if: fromJSON(env.BUILD_STEP_CONFIG).docker-version != ''
         uses: docker/setup-docker-action@v5
         with:
-          version: ${{ matrix.pre-steps.docker-version }}
+          version: ${{ fromJSON(env.BUILD_STEP_CONFIG).docker-version }}
 
       - name: Setup Docker Compose
-        if: matrix.pre-steps.compose-version != ''
+        if: fromJSON(env.BUILD_STEP_CONFIG).compose-version != ''
         uses: docker/setup-compose-action@v2
         with:
-          version: ${{ matrix.pre-steps.compose-version }}
+          version: ${{ fromJSON(env.BUILD_STEP_CONFIG).compose-version }}
 
       - name: Login to registry
-        if: matrix.pre-steps.docker-login == 'true'
+        if: fromJSON(env.BUILD_STEP_CONFIG).docker-login == 'true'
         uses: docker/login-action@v4
         with:
           registry: ${{ inputs.registry }}
@@ -1522,22 +1528,22 @@ jobs:
           password: ${{ secrets.registry-password || secrets.GITHUB_TOKEN }}
 
       - name: Setup QEMU
-        if: matrix.pre-steps.qemu-install == 'true'
+        if: fromJSON(env.BUILD_STEP_CONFIG).qemu-install == 'true'
         uses: docker/setup-qemu-action@v4
 
-      - name: ${{ matrix.pre-steps.name }}
+      - name: ${{ matrix.name }}
         id: command
         env:
           BASELINE_METADATA: ${{ inputs.baseline-enabled && format('{0}/metadata.json', steps.baseline_bundle.outputs.download-path) || '' }}
           BASELINE_PATH: ${{ inputs.baseline-enabled && needs.prepare.outputs.baseline-status != 'unavailable' && format('{0}/artifacts', steps.baseline_bundle.outputs.download-path) || '' }}
         uses: $/command
         with:
-          command: ${{ matrix.pre-steps.command }}
-          artifact-name: ${{ matrix.pre-steps.artifact-name }}
-          artifact-path: ${{ matrix.pre-steps.artifact-path }}
-          artifact-overwrite: ${{ matrix.pre-steps.artifact-overwrite }}
-          artifact-if-no-files-found: ${{ matrix.pre-steps.artifact-if-no-files-found }}
-          artifact-retention-days: ${{ matrix.pre-steps.artifact-retention-days }}
+          command: ${{ fromJSON(env.BUILD_STEP_CONFIG).command }}
+          artifact-name: ${{ fromJSON(env.BUILD_STEP_CONFIG).artifact-name }}
+          artifact-path: ${{ fromJSON(env.BUILD_STEP_CONFIG).artifact-path }}
+          artifact-overwrite: ${{ fromJSON(env.BUILD_STEP_CONFIG).artifact-overwrite }}
+          artifact-if-no-files-found: ${{ fromJSON(env.BUILD_STEP_CONFIG).artifact-if-no-files-found }}
+          artifact-retention-days: ${{ fromJSON(env.BUILD_STEP_CONFIG).artifact-retention-days }}
 
   image-build:
     name: Build Image
@@ -1601,7 +1607,7 @@ jobs:
           registry-password: ${{ secrets.registry-password || secrets.GITHUB_TOKEN }}
 
   post-steps:
-    name : ${{ matrix.post-steps.name }}
+    name: Post Step
     permissions:
       contents: read
       packages: write
@@ -1609,10 +1615,12 @@ jobs:
       - prepare
       - image-push
     if: ${{ !failure() && !cancelled() && needs.prepare.outputs.post-step-matrix != '[]' }}
-    runs-on: ${{ matrix.post-steps.runner || inputs.runner-post-default || inputs.runner-default }}
+    runs-on: ${{ fromJSON(needs.prepare.outputs.post-step-matrix)[strategy.job-index].runner || inputs.runner-post-default || inputs.runner-default }}
     strategy:
       matrix:
-        post-steps: ${{ fromJson(needs.prepare.outputs.post-step-matrix) }}
+        name: ${{ fromJson(needs.prepare.outputs.post-step-names) }}
+    env:
+      BUILD_STEP_CONFIG: ${{ toJSON(fromJSON(needs.prepare.outputs.post-step-matrix)[strategy.job-index]) }}
     steps:
       - name: Download updated source
         uses: atos-actions/download-artifact@v2
@@ -1634,19 +1642,19 @@ jobs:
           just-version: ${{ inputs.just-version }}
 
       - name: Setup Docker
-        if: matrix.post-steps.docker-version != ''
+        if: fromJSON(env.BUILD_STEP_CONFIG).docker-version != ''
         uses: docker/setup-docker-action@v5
         with:
-          version: ${{ matrix.post-steps.docker-version }}
+          version: ${{ fromJSON(env.BUILD_STEP_CONFIG).docker-version }}
 
       - name: Setup Docker Compose
-        if: matrix.post-steps.compose-version != ''
+        if: fromJSON(env.BUILD_STEP_CONFIG).compose-version != ''
         uses: docker/setup-compose-action@v2
         with:
-          version: ${{ matrix.post-steps.compose-version }}
+          version: ${{ fromJSON(env.BUILD_STEP_CONFIG).compose-version }}
 
       - name: Login to registry
-        if: matrix.post-steps.docker-login == 'true'
+        if: fromJSON(env.BUILD_STEP_CONFIG).docker-login == 'true'
         uses: docker/login-action@v4
         with:
           registry: ${{ inputs.registry }}
@@ -1654,22 +1662,22 @@ jobs:
           password: ${{ secrets.registry-password || secrets.GITHUB_TOKEN }}
 
       - name: Setup QEMU
-        if: matrix.post-steps.qemu-install == 'true'
+        if: fromJSON(env.BUILD_STEP_CONFIG).qemu-install == 'true'
         uses: docker/setup-qemu-action@v4
 
-      - name: ${{ matrix.post-steps.name }}
+      - name: ${{ matrix.name }}
         id: command
         env:
           BASELINE_METADATA: ${{ inputs.baseline-enabled && format('{0}/metadata.json', steps.baseline_bundle.outputs.download-path) || '' }}
           BASELINE_PATH: ${{ inputs.baseline-enabled && needs.prepare.outputs.baseline-status != 'unavailable' && format('{0}/artifacts', steps.baseline_bundle.outputs.download-path) || '' }}
         uses: $/command
         with:
-          command: ${{ matrix.post-steps.command }}
-          artifact-name: ${{ matrix.post-steps.artifact-name }}
-          artifact-path: ${{ matrix.post-steps.artifact-path }}
-          artifact-overwrite: ${{ matrix.post-steps.artifact-overwrite }}
-          artifact-if-no-files-found: ${{ matrix.post-steps.artifact-if-no-files-found }}
-          artifact-retention-days: ${{ matrix.post-steps.artifact-retention-days }}
+          command: ${{ fromJSON(env.BUILD_STEP_CONFIG).command }}
+          artifact-name: ${{ fromJSON(env.BUILD_STEP_CONFIG).artifact-name }}
+          artifact-path: ${{ fromJSON(env.BUILD_STEP_CONFIG).artifact-path }}
+          artifact-overwrite: ${{ fromJSON(env.BUILD_STEP_CONFIG).artifact-overwrite }}
+          artifact-if-no-files-found: ${{ fromJSON(env.BUILD_STEP_CONFIG).artifact-if-no-files-found }}
+          artifact-retention-days: ${{ fromJSON(env.BUILD_STEP_CONFIG).artifact-retention-days }}
 
   build-report:
     name: Build Report

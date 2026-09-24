@@ -44,3 +44,7 @@ test-changelog:
 test-report:
 	python3 -B -m unittest discover -s tests -p 'test_build_report.py' -v
 	node --test tests/test_build_report_comment.js tests/test_build_baseline.js
+
+.PHONY: test-build-steps
+test-build-steps:
+	python3 -B -m unittest discover -s tests -p 'test_build_steps.py' -v

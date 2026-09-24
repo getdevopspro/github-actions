@@ -47,6 +47,11 @@ Set `docker-version` or `compose-version` to install a specific Docker CE or Doc
 
 Pre and post command jobs use those same versions by default. Set `pre-docker-version`, `pre-compose-version`, `post-docker-version`, or `post-compose-version` to override them for pre or post jobs.
 
+Pre/post jobs use the fixed names `Pre Step` and `Post Step`. Enabled commands
+append their configured `*-name` as a matrix suffix, such as `Post Step (System Tests)`
+for `post-test-name: System Tests`. Empty phases keep the fixed name and appear
+as skipped. Command steps and report sections retain the configured name.
+
 The Build workflow enables Git LFS downloads during checkout by default. Set `lfs: false` when the caller does not need Git LFS files.
 
 When `lfs` is enabled, the workflow prints the tracked LFS files and fails before image build if any checked-out file is still an unresolved LFS pointer. Image builds use the uploaded source artifact as a local path context, so the hydrated checkout is what gets baked into the image.

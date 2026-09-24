@@ -118,6 +118,8 @@ Run `make test-changelog` for changelog initialization and release-note regressi
 
 Run `make test-report` for offline report aggregation and publishing tests. These require Python 3.10 or newer and Node.js with `node:test` support; no GitHub API calls are made.
 
+Run `make test-build-steps` for pre/post matrix naming and configuration tests. These require Python 3.10 or newer and run offline.
+
 For workflow lint, actionlint currently [does not recognize GitHub's `$/` references](https://github.com/rhysd/actionlint/issues/711). Lint a temporary copy with `uses: $/` rewritten to `uses: ./`, preserving the repository layout so local action paths and reusable-workflow inputs are checked. Keep the committed references as `$/`.
 
 The `Build cache` PR check calls the Bake composites from the workflow’s commit with a small two-target fixture on native AMD64 and ARM64 runners. It checks separate target/platform scopes, caller overrides, two warm imports on fresh builders, and source/dependency invalidation after all cold exports complete. It publishes only Actions cache entries and temporary test artifacts. Per-run cache prefixes prevent previous PR runs from warming the cold comparison. Measurements appear in job summaries and the `cache-measurements-*` artifacts; these synthetic timings are not consumer build benchmarks.
