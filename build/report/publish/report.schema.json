@@ -125,6 +125,7 @@
           "properties": {
             "sha": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
             "requested_sha": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+            "distance": {"$ref": "#/$defs/count"},
             "run_url": {"type": "string", "pattern": "^https://[^\\s]+$"},
             "created_at": {"$ref": "#/$defs/sectionTitle"},
             "line_rate": {"$ref": "#/$defs/rate"}

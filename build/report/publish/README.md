@@ -54,10 +54,13 @@ equivalents. The section ID is the producer key; its title is the corresponding
 Names affect presentation only. Artifact content determines the fields and
 results; configuring a command never invents report data. HTML, job summaries,
 and PR comments omit fields that are absent from the selected artifacts.
-Tests and lint retain the producer's section. Coverage collected with other
-results appears in its own Coverage section in HTML, job summaries, and PR
-comments. With several coverage producers, coverage headings include the
-producer's title. Coverage-only producers keep their configured titles.
+Tests retain the producer's section. Lint collected with tests appears separately;
+when there is exactly one lint-only section, it joins that section. Otherwise,
+it gets a separate Lint section, including the producer's title when several
+producers supply lint. Combined lint details retain source names and tools.
+Coverage collected with other results appears in its own Coverage section.
+With several coverage producers, coverage headings include the producer's title.
+Lint-only and coverage-only producers keep their configured titles.
 Legacy JSON keys and filenames do not override the producer's title.
 
 | Content | Reported fields |
@@ -70,6 +73,8 @@ Legacy JSON keys and filenames do not override the producer's title.
 A clean Ruff `[]` or Pyright `{"generalDiagnostics": []}` supplies lint results
 with zero issues, without establishing how many files were checked. Missing
 selected artifacts fail; they are never treated as clean reports.
+Lint totals count reported checks across tools, not unique files. Grouping only
+changes presentation; the generated JSON retains each producer's original data.
 
 ### Section names
 
@@ -172,8 +177,11 @@ Add one `coverage_comparison` to the JSON containing that producer's coverage:
 
 `status` is `exact`, `approximate`, or `unavailable`. Available comparisons require
 `delta_pp` (signed percentage points, -100 to 100) and baseline `line_rate` (0–1),
-`sha` (40 lowercase hex characters), and HTTPS `run_url`. `created_at` and
-`requested_sha` are optional. For unavailable comparisons, provide a nonempty
+`sha` (40 lowercase hex characters), and HTTPS `run_url`. `created_at`,
+`requested_sha`, and `distance` are optional. Copy `distance` from baseline
+metadata to identify a direct parent (1); it is a nonnegative first-parent step
+count. Missing distance retains the earlier-ancestor wording. Parent comparisons
+remain approximate. For unavailable comparisons, provide a nonempty
 `reason` and omit `delta_pp`; never substitute zero coverage. Omit
 `coverage_comparison` entirely when comparison is disabled.
 
@@ -187,6 +195,11 @@ can supply distinct comparisons. Multiple comparisons in one producer are
 rejected as ambiguous; aggregate them in the repository script first. Native XML
 still renders current coverage; comparisons require a normalized JSON producer.
 Upload one representation of the results to avoid double counting.
+
+Coverage uses a neutral chart icon with changes in percentage points (`pp`),
+including explicit unchanged results. Baseline notes link the CI run and both
+commits when `run_url` identifies a GitHub repository. Timestamps appear in the
+HTML report; the PR summary omits them. No additional GitHub requests are made.
 
 ## Results and logging
 

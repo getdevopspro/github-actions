@@ -93,6 +93,7 @@ async function find({github, context, core}) {
           result = {
             status: run.head_sha === commits[0] ? 'exact' : 'approximate', requested_sha: commits[0],
             sha: run.head_sha, run_id: run.id, run_url: run.html_url, created_at: run.created_at,
+            distance: distance.get(run.head_sha),
           };
           core.setOutput('run-id', run.id);
         }
@@ -122,7 +123,10 @@ function finish({core}) {
   if (!available) {
     if (result.requested_sha) core.warning(result.reason);
     else core.info(result.reason);
-  } else if (result.status === 'approximate') core.notice('Baseline uses an earlier ancestor; comparisons are approximate');
+  } else if (result.status === 'approximate') {
+    const relation = result.distance === 1 ? 'the parent of the requested baseline' : 'an earlier ancestor';
+    core.notice(`Baseline uses ${relation}; comparisons are approximate`);
+  }
 }
 
 module.exports = {resolveReference, find, finish};

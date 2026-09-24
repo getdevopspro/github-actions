@@ -100,6 +100,7 @@ after a completed lookup, including an unavailable result:
   "status": "exact",
   "requested_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
   "sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "distance": 0,
   "run_id": 42,
   "run_url": "https://github.com/example/project/actions/runs/42",
   "created_at": "2026-01-01T00:00:00Z",
@@ -110,6 +111,10 @@ after a completed lookup, including an unavailable result:
 The JSON `path` is relative to the metadata file's directory so the bundle can
 move between runners. Resolve it against that directory before reading files;
 preserve the `metadata.json` and `artifacts/` layout when transferring them.
+`distance` counts first-parent steps from `requested_sha` to the selected `sha`:
+0 is exact, 1 is its parent, and larger values are earlier ancestors. It reuses
+the lookup history without additional requests. Forward it with comparison
+metadata when the report should identify a parent baseline.
 
 An unavailable result includes `reason` and an empty `path`. Download failure can
 retain the selected run in metadata for diagnosis; consumers must check `status`

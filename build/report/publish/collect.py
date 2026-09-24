@@ -292,7 +292,11 @@ def generate(root):
                 if comparison["status"] == "unavailable":
                     warnings.append(f'{name}: coverage comparison unavailable: {comparison["reason"]}')
                 elif comparison["status"] == "approximate":
-                    annotate("notice", f"{name}: coverage comparison uses an earlier ancestor")
+                    relation = (
+                        "the parent of the requested baseline"
+                        if comparison["baseline"].get("distance") == 1 else "an earlier ancestor"
+                    )
+                    annotate("notice", f"{name}: coverage comparison uses {relation}")
         kinds = {"tests" if kind in ("unit", "system") else kind for kind in present}
         section.kinds = sorted(set(section.kinds) | kinds)
 

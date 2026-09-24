@@ -131,6 +131,7 @@ test('exact run lookup precedes bounded ancestor search and retains provenance',
   assert.equal(result.outputs['run-id'], 3);
   assert.equal(result.metadata.sha, f.advanced);
   assert.equal(result.metadata.requested_sha, f.advanced);
+  assert.equal(result.metadata.distance, 0);
   assert.equal(result.metadata.run_url, 'https://example.test/actions/runs/3');
   assert.deepEqual(result.calls.map(c => c.name), ['exact', 'artifacts']);
   assert.equal(result.calls[0].args.head_sha, f.advanced);
@@ -233,8 +234,13 @@ test('ancestor fallback is opt-in, bounded and independent of API ordering', asy
   const enabled = await lookup(f, {...options, allowAncestor: 'true'});
   assert.equal(enabled.outputs.status, 'approximate');
   assert.equal(enabled.metadata.sha, f.base);
+  assert.equal(enabled.metadata.distance, 1);
   assert.equal(enabled.calls[1].args.per_page, 100);
   assert.equal(enabled.messages[0][0], 'notice');
+  assert.match(enabled.messages[0][1], /parent/);
+  const older = await lookup(f, {runs: [run(9, f.older)], allowAncestor: 'true'});
+  assert.equal(older.metadata.distance, 2);
+  assert.match(older.messages[0][1], /earlier ancestor/);
 });
 
 test('selection excludes current, PR, incomplete and unrelated-branch runs', async t => {

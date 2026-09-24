@@ -8,7 +8,9 @@ import subprocess
 import sys
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
 from pathlib import Path
+from urllib.parse import quote
 
 DEFAULT_REPORT_PATH = Path("build/build_report.html")
 REPO_ROOT = Path(os.environ.get("GITHUB_WORKSPACE", Path.cwd()))
@@ -646,7 +648,7 @@ def _render_lint_tools(pkg_idx: str, tools: list[LintTool]) -> str:
               <td colspan="3">
                 <span class="toggle" id="ttoggle-{tid}">▶</span>
                 <span class="class-name lint-tool-name">{_esc(tool.name)}</span>
-                <span class="class-counts">{counts} files</span>
+                <span class="class-counts">{counts} checks</span>
                 <span class="badge" style="background:{badge_color}">{badge_text}</span>
               </td>
             </tr>
@@ -702,11 +704,11 @@ def _render_lint_section(lint_packages: list[LintPackage], section: str, title: 
     <span class="toggle section-toggle{arrow_cls}" id="section-{section}-toggle">▶</span>
     {_esc(title)}
     <span class="badge" style="background:{status_color};font-size:0.7rem">{status_text}</span>
-    <span style="color:#475569;font-size:0.8rem;font-weight:400;text-transform:none;letter-spacing:0">{total_pkg} package{"s" if total_pkg != 1 else ""} &middot; {total_files} file{"s" if total_files != 1 else ""}{f", {failed_pkg} failing" if failed_pkg else ""}</span>
+    <span style="color:#475569;font-size:0.8rem;font-weight:400;text-transform:none;letter-spacing:0">{total_pkg} package{"s" if total_pkg != 1 else ""} &middot; {total_files} check{"s" if total_files != 1 else ""}{f", {failed_pkg} failing" if failed_pkg else ""}</span>
   </div>
   <div id="section-{section}-body" style="display:{body_display}">
   <table class="suites-table" style="margin-top:12px">
-    <thead><tr><th>Package</th><th>Status</th><th>Files</th><th>Passed</th><th>Failed</th></tr></thead>
+    <thead><tr><th>Package</th><th>Status</th><th>Checks</th><th>Passed</th><th>Failed</th></tr></thead>
     <tbody>{"".join(rows)}</tbody>
   </table>
   </div>
@@ -846,32 +848,74 @@ def _display_sections(sections: list[ReportSection]) -> list[ReportSection]:
                 coverage_comparison=section.coverage_comparison,
             )
         )
-    return result + coverage
+    lint_sources = [section for section in result if "lint" in section.kinds]
+    mixed_lint = [section for section in lint_sources if "tests" in section.kinds]
+    lint_targets = [section for section in lint_sources if "tests" not in section.kinds]
+    if mixed_lint and len(lint_targets) == 1:
+        target = lint_targets[0]
+        packages = [
+            dataclasses.replace(package, package=f"{source.title} — {package.package}")
+            for source in lint_sources for package in source.lint_packages
+        ]
+        result[result.index(target)] = dataclasses.replace(target, lint_packages=packages)
+    lint = []
+    for section in mixed_lint:
+        result[result.index(section)] = dataclasses.replace(section, lint_packages=[], kinds=["tests"])
+        if len(lint_targets) != 1:
+            lint.append(ReportSection(
+                id=section.id,
+                title="Lint" if len(lint_sources) == 1 else f"{section.title} — Lint",
+                lint_packages=section.lint_packages,
+                kinds=["lint"],
+            ))
+    return result + lint + coverage
 
 
 def _coverage_delta(comparison: dict) -> str:
-    delta = comparison["delta_pp"]
-    arrow = "↓ " if delta < 0 else "↑ " if delta > 0 else ""
+    delta = round(comparison["delta_pp"], 1)
+    if not delta:
+        return "unchanged (0.0 pp)"
+    arrow = "↓ " if delta < 0 else "↑ "
     return f"{arrow}{abs(delta):.1f} pp"
 
 
-def _coverage_comparison(comparison: dict) -> str:
+def _coverage_comparison(comparison: dict, *, markdown: bool = False) -> str:
+    escape = _md if markdown else _esc
     if comparison["status"] == "unavailable":
-        return "Coverage comparison unavailable: " + _esc(comparison["reason"])
+        return "Coverage comparison unavailable: " + escape(comparison["reason"])
     baseline = comparison["baseline"]
+    repository = re.match(r"(https://[^/?#]+/[^/?#]+/[^/?#]+)/actions/runs/\d+(?:[/?#]|$)", baseline["run_url"])
+
+    def link(label, url):
+        label = escape(label)
+        if not url:
+            return label
+        url = quote(url, safe=":/?&=#%")
+        return f"[{label}]({url})" if markdown else f'<a href="{_esc(url)}">{label}</a>'
+
+    def commit(sha):
+        return link(sha[:7], f"{repository[1]}/commit/{sha}" if repository else None)
+
     result = (
-        f'Coverage change: {_coverage_delta(comparison)}. '
-        f'Baseline: {baseline["line_rate"] * 100:.1f}%, '
-        f'<a href="{_esc(baseline["run_url"])}">run</a>, '
-        f'<code>{_esc(baseline["sha"][:7])}</code>'
+        f'Baseline: {baseline["line_rate"] * 100:.1f}% at {commit(baseline["sha"])} '
+        f'({link("CI run", baseline["run_url"])}).'
     )
-    if baseline.get("created_at"):
-        result += ", " + _esc(baseline["created_at"])
     if comparison["status"] == "approximate":
-        result += ". Approximate comparison (earlier ancestor)"
-    if baseline.get("requested_sha"):
-        result += f'. Requested baseline: <code>{_esc(baseline["requested_sha"][:7])}</code>'
-    return result + "."
+        relation = "parent" if baseline.get("distance") == 1 else "earlier ancestor"
+        result += f" Approximate comparison: baseline is the {relation} of the requested baseline"
+        result += f' {commit(baseline["requested_sha"])}.' if baseline.get("requested_sha") else "."
+    elif baseline.get("requested_sha") and baseline["requested_sha"] != baseline["sha"]:
+        result += f' Requested baseline: {commit(baseline["requested_sha"])}.'
+    if not markdown and baseline.get("created_at"):
+        created = baseline["created_at"]
+        try:
+            timestamp = datetime.fromisoformat(created.replace("Z", "+00:00"))
+            timestamp = timestamp.replace(tzinfo=timestamp.tzinfo or timezone.utc)
+            created = timestamp.astimezone(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+        except ValueError:
+            pass
+        result += f" Recorded {escape(created)}."
+    return result
 
 
 def render_html(
@@ -922,7 +966,7 @@ def render_html(
                 files = sum(p.total_files for p in section.lint_packages)
                 failed = sum(p.failures for p in section.lint_packages)
                 if files:
-                    cards.append(("Reported files", files, "#a5b4fc"))
+                    cards.append(("Reported checks", files, "#a5b4fc"))
                 cards.append(("Lint issues", failed, "#ef4444" if failed else "#a5b4fc"))
                 parts.append(_render_lint_section(section.lint_packages, part_key, part_title))
             else:
@@ -930,13 +974,15 @@ def render_html(
                 valid = sum(p.lines_valid for p in section.cov_packages)
                 cards.extend(
                     [
-                        ("Coverage", f"{covered / valid * 100:.0f}%" if valid else "—", "#67e8f9"),
+                        ("Coverage", f"{covered / valid * 100:.1f}%" if valid else "—", "#67e8f9"),
                         ("Covered lines", covered, "#67e8f9"),
                         ("Total lines", valid, "#94a3b8"),
                     ]
                 )
                 parts.append(_render_coverage_section(section.cov_packages, output_path, part_key, part_title))
                 if section.coverage_comparison:
+                    if section.coverage_comparison["status"] != "unavailable":
+                        cards.append(("Change", _coverage_delta(section.coverage_comparison), "#67e8f9"))
                     parts.append(f'<p class="content">{_coverage_comparison(section.coverage_comparison)}</p>')
         summary.append(_summary_group(key, section.title, cards))
         if mixed:
@@ -1140,9 +1186,9 @@ def render_markdown_summary(
         if "lint" in section.kinds:
             files = sum(p.total_files for p in section.lint_packages)
             failed = sum(p.failures for p in section.lint_packages)
-            word = "file" if files == 1 else "files"
+            word = "check" if files == 1 else "checks"
             detail = (
-                f"{failed} error(s) in {files} {word}" if failed else f"{files} {word} clean" if files else "0 issues"
+                f"{failed} failed of {files} {word}" if failed else f"{files} {word} passed" if files else "0 issues"
             )
             parts.append(("Lint", detail))
             if result == "—":
@@ -1151,15 +1197,15 @@ def render_markdown_summary(
             covered = sum(p.lines_covered for p in section.cov_packages)
             valid = sum(p.lines_valid for p in section.cov_packages)
             if result == "—":
-                result = "ℹ️" if valid else "⚠️"
+                result = "📊" if valid else "⚠️"
             detail = "no executable lines"
             if valid:
                 rate = covered / valid
-                detail = f"{rate * 100:.1f}% ({covered}/{valid} lines)"
+                detail = f"{rate * 100:.1f}% ({covered:,}/{valid:,} lines)"
                 if section.coverage_comparison and section.coverage_comparison["status"] != "unavailable":
-                    detail += " " + _coverage_delta(section.coverage_comparison)
-                    if result == "—":
-                        result = "ℹ️"
+                    detail += " · " + _coverage_delta(section.coverage_comparison)
+                elif section.coverage_comparison:
+                    result = "⚠️"
             parts.append(("Coverage", detail))
         if section.failures:
             result = "❌"
@@ -1167,7 +1213,8 @@ def render_markdown_summary(
         lines.append(f"| {_md(section.title)} | {result if parts else '⚠️'} | {detail or 'no identifiable results'} |")
 
         if section.coverage_comparison:
-            details.extend(["", f"<p>{_esc(section.title)}: {_coverage_comparison(section.coverage_comparison)}</p>"])
+            label = f"**{_md(section.title)}** — " if section.title != "Coverage" else ""
+            details.extend(["", label + _coverage_comparison(section.coverage_comparison, markdown=True)])
         items = []
         for suite in sorted(section.suites, key=lambda s: (s.package, s.name)):
             for case in suite.cases:

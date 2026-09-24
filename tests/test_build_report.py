@@ -330,11 +330,11 @@ class ReportTests(unittest.TestCase):
         self.write("lint.json", "[]")
         check, markdown = self.run_report()
         self.assertEqual(check.returncode, 0)
-        self.assertIn("| Fast tests | ✅ | Tests: 1 passed; Lint: 0 issues |", markdown)
-        self.assertIn("| Coverage | ℹ️ | 50.0% (1/2 lines) |", markdown)
+        self.assertIn("| Fast tests | ✅ | 1 passed |", markdown)
+        self.assertIn("| Coverage | 📊 | 50.0% (1/2 lines) |", markdown)
         for title in ("Contract tests", "Acceptance tests"):
             self.assertIn(f"| {title} | ✅ | 1 passed |", markdown)
-        self.assertNotIn("| Lint |", markdown)
+        self.assertIn("| Lint | ✅ | 0 issues |", markdown)
         sections = json.loads((self.root / "output/build_report.json").read_text())["report_sections"]
         self.assertEqual(sections[0]["id"], "pre-test-unit")
         self.assertEqual(sections[0]["kinds"], ["coverage", "lint", "tests"])
@@ -383,7 +383,7 @@ class ReportTests(unittest.TestCase):
         self.assertEqual(check.returncode, 0)
         for title in ("Before", "After"):
             self.assertIn(f"| {title} | ✅ | 1 passed |", markdown)
-            self.assertIn(f"| {title} — Coverage | ℹ️ | 50.0% (1/2 lines) |", markdown)
+            self.assertIn(f"| {title} — Coverage | 📊 | 50.0% (1/2 lines) |", markdown)
         self.assertNotIn("::warning::", self.generated.stdout)
 
     def test_legacy_json_and_system_xml_use_the_workflow_name(self):
@@ -436,7 +436,7 @@ class ReportTests(unittest.TestCase):
         check, markdown = self.run_report()
         self.assertEqual(check.returncode, 0)
         self.assertIn("| Unit Test (post-steps) | ✅ | 2 passed |", markdown)
-        self.assertIn("| Coverage | ℹ️ | 50.0% (1/2 lines) |", markdown)
+        self.assertIn("| Coverage | 📊 | 50.0% (1/2 lines) |", markdown)
         self.assertIn("| System Test (post-steps) | ✅ | 3 passed |", markdown)
         self.assertIn("| Python Lint (post-steps) | ✅ | 0 issues |", markdown)
         self.assertNotIn("::warning::", self.generated.stdout)
@@ -561,7 +561,7 @@ assert.equal(nodes.get('section-group-0-body').style.display, 'block');
         check, markdown = self.run_report()
         self.assertEqual(check.returncode, 0)
         self.assertIn("| Static analysis | ✅ | 0 issues |", markdown)
-        self.assertIn("| Coverage | ℹ️ | 50.0% (1/2 lines) |", markdown)
+        self.assertIn("| Coverage | 📊 | 50.0% (1/2 lines) |", markdown)
         self.assertNotIn("no tests collected", markdown)
 
     def test_direct_action_defaults_to_artifact_name(self):
@@ -590,7 +590,8 @@ assert.equal(nodes.get('section-group-0-body').style.display, 'block');
                 self.assertEqual(check.returncode, 0 if title == "Analysis" else 1)
                 self.assertIn("1 passed", markdown)
                 if title == "Analysis":
-                    self.assertIn("| Analysis | ✅ | Tests: 1 passed; Lint: 0 issues |", markdown)
+                    self.assertIn("| Analysis | ✅ | 1 passed |", markdown)
+                    self.assertIn("| Lint | ✅ | 0 issues |", markdown)
                 else:
                     self.assertIn("section_title must be string", markdown)
 
@@ -622,7 +623,8 @@ assert.equal(nodes.get('section-group-0-body').style.display, 'block');
         self.write("lint.json", "[]", self.root / "input/lint-results")
         check, markdown = self.run_report()
         self.assertEqual(check.returncode, 0)
-        self.assertIn("| Project checks | ✅ | Tests: 1 passed; Lint: 0 issues |", markdown)
+        self.assertIn("| Project checks | ✅ | 1 passed |", markdown)
+        self.assertIn("| Lint | ✅ | 0 issues |", markdown)
         self.assertEqual(markdown.count("| Project checks |"), 1)
 
     def test_mixed_sections_have_unique_working_html_controls(self):
@@ -666,9 +668,13 @@ const nodes = new Map(ids.map(id => [id, {
   id, style: {display: 'none'}, scrollIntoView() {},
   classList: {add() {}, toggle() {}},
 }]));
-const rows = [0, 1].map(i => ({
-  getAttribute: () => `toggleLintTool('lt-group-${i}-lint-0-0')`,
-  closest: () => nodes.get(`lp-group-${i}-lint-0-tools`),
+const tools = [...page.matchAll(/class="class-header lint-tool-header has-fail" onclick="toggleLintTool\('([^']+)'\)"/g)]
+  .map(([, id]) => id);
+assert.equal(tools.length, 2);
+const packageId = id => `lp-${id.slice(3).replace(/-\d+$/, '')}-tools`;
+const rows = tools.map(id => ({
+  getAttribute: () => `toggleLintTool('${id}')`,
+  closest: () => nodes.get(packageId(id)),
 }));
 const context = {document: {
   getElementById(id) { assert(nodes.has(id), `missing element ${id}`); return nodes.get(id); },
@@ -676,9 +682,9 @@ const context = {document: {
 }};
 vm.createContext(context);
 vm.runInContext(page.match(/<script>([\s\S]*?)<\/script>/)[1], context);
-for (let i = 0; i < 2; i++) {
-  assert.equal(nodes.get(`lp-group-${i}-lint-0-tools`).style.display, '');
-  assert.equal(nodes.get(`lt-group-${i}-lint-0-0-files`).style.display, '');
+for (const id of tools) {
+  assert.equal(nodes.get(packageId(id)).style.display, '');
+  assert.equal(nodes.get(`${id}-files`).style.display, '');
 }
 for (const [, handler] of page.matchAll(/\bonclick="([^"]+)"/g)) vm.runInContext(handler, context);
 """
@@ -832,7 +838,7 @@ for (const [, handler] of page.matchAll(/\bonclick="([^"]+)"/g)) vm.runInContext
         check, markdown = self.run_report()
         self.assertEqual(check.returncode, 1)
         self.assertIn("| Checks | ❌", markdown)
-        self.assertIn("Lint: 0 issues", markdown)
+        self.assertIn("| Lint | ✅ | 0 issues |", markdown)
 
     def test_warning_messages_cannot_inject_workflow_commands(self):
         self.write("empty%\n::error::injected.xml", '<testsuite name="empty"/>')
@@ -886,7 +892,8 @@ for (const [, handler] of page.matchAll(/\bonclick="([^"]+)"/g)) vm.runInContext
         self.write("report.json", json.dumps(data))
         check, markdown = self.run_report()
         self.assertEqual(check.returncode, 1)
-        self.assertIn("| Checks | ❌ | Tests: 1 passed; Lint: 1 error(s)", markdown)
+        self.assertIn("| Checks | ✅ | 1 passed |", markdown)
+        self.assertIn("| Lint | ❌ | 1 failed of 1 check |", markdown)
         self.assertIn("80.0% (8/10 lines)", markdown)
 
     def test_missing_or_invalid_reports_publish_failed_summary(self):
@@ -964,7 +971,7 @@ for (const [, handler] of page.matchAll(/\bonclick="([^"]+)"/g)) vm.runInContext
         )
         check, markdown = self.run_report()
         self.assertEqual(check.returncode, 1)
-        self.assertIn("2 error(s)", markdown)
+        self.assertIn("2 failed of 2 checks", markdown)
         self.assertIn("ruff:", markdown)
         self.assertIn("pyright:", markdown)
 
@@ -1042,10 +1049,9 @@ for (const [, handler] of page.matchAll(/\bonclick="([^"]+)"/g)) vm.runInContext
         self.assertEqual(check.returncode, 0)
         for report in (markdown, (self.root / "output/build_report.html").read_text()):
             self.assertIn("↓ 12.3 pp", report)
-            self.assertEqual(report.count("Coverage change:"), 1)
+            self.assertEqual(report.count("↓ 12.3 pp"), 1)
             self.assertNotIn("↓ 50.0 pp", report)
             self.assertIn("https://example.test/actions/runs/42", report)
-            self.assertIn("2026-01-01T00:00:00Z", report)
             self.assertIn("aaaaaaa", report)
         self.assertNotIn("::warning::", self.generated.stdout)
         saved = (self.root / "output/build_report.json").read_text()
@@ -1064,6 +1070,86 @@ for (const [, handler] of page.matchAll(/\bonclick="([^"]+)"/g)) vm.runInContext
             self.assertIn("Approximate comparison", report)
         self.assertIn("::notice::", self.generated.stdout)
         self.assertNotIn("::warning::", self.generated.stdout)
+
+    def test_parent_baseline_links_both_commits_without_repeated_coverage_text(self):
+        data = self.coverage_result(delta=0, status="approximate")
+        baseline = data["coverage_comparison"]["baseline"]
+        baseline.update(distance=1, run_url="https://github.example.test/example/project/actions/runs/42")
+        self.write("result.json", json.dumps(data))
+        check, markdown = self.run_report()
+        self.assertEqual(check.returncode, 0)
+        self.assertIn("| Checks | 📊 | 50.0% (1/2 lines) · unchanged (0.0 pp) |", markdown)
+        self.assertIn("parent of the requested baseline", markdown)
+        self.assertIn("[aaaaaaa](https://github.example.test/example/project/commit/" + "a" * 40 + ")", markdown)
+        self.assertIn("[bbbbbbb](https://github.example.test/example/project/commit/" + "b" * 40 + ")", markdown)
+        self.assertIn("[CI run](https://github.example.test/example/project/actions/runs/42)", markdown)
+        self.assertNotIn("<p>", markdown)
+        self.assertNotIn("Coverage change:", markdown)
+        self.assertNotIn(baseline["created_at"], markdown)
+        page = (self.root / "output/build_report.html").read_text()
+        self.assertIn('href="https://github.example.test/example/project/commit/' + "a" * 40 + '"', page)
+        self.assertIn('href="https://github.example.test/example/project/commit/' + "b" * 40 + '"', page)
+        self.assertIn("2026-01-01 00:00 UTC", page)
+        self.assertIn("parent", self.generated.stdout)
+
+    def test_parent_metadata_is_optional_and_distance_is_validated(self):
+        for distance in (None, 2):
+            data = self.coverage_result(status="approximate")
+            if distance is not None:
+                data["coverage_comparison"]["baseline"]["distance"] = distance
+            self.write("result.json", json.dumps(data))
+            check, markdown = self.run_report()
+            self.assertEqual(check.returncode, 0)
+            self.assertIn("earlier ancestor", markdown)
+        for distance in (-1, 1.5, True):
+            data["coverage_comparison"]["baseline"]["distance"] = distance
+            self.write("result.json", json.dumps(data))
+            check, _ = self.run_report()
+            self.assertEqual(check.returncode, 1)
+
+    def test_embedded_lint_moves_to_the_only_lint_section_without_losing_failures(self):
+        (self.root / "artifacts.json").write_text(json.dumps(["unit-results", "lint-results"]))
+        self.section_defaults(**{
+            "unit-results": {"id": "post-test-unit", "title": "Unit tests"},
+            "lint-results": {"id": "post-lint", "title": "Static analysis"},
+        })
+        self.write("results.json", json.dumps({
+            "suites": [{"name": "unit", "package": "example", "tests": 2}],
+            "lint_packages": [{"package": "example", "tools": [{"name": "flake8", "files": [
+                {"name": "same.py", "status": "passed"},
+            ]}, {"name": "pep257", "files": [{"name": "same.py", "status": "failed"}]}]}],
+        }))
+        self.write("lint.json", "[]", self.root / "input/lint-results")
+        check, markdown = self.run_report()
+        self.assertEqual(check.returncode, 1)
+        self.assertIn("| Unit tests | ✅ | 2 passed |", markdown)
+        self.assertIn("| Static analysis | ❌ | 1 failed of 2 checks |", markdown)
+        page = (self.root / "output/build_report.html").read_text()
+        self.assertIn("Unit tests — example", page)
+        self.assertIn("flake8", page)
+        self.assertIn("pep257", page)
+        sections = json.loads((self.root / "output/build_report.json").read_text())["report_sections"]
+        self.assertEqual(sections[0]["lint_packages"][0]["package"], "example")
+        self.assertEqual(sections[1]["lint_packages"], [])
+
+    def test_embedded_lint_does_not_merge_distinct_named_lint_producers(self):
+        (self.root / "artifacts.json").write_text(json.dumps(["unit-results", "pre-lint", "post-lint"]))
+        self.section_defaults(**{
+            "unit-results": {"id": "post-test-unit", "title": "Unit tests"},
+            "pre-lint": {"id": "pre-lint", "title": "Source lint"},
+            "post-lint": {"id": "post-lint", "title": "Generated lint"},
+        })
+        self.write("results.json", json.dumps({
+            "suites": [{"name": "unit", "package": "example", "tests": 2}],
+            "lint_packages": [], "sections": ["lint"],
+        }))
+        for name in ("pre-lint", "post-lint"):
+            self.write("lint.json", "[]", self.root / "input" / name)
+        check, markdown = self.run_report()
+        self.assertEqual(check.returncode, 0)
+        self.assertIn("| Unit tests | ✅ | 2 passed |", markdown)
+        for title in ("Unit tests — Lint", "Source lint", "Generated lint"):
+            self.assertIn(f"| {title} | ✅ | 0 issues |", markdown)
 
     def test_unavailable_comparison_warns_escapes_content_and_has_no_delta(self):
         data = self.coverage_result()
@@ -1130,7 +1216,7 @@ for (const [, handler] of page.matchAll(/\bonclick="([^"]+)"/g)) vm.runInContext
         check, markdown = self.run_report()
         self.assertEqual(check.returncode, 1)
         self.assertIn("| Checks | ❌ | 0 passed, 1 failed |", markdown)
-        self.assertIn("| Coverage | ℹ️ | 50.0% (1/2 lines) |", markdown)
+        self.assertIn("| Coverage | 📊 | 50.0% (1/2 lines) |", markdown)
         self.assertNotIn("Original title", markdown)
         self.assertNotIn("::warning::", self.generated.stdout)
 
