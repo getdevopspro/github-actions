@@ -1,3 +1,9 @@
+## [v10.0.1](https://github.com/getdevopspro/github-actions/compare/v10.0.0..v10.0.1) - 2026-09-24
+
+### Bug Fixes
+
+- _(baseline)_ Preserve lookup output in github-script ([`bf6c062`](https://github.com/getdevopspro/github-actions/commit/bf6c062468091a88832659c5f808062d9181248e))
+
 ## [v10.0.0](https://github.com/getdevopspro/github-actions/compare/v9.1.0..v10.0.0) - 2026-09-23
 
 ### Bug Fixes
