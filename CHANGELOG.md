@@ -1,3 +1,9 @@
+## [v10.0.2](https://github.com/getdevopspro/github-actions/compare/v10.0.1..v10.0.2) - 2026-09-24
+
+### Refactor
+
+- _(build)_ Retrieve baselines in Prepare ([`257fe64`](https://github.com/getdevopspro/github-actions/commit/257fe641774de4563eb90748ad23d507515136c5))
+
 ## [v10.0.1](https://github.com/getdevopspro/github-actions/compare/v10.0.0..v10.0.1) - 2026-09-24
 
 ### Bug Fixes
