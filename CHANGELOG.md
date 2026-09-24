@@ -1,3 +1,9 @@
+## [v11.0.0](https://github.com/getdevopspro/github-actions/compare/v10.0.3..v11.0.0) - 2026-09-24
+
+### Refactor
+
+- _(build)_ [**breaking**] Split report preparation and publishing ([`7890e5a`](https://github.com/getdevopspro/github-actions/commit/7890e5a6115940b6864e52a4ddee27a73971e0d4))
+
 ## [v10.0.3](https://github.com/getdevopspro/github-actions/compare/v10.0.2..v10.0.3) - 2026-09-24
 
 ### Bug Fixes
