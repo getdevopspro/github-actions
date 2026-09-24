@@ -3,7 +3,6 @@
 import argparse
 import dataclasses
 from datetime import datetime
-import html
 import hashlib
 import json
 import math
@@ -20,6 +19,7 @@ import render
 
 
 REPORT_KEYS = ("suites", "system_suites", "lint_packages", "cov_packages")
+METADATA_KEYS = ("outcome", "issues", "baselines", "comparisons")
 REPORT_SECTIONS = ("unit", "system", "lint", "coverage")
 REPORT_SCHEMA = json.loads(Path(__file__).with_name("report.schema.json").read_text())
 
@@ -138,6 +138,57 @@ def unpack_reports(directory):
                     shutil.copyfileobj(reader, writer)
 
 
+def merge_metadata(destination, source):
+    """Combine producer results without allowing a later success to hide failure."""
+    if source.get("outcome"):
+        old = destination.get("outcome")
+        new = source["outcome"]
+        rank = {"skipped": 0, "passed": 1, "failed": 2, "error": 3}
+        status = max((old or new)["status"], new["status"], key=rank.get)
+        messages = dict.fromkeys(item["message"] for item in (old, new) if item and item.get("message"))
+        destination["outcome"] = {"status": status, "message": "; ".join(messages)}
+    for key in ("issues", "baselines", "comparisons"):
+        destination.setdefault(key, [])
+        for item in source.get(key, []):
+            if item not in destination[key]:
+                destination[key].append(item)
+
+
+def report_metadata(value):
+    """Resolve document/section-local baseline IDs into stable portable references."""
+    result = {}
+
+    def baseline_map(items):
+        mapped = {}
+        for item in items:
+            if item["id"] in mapped:
+                raise ValueError(f'duplicate baseline ID: {item["id"]}')
+            fields = {key: field for key, field in item.items() if key != "id"}
+            identity = hashlib.sha256(json.dumps(fields, sort_keys=True).encode()).hexdigest()[:16]
+            normalized = {"id": "baseline-" + identity, **fields}
+            mapped[item["id"]] = normalized
+        return mapped
+
+    shared = baseline_map(value.get("baselines", []))
+    for source in [value, *value.get("report_sections", [])]:
+        local = shared if source is value else baseline_map(source.get("baselines", []))
+        references = {**shared, **local}
+        comparisons = []
+        for comparison in source.get("comparisons", []):
+            comparison = dict(comparison)
+            if "baseline_id" in comparison:
+                baseline = references.get(comparison["baseline_id"])
+                if baseline is None:
+                    raise ValueError(f'unknown baseline_id: {comparison["baseline_id"]}')
+                if comparison["status"] == "available" and baseline["status"] == "unavailable":
+                    raise ValueError("available comparison requires an available baseline")
+                comparison["baseline_id"] = baseline["id"]
+            comparisons.append(comparison)
+        merge_metadata(result, {"outcome": source.get("outcome"), "issues": source.get("issues", []),
+                                "baselines": list(local.values()), "comparisons": comparisons})
+    return result
+
+
 def read_reports(directory):
     data = [[] for _ in REPORT_KEYS]
     issues = []
@@ -147,12 +198,13 @@ def read_reports(directory):
     empty_test_warnings = []
     title = None
     comparison = None
+    metadata = {}
     if not directory.is_dir():
-        return data, ["artifact is missing"], count, sections, warnings, title, comparison
+        return data, ["artifact is missing"], count, sections, warnings, title, comparison, metadata
     try:
         unpack_reports(directory)
     except (OSError, tarfile.TarError, ValueError) as error:
-        return data, [str(error)], count, sections, warnings, title, comparison
+        return data, [str(error)], count, sections, warnings, title, comparison, metadata
     for path in sorted(directory.rglob("*")):
         if not path.is_file() or path.suffix.lower() not in (".xml", ".json"):
             continue
@@ -160,10 +212,13 @@ def read_reports(directory):
             parsed = [[] for _ in REPORT_KEYS]
             present = set()
             supplied_comparisons = []
+            supplied_metadata = {}
             if path.suffix.lower() == ".json":
                 value = json.loads(path.read_text())
-                if isinstance(value, dict) and any(key in value for key in (*REPORT_KEYS, "report_sections")):
+                if isinstance(value, dict) and any(key in value for key in
+                                                  (*REPORT_KEYS, *METADATA_KEYS, "report_sections", "schema_version")):
                     validate_report(value)
+                    supplied_metadata = report_metadata(value)
                     supplied_comparisons = [item["coverage_comparison"] for item in
                                             [value, *value.get("report_sections", [])]
                                             if "coverage_comparison" in item]
@@ -221,10 +276,15 @@ def read_reports(directory):
                 for coverage in [package, *package.files]:
                     if coverage.lines_covered > coverage.lines_valid:
                         raise ValueError("covered lines exceed executable lines")
+            for package in parsed[2]:
+                for tool in package.tools:
+                    for file in tool.files:
+                        if file.diagnostics and file.status != render._lint_diagnostic_status(file.diagnostics):
+                            raise ValueError("lint status must match the highest diagnostic severity")
             if supplied_comparisons and "coverage" not in present:
                 raise ValueError("coverage_comparison requires coverage results in the same JSON")
             label = str(path.relative_to(directory))
-            if not present:
+            if not present and not any(supplied_metadata.values()):
                 warnings.append(
                     f"{label}: empty report has no identifiable sections; declare sections for checks with zero findings"
                 )
@@ -243,6 +303,7 @@ def read_reports(directory):
                 destination.extend(values)
             if supplied_comparisons:
                 comparison = supplied_comparisons[0]
+            merge_metadata(metadata, supplied_metadata)
             sections.update(present)
             count += 1
         except (OSError, ValueError, TypeError, KeyError, AttributeError, ET.ParseError) as error:
@@ -251,7 +312,7 @@ def read_reports(directory):
         issues.append("artifact contains no supported report files")
     if not any(suite.tests for suite in data[0] + data[1]):
         warnings.extend(empty_test_warnings)
-    return data, issues, count, sections, warnings, title, comparison
+    return data, issues, count, sections, warnings, title, comparison, metadata
 
 
 def generate(root):
@@ -266,7 +327,7 @@ def generate(root):
         issues.append("Report artifact download failed; results may be incomplete")
 
     def collect_section(directory, name, default):
-        data, errors, count, present, notices, title, comparison = read_reports(directory)
+        data, errors, count, present, notices, title, comparison, metadata = read_reports(directory)
         issues.extend(f"{name}: {error}" for error in errors)
         warnings.extend(f"{name}: {notice}" for notice in notices)
         if not count:
@@ -284,6 +345,10 @@ def generate(root):
         section.suites.extend(data[0] + data[1])
         section.lint_packages.extend(data[2])
         section.cov_packages.extend(data[3])
+        combined = {key: getattr(section, key) for key in METADATA_KEYS}
+        merge_metadata(combined, metadata)
+        for key, value in combined.items():
+            setattr(section, key, value)
         if comparison is not None:
             if section.coverage_comparison is not None:
                 issues.append(f"{name}: multiple coverage comparisons for {section_id}")
@@ -310,6 +375,24 @@ def generate(root):
         # Its producer is unknown; preserve available results and fail missing inputs.
         collect_section(root / "input", "Unattributed results", {"id": "unattributed", "title": "Unattributed results"})
     sections = list(sections.values())
+    for section in sections:
+        files = [file for package in section.lint_packages for tool in package.tools for file in tool.files]
+        if any(file.count("warning") for file in files):
+            annotate("warning", f"{section.title}: lint {render._lint_summary(files)}")
+        elif any(file.count("information") for file in files):
+            annotate("notice", f"{section.title}: lint {render._lint_summary(files)}")
+        for issue in section.issues:
+            if issue["severity"] != "error":
+                annotate("notice" if issue["severity"] == "information" else "warning",
+                         f'{section.title}: {issue["message"]}')
+        for baseline in section.baselines:
+            if baseline["status"] == "approximate":
+                annotate("notice", f"{section.title}: approximate baseline supplied by producer")
+            elif baseline["status"] == "unavailable":
+                warnings.append(f'{section.title}: baseline unavailable: {baseline["reason"]}')
+        for comparison in section.comparisons:
+            if comparison["status"] == "unavailable":
+                warnings.append(f'{section.title}: {comparison["name"]} comparison unavailable: {comparison["reason"]}')
     (root / "issues.json").write_text(json.dumps(issues))
     output = root / "output"
     for warning in warnings:
@@ -337,12 +420,6 @@ def generate(root):
         ),
         encoding="utf-8",
     )
-    for heading, messages in (("Report warnings", warnings), ("Report input errors", issues)):
-        if messages:
-            details = "\n".join(f"- {message}" for message in messages)
-            markdown.write_text(f"## {heading}\n\n<pre>" + html.escape(details) + "</pre>\n\n" + markdown.read_text())
-            banner = f'<section class="content"><h2>{heading}</h2><pre>' + html.escape(details) + "</pre></section>"
-            report.write_text(report.read_text().replace("<body>", "<body>" + banner, 1))
 
 
 def check(root):
@@ -353,10 +430,10 @@ def check(root):
     issues = json.loads((root / "issues.json").read_text())
     for issue in issues:
         annotate("error", issue)
-    failures = sum(section.failures for section in render._load_report_sections(report))
-    if failures:
-        annotate("error", f"{failures} test or lint failure(s); see the build report")
-    return int(bool(issues or failures))
+    blocking = [section for section in render._load_report_sections(report) if section.blocking]
+    for section in blocking:
+        annotate("error", f"{section.title}: reported check, tool, or policy failure; see the build report")
+    return int(bool(issues or blocking))
 
 
 def main():

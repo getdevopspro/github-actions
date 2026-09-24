@@ -1,0 +1,91 @@
+{
+  "schema_version": 1,
+  "section_title": "Repository checks",
+  "sections": ["tests", "lint", "coverage"],
+  "outcome": {"status": "error", "message": "Static analysis did not complete"},
+  "issues": [
+    {
+      "kind": "tool",
+      "severity": "error",
+      "tool": "clang-tidy",
+      "exit_code": 2,
+      "message": "Compilation database is missing",
+      "details": "Generate compile_commands.json before running analysis."
+    },
+    {"kind": "notice", "severity": "information", "message": "Coverage policy is evaluated by the repository"}
+  ],
+  "suites": [
+    {
+      "name": "unit",
+      "package": "example",
+      "tests": 128,
+      "failures": 1,
+      "skipped": 1,
+      "time": 12.4,
+      "cases": [
+        {
+          "name": "test_retry_limit",
+          "classname": "RetryTests",
+          "time": 0.1,
+          "status": "failed",
+          "message": "Expected three attempts; received four"
+        }
+      ]
+    }
+  ],
+  "lint_packages": [
+    {
+      "package": "example",
+      "tools": [
+        {
+          "name": "pyright",
+          "files": [
+            {
+              "name": "src/example/client.py",
+              "status": "warning",
+              "diagnostics": [
+                {"severity": "warning", "rule": "reportDeprecated", "line": 42, "column": 5, "message": "Deprecated API"},
+                {"severity": "warning", "line": 58, "message": "Type is partially unknown\nConsider an explicit annotation."},
+                {"severity": "information", "line": 61, "message": "Type of response is str"}
+              ]
+            }
+          ]
+        },
+        {"name": "ruff", "files": []}
+      ]
+    }
+  ],
+  "cov_packages": [
+    {"package": "python", "line_rate": 0.846, "lines_covered": 846, "lines_valid": 1000},
+    {"package": "cpp", "line_rate": 0.76, "lines_covered": 760, "lines_valid": 1000}
+  ],
+  "baselines": [
+    {
+      "id": "main",
+      "status": "exact",
+      "sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "requested_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "distance": 0,
+      "run_url": "https://github.com/example/project/actions/runs/42",
+      "artifact_name": "python-results",
+      "created_at": "2026-01-01T00:00:00Z"
+    },
+    {
+      "id": "cpp",
+      "status": "approximate",
+      "sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "requested_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "distance": 1,
+      "run_url": "https://github.com/example/project/actions/runs/41",
+      "artifact_name": "cpp-results",
+      "reason": "The requested commit has no C++ artifact"
+    }
+  ],
+  "comparisons": [
+    {"name": "Python line coverage", "status": "available", "baseline_id": "main", "current": 84.6, "previous": 82.3, "delta": 2.3, "unit": "%", "delta_unit": "pp"},
+    {"name": "C++ line coverage", "status": "available", "baseline_id": "cpp", "current": 76, "previous": 76.4, "delta": -0.4, "unit": "%", "delta_unit": "pp"},
+    {"name": "Python branch coverage", "status": "available", "baseline_id": "main", "current": 68.1, "previous": 68.1, "delta": 0, "unit": "%", "delta_unit": "pp"},
+    {"name": "Unit tests collected", "status": "available", "baseline_id": "main", "current": 128, "previous": 124, "delta": 4, "unit": "tests", "delta_unit": "tests", "details": "Same test selection as baseline"},
+    {"name": "System test duration", "status": "unavailable", "reason": "No comparable duration was exported"}
+  ]
+}

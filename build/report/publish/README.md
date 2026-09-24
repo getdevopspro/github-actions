@@ -38,7 +38,7 @@ the `.tar` archives produced by the shared Command action are supported.
 
 The action uploads `build_report.html` as the `build-report` artifact and returns
 `artifact-url` and `artifact-id`. Override `artifact-name` for multiple independent
-reports in one run. Failed tests or lint, missing reports, invalid report data, or
+reports in one run. Failed tests, lint errors, reported tool/policy failures, missing reports, invalid report data, or
 download errors fail the action after available results have been published.
 Image-build failures remain the responsibility of the producing jobs.
 
@@ -73,7 +73,9 @@ Legacy JSON keys and filenames do not override the producer's title.
 A clean Ruff `[]` or Pyright `{"generalDiagnostics": []}` supplies lint results
 with zero issues, without establishing how many files were checked. Missing
 selected artifacts fail; they are never treated as clean reports.
-Lint totals count reported checks across tools, not unique files. Grouping only
+Lint errors, warnings, and information appear separately. Only errors block the
+action. Structured diagnostics are counted individually; legacy entries are
+labeled as reported checks across tools, not unique files. Grouping only
 changes presentation; the generated JSON retains each producer's original data.
 
 ### Section names
@@ -110,6 +112,12 @@ after publishing available results. A title-only file is invalid: metadata must
 accompany result content. Native results can use the workflow name directly.
 
 ### Build-report JSON
+
+New producers should use the [v1 field contract](FORMAT.md) and
+[complete example](examples/report-v1.json). It defines repository-supplied
+outcomes, tool failures, lint diagnostics, comparisons, and independent baseline
+provenance. The action validates and presents these values; repositories own
+execution, severity classification, comparison arithmetic, and policy.
 
 Custom producers must follow [report.schema.json](report.schema.json). The action
 checks required fields, types, allowed statuses, finite nonnegative counts and
@@ -151,6 +159,12 @@ count it twice. Coverage and supplied comparisons are informational; decreases
 do not fail the action. Repository scripts enforce any coverage thresholds.
 
 ## Coverage comparisons
+
+For new producers, use the independent `baselines` and `comparisons` arrays in
+the [v1 contract](FORMAT.md#baselines-and-comparisons). The same baseline can
+support coverage, test counts, or other repository-supplied measurements.
+Baseline provenance appears in its own Baselines section in HTML and Markdown.
+The following `coverage_comparison` shape remains supported for existing producers.
 
 Repository scripts generate coverage, choose compatible measurements, calculate
 deltas, and apply thresholds. This action renders their values without retrieving
@@ -196,22 +210,27 @@ rejected as ambiguous; aggregate them in the repository script first. Native XML
 still renders current coverage; comparisons require a normalized JSON producer.
 Upload one representation of the results to avoid double counting.
 
-Coverage uses a neutral chart icon with changes in percentage points (`pp`),
-including explicit unchanged results. Baseline notes link the CI run and both
+Coverage uses a neutral chart icon with changes in percentage points (`pp`):
+`↑ +2.3 pp`, `↓ −0.4 pp`, or `→ 0.0 pp (unchanged)`. Small nonzero changes keep
+their direction rather than appearing unchanged. Baseline notes link the CI run and both
 commits when `run_url` identifies a GitHub repository. Timestamps appear in the
 HTML report; the PR summary omits them. No additional GitHub requests are made.
 
 ## Results and logging
 
-The action publishes available results before failing for test/lint failures,
-missing selected artifacts, download errors, or malformed reports. Producing
+The action publishes available results before failing for test/lint errors,
+reported failed/error outcomes, tool/policy failures, missing selected artifacts,
+download errors, or malformed reports. Reported failures and publisher input
+errors have separate blocking panels. Lint warnings/information and reported
+notices remain visible and nonblocking. Producing
 jobs remain responsible for running checks and propagating their exit codes.
 
 Warnings appear in action annotations and the report when a test artifact has
 no collected tests. Empty suites within an artifact that has tests do not warn.
 Warnings also identify ambiguous empty JSON, coverage with no executable lines,
 and a producer-supplied unavailable comparison. These conditions do not change the action's exit code, but the report
-shows warnings instead of an unconditional pass. Omitted sections, clean lint,
+shows a warning state instead of an unconditional pass. Lint warnings alone show
+a pass with warnings. Omitted sections, clean lint,
 and ordinary coverage changes do not produce warnings. Coverage comparisons are
 informational, including decreases. Approximate comparisons emit a notice.
 

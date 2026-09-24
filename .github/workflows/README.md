@@ -130,6 +130,10 @@ supplies the applicable test, lint, and coverage fields. Clean lint results
 remain visible; absent fields are omitted. See the action's
 [formats and schema](../../build/report/publish/README.md#report-formats-and-sections)
 for custom JSON producers and its [warning policy](../../build/report/publish/README.md#results-and-logging).
+The [v1 report contract](../../build/report/publish/FORMAT.md) documents outcomes,
+tool failures, lint severity, comparisons, and independent baseline provenance.
+Warnings/information do not fail checks; errors, reported tool/policy failures,
+and missing/invalid reports remain blocking. Repositories own policy and comparison arithmetic.
 It produces combined test, lint, and coverage results. It uses
 `runner-report-default`, falling back to `runner-default`, and needs Python 3.10+.
 

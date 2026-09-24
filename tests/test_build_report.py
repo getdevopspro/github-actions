@@ -971,7 +971,7 @@ for (const [, handler] of page.matchAll(/\bonclick="([^"]+)"/g)) vm.runInContext
         )
         check, markdown = self.run_report()
         self.assertEqual(check.returncode, 1)
-        self.assertIn("2 failed of 2 checks", markdown)
+        self.assertIn("2 errors, 0 warnings, 0 information", markdown)
         self.assertIn("ruff:", markdown)
         self.assertIn("pyright:", markdown)
 
@@ -1048,9 +1048,9 @@ for (const [, handler] of page.matchAll(/\bonclick="([^"]+)"/g)) vm.runInContext
         check, markdown = self.run_report()
         self.assertEqual(check.returncode, 0)
         for report in (markdown, (self.root / "output/build_report.html").read_text()):
-            self.assertIn("↓ 12.3 pp", report)
-            self.assertEqual(report.count("↓ 12.3 pp"), 1)
-            self.assertNotIn("↓ 50.0 pp", report)
+            self.assertIn("↓ −12.3 pp", report)
+            self.assertEqual(report.count("↓ −12.3 pp"), 1)
+            self.assertNotIn("↓ −50.0 pp", report)
             self.assertIn("https://example.test/actions/runs/42", report)
             self.assertIn("aaaaaaa", report)
         self.assertNotIn("::warning::", self.generated.stdout)
@@ -1059,7 +1059,7 @@ for (const [, handler] of page.matchAll(/\bonclick="([^"]+)"/g)) vm.runInContext
         self.write("result.json", saved)
         check, markdown = self.run_report()
         self.assertEqual(check.returncode, 0)
-        self.assertIn("↓ 12.3 pp", markdown)
+        self.assertIn("↓ −12.3 pp", markdown)
 
     def test_approximate_comparison_is_labelled_and_unchanged_coverage_is_visible(self):
         self.write("result.json", json.dumps(self.coverage_result(delta=0, status="approximate")))
@@ -1078,7 +1078,7 @@ for (const [, handler] of page.matchAll(/\bonclick="([^"]+)"/g)) vm.runInContext
         self.write("result.json", json.dumps(data))
         check, markdown = self.run_report()
         self.assertEqual(check.returncode, 0)
-        self.assertIn("| Checks | 📊 | 50.0% (1/2 lines) · unchanged (0.0 pp) |", markdown)
+        self.assertIn("| Checks | 📊 | 50.0% (1/2 lines) · baseline 100.0% · → 0.0 pp (unchanged) |", markdown)
         self.assertIn("parent of the requested baseline", markdown)
         self.assertIn("[aaaaaaa](https://github.example.test/example/project/commit/" + "a" * 40 + ")", markdown)
         self.assertIn("[bbbbbbb](https://github.example.test/example/project/commit/" + "b" * 40 + ")", markdown)
@@ -1193,8 +1193,8 @@ for (const [, handler] of page.matchAll(/\bonclick="([^"]+)"/g)) vm.runInContext
             self.write("result.json", json.dumps(self.coverage_result(delta)), self.root / "input" / name)
         check, markdown = self.run_report()
         self.assertEqual(check.returncode, 0)
-        self.assertIn("↓ 5.0 pp", markdown)
-        self.assertIn("↑ 10.0 pp", markdown)
+        self.assertIn("↓ −5.0 pp", markdown)
+        self.assertIn("↑ +10.0 pp", markdown)
         self.assertNotIn("::warning::", self.generated.stdout)
 
     def test_generated_report_can_be_read_again_without_changing_producer_identity(self):
@@ -1219,6 +1219,234 @@ for (const [, handler] of page.matchAll(/\bonclick="([^"]+)"/g)) vm.runInContext
         self.assertIn("| Coverage | 📊 | 50.0% (1/2 lines) |", markdown)
         self.assertNotIn("Original title", markdown)
         self.assertNotIn("::warning::", self.generated.stdout)
+
+    def test_pyright_warnings_information_and_multiline_diagnostics_are_nonblocking(self):
+        diagnostics = [
+            {"file": "src/group/example/code.py", "severity": severity, "message": "First line\nMore context"}
+            for severity in ("warning", "warning", "information")
+        ]
+        self.write("pyright.json", json.dumps({"generalDiagnostics": diagnostics,
+                                              "summary": {"errorCount": 0, "warningCount": 4, "informationCount": 1}}))
+        check, markdown = self.run_report()
+        self.assertEqual(check.returncode, 0, check.stdout)
+        self.assertIn("PASSED WITH WARNINGS", markdown)
+        self.assertIn("0 errors, 2 warnings, 1 information", markdown)
+        self.assertIn("lint warnings (non-blocking)", markdown)
+        self.assertIn("lint information (non-blocking)", markdown)
+        self.assertNotIn("lint errors</summary>", markdown)
+        self.assertIn("::warning::", self.generated.stdout)
+        page = (self.root / "output/build_report.html").read_text()
+        self.assertIn('class="case-row warning"', page)
+        self.assertIn("Warning (2)", page)
+        self.assertIn("Information (1)", page)
+        saved = json.loads((self.root / "output/build_report.json").read_text())
+        file = saved["report_sections"][0]["lint_packages"][0]["tools"][0]["files"][0]
+        self.assertEqual(file["status"], "warning")
+        self.assertEqual(len(file["diagnostics"]), 3)
+
+    def test_pyright_information_only_and_mixed_errors(self):
+        for severities, status, code in ((["information"], "information", 0),
+                                          (["warning", "error", "information"], "failed", 1)):
+            with self.subTest(severities=severities):
+                self.write("pyright.json", json.dumps({"generalDiagnostics": [
+                    {"file": "src/group/example/code.py", "severity": severity, "message": severity}
+                    for severity in severities]}))
+                check, markdown = self.run_report()
+                self.assertEqual(check.returncode, code)
+                saved = json.loads((self.root / "output/build_report.json").read_text())
+                file = saved["report_sections"][0]["lint_packages"][0]["tools"][0]["files"][0]
+                self.assertEqual(file["status"], status)
+                self.assertEqual(len(file["diagnostics"]), len(severities))
+                self.assertIn("1 information", markdown)
+                self.assertEqual("lint errors</summary>" in markdown, bool(code))
+
+    def test_pyright_summary_cannot_hide_errors_or_claim_invalid_counts(self):
+        for summary in ([], {"errorCount": 1}, {"errorCount": -1}, {"errorCount": True},
+                        {"warningCount": -1}, {"informationCount": 1.5}):
+            with self.subTest(summary=summary):
+                self.write("pyright.json", json.dumps({"generalDiagnostics": [], "summary": summary}))
+                check, markdown = self.run_report()
+                self.assertEqual(check.returncode, 1)
+                self.assertIn("Report input errors", markdown)
+        self.write("pyright.json", json.dumps({"generalDiagnostics": [
+            {"file": "code.py", "severity": "warning", "message": "warning"}], "summary": {"warningCount": 0}}))
+        self.assertEqual(self.run_report()[0].returncode, 1)
+
+    def test_legacy_lint_severities_use_check_counts_without_counting_message_lines(self):
+        self.write("report.json", json.dumps({"lint_packages": [{"package": "example", "tools": [{
+            "name": "custom", "files": [
+                {"name": "one.py", "status": "warning", "details": "line1\nline2\nline3"},
+                {"name": "two.py", "status": "information", "message": "note"},
+                {"name": "three.py", "status": "passed"}]}]}]}))
+        check, markdown = self.run_report()
+        self.assertEqual(check.returncode, 0)
+        self.assertIn("3 checks: 0 failed, 1 warning, 1 information", markdown)
+        self.assertNotIn("3 error", markdown)
+        self.assertIn("line1 line2 line3", markdown)
+
+    def test_invalid_lint_severity_and_inconsistent_status_preserve_other_results(self):
+        self.write("passing.xml", '<testsuite name="unit" tests="1"/>')
+        for file in (
+            {"name": "code.py", "status": "passed", "diagnostics": [{"severity": "error", "message": "error"}]},
+            {"name": "code.py", "status": "warning", "diagnostics": [{"severity": "unknown", "message": "bad"}]},
+            {"name": "code.py", "status": "warning", "diagnostics": [{"severity": "warning", "message": "bad", "line": 0}]},
+        ):
+            with self.subTest(file=file):
+                self.write("lint.json", json.dumps({"lint_packages": [{"package": "example", "tools": [{
+                    "name": "custom", "files": [file]}]}]}))
+                check, markdown = self.run_report()
+                self.assertEqual(check.returncode, 1)
+                self.assertIn("1 passed", markdown)
+                self.assertIn("Report input errors", markdown)
+
+    def test_outcomes_and_reported_tool_policy_failures_survive_normalization(self):
+        for data in (
+            {"outcome": {"status": "failed", "message": "Coverage policy failed"}},
+            {"outcome": {"status": "error", "message": "Tool did not complete"}},
+            {"outcome": {"status": "passed"}, "issues": [{"kind": "tool", "severity": "error", "tool": "checker",
+                "exit_code": 2, "message": "Execution failed", "details": "Missing <configuration>"}]},
+            {"outcome": {"status": "skipped"}, "issues": [{"kind": "policy", "severity": "error", "message": "Required baseline missing"}]},
+            {"outcome": {"status": "passed"}, "suites": [{"name": "unit", "package": "example", "tests": 1, "failures": 1}]},
+        ):
+            with self.subTest(data=data):
+                self.write("result.json", json.dumps({"schema_version": 1, **data}))
+                check, markdown = self.run_report()
+                self.assertEqual(check.returncode, 1)
+                self.assertIn("Reported failures (blocking)", markdown)
+                self.assertNotIn("Report input errors", markdown)
+                saved = (self.root / "output/build_report.json").read_text()
+                collect.validate_report(json.loads(saved))
+                self.write("result.json", saved)
+                self.assertEqual(self.run_report()[0].returncode, 1)
+
+    def test_outcome_merge_cannot_replace_an_error_with_a_pass(self):
+        self.write("a.json", json.dumps({"outcome": {"status": "error", "message": "tool failed"}}))
+        self.write("b.json", json.dumps({"outcome": {"status": "passed", "message": "other tool passed"}}))
+        check, markdown = self.run_report()
+        self.assertEqual(check.returncode, 1)
+        self.assertIn("tool failed", markdown)
+        self.assertIn("other tool passed", markdown)
+
+    def test_notices_and_skipped_outcomes_are_nonblocking_and_escaped(self):
+        self.write("result.json", json.dumps({"schema_version": 1, "outcome": {"status": "skipped", "message": "Not applicable"},
+            "issues": [{"kind": "notice", "severity": "warning", "message": "<script>%\n::error::injected"},
+                       {"kind": "notice", "severity": "information", "message": "informational note"}]}))
+        check, markdown = self.run_report()
+        self.assertEqual(check.returncode, 0)
+        self.assertIn("⏭️", markdown)
+        self.assertIn("Reported notices (non-blocking)", markdown)
+        self.assertNotIn("<script>", markdown)
+        self.assertNotIn("\n::error::injected", self.generated.stdout)
+        self.assertIn("::notice::", self.generated.stdout)
+
+    @staticmethod
+    def comparison_result():
+        return {"schema_version": 1, "baselines": [{"id": "base", "status": "exact", "sha": "a" * 40,
+                    "run_url": "https://github.com/example/project/actions/runs/42"}],
+                "comparisons": [{"name": "Test count", "status": "available", "baseline_id": "base",
+                    "current": 12, "previous": 10, "delta": -9, "unit": "tests", "delta_unit": "tests"}]}
+
+    def test_shared_baseline_is_independent_of_coverage_and_deltas_are_not_recomputed(self):
+        data = self.comparison_result()
+        data["comparisons"].append({"name": "Line coverage", "status": "available", "baseline_id": "base",
+                                    "current": 84.6, "previous": 82.3, "delta": 2.3, "unit": "%", "delta_unit": "pp"})
+        self.write("result.json", json.dumps(data))
+        check, markdown = self.run_report()
+        self.assertEqual(check.returncode, 0)
+        for report in (markdown, (self.root / "output/build_report.html").read_text()):
+            self.assertIn("Baselines", report)
+            self.assertIn("Comparisons", report)
+            self.assertIn("↓ −9 tests", report)
+            self.assertIn("↑ +2.3 pp", report)
+            self.assertEqual(report.count("/actions/runs/42"), 1)
+            self.assertNotIn("B2", report)
+        self.assertNotIn("no executable lines", markdown)
+        self.assertNotIn("::warning::", self.generated.stdout)
+        self.write("result.json", json.dumps({"baselines": data["baselines"]}))
+        check, markdown = self.run_report()
+        self.assertEqual(check.returncode, 0)
+        self.assertIn("#### Baselines", markdown)
+        self.assertNotIn("#### Comparisons", markdown)
+
+    def test_local_baseline_ids_do_not_merge_distinct_provenance(self):
+        first = self.comparison_result()
+        second = self.comparison_result()
+        second["baselines"][0].update(sha="b" * 40, run_url="https://github.com/example/project/actions/runs/41")
+        data = {"report_sections": [dict(id=name, title=name, kinds=[], **{
+            key: value for key, value in source.items() if key != "schema_version"})
+            for name, source in (("first", first), ("second", second))]}
+        self.write("result.json", json.dumps(data))
+        check, markdown = self.run_report()
+        self.assertEqual(check.returncode, 0)
+        self.assertIn("| B1 | Exact: [aaaaaaa]", markdown)
+        self.assertIn("| B2 | Exact: [bbbbbbb]", markdown)
+        normalized = json.loads((self.root / "output/build_report.json").read_text())
+        comparisons = normalized["report_sections"][0]["comparisons"]
+        self.assertNotEqual(comparisons[0]["baseline_id"], comparisons[1]["baseline_id"])
+        self.write("result.json", json.dumps(normalized))
+        self.assertEqual(self.run_report()[0].returncode, 0)
+        self.assertEqual(json.loads((self.root / "output/build_report.json").read_text()), normalized)
+
+    def test_invalid_contract_versions_references_and_tool_severities_are_blocking(self):
+        base = self.comparison_result()
+        invalid = [
+            {**base, "schema_version": 2},
+            {**base, "baselines": []},
+            {**base, "baselines": base["baselines"] * 2},
+            {**base, "baselines": [{"id": "base", "status": "unavailable", "reason": "missing"}]},
+            {**base, "comparisons": [{**base["comparisons"][0], "delta": float("inf")}]},
+            {"issues": [{"kind": "tool", "severity": "warning", "tool": "checker", "message": "failed"}]},
+            {"issues": [{"kind": "tool", "severity": "error", "message": "missing tool identity"}]},
+        ]
+        for data in invalid:
+            with self.subTest(data=data):
+                self.write("result.json", json.dumps(data))
+                check, markdown = self.run_report()
+                self.assertEqual(check.returncode, 1)
+                self.assertIn("Report input errors", markdown)
+
+    def test_small_nonzero_changes_never_display_as_unchanged(self):
+        for delta, expected in ((0, "→ 0.0 pp (unchanged)"), (0.001, "↑ +&lt;0.1 pp"), (-0.001, "↓ −&lt;0.1 pp")):
+            with self.subTest(delta=delta):
+                data = self.comparison_result()
+                data["comparisons"][0].update(delta=delta, delta_unit="pp")
+                self.write("result.json", json.dumps(data))
+                check, markdown = self.run_report()
+                self.assertEqual(check.returncode, 0)
+                for report in (markdown, (self.root / "output/build_report.html").read_text()):
+                    self.assertIn(expected, report)
+                    if delta:
+                        self.assertNotIn("unchanged", report)
+
+    def test_documented_full_example_roundtrips_and_separates_input_errors(self):
+        example = json.loads((ACTION / "examples/report-v1.json").read_text())
+        collect.validate_report(example)
+        self.write("result.json", json.dumps(example))
+        (self.root / "artifacts.json").write_text(json.dumps(["unit-results", "missing-results", "invalid-results"]))
+        self.write("broken.json", "{", self.root / "input/invalid-results")
+        check, markdown = self.run_report()
+        self.assertEqual(check.returncode, 1)
+        for report in (markdown, (self.root / "output/build_report.html").read_text()):
+            self.assertIn("Report input errors (blocking)", report)
+            self.assertIn("Reported failures (blocking)", report)
+            self.assertIn("clang-tidy (exit 2)", report)
+            self.assertIn("artifact is missing", report)
+            self.assertIn("broken.json", report)
+            self.assertIn("↑ +2.3 pp", report)
+            self.assertIn("↓ −0.4 pp", report)
+            self.assertIn("→ 0.0 pp (unchanged)", report)
+            self.assertIn("Baselines", report)
+        saved = json.loads((self.root / "output/build_report.json").read_text())
+        collect.validate_report(saved)
+        self.write("result.json", json.dumps(saved))
+        (self.root / "artifacts.json").write_text(json.dumps(["unit-results"]))
+        check, markdown = self.run_report()
+        self.assertEqual(check.returncode, 1)
+        self.assertNotIn("Report input errors", markdown)
+        self.assertIn("0 errors, 2 warnings, 1 information", markdown)
+        self.assertEqual(json.loads((self.root / "output/build_report.json").read_text())["report_sections"][0]["baselines"],
+                         saved["report_sections"][0]["baselines"])
+
 
 class PrepareTests(unittest.TestCase):
     def test_group_metadata_is_validated_and_saved_before_download(self):

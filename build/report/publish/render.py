@@ -51,9 +51,15 @@ class TestSuite:
 @dataclass
 class LintFile:
     name: str  # file path as reported in testcase name
-    status: str  # "passed" or "failed"
+    status: str  # "passed", "failed", "warning", or "information"
     message: str = ""
     details: str = ""
+    diagnostics: list[dict] = field(default_factory=list)
+
+    def count(self, severity: str) -> int:
+        if self.diagnostics:
+            return sum(d["severity"] == severity for d in self.diagnostics)
+        return int(self.status == {"error": "failed"}.get(severity, severity))
 
 
 @dataclass
@@ -69,6 +75,18 @@ class LintTool:
     def passed(self) -> int:
         return sum(1 for f in self.files if f.status == "passed")
 
+    @property
+    def warnings(self) -> int:
+        return sum(f.count("warning") for f in self.files)
+
+    @property
+    def information(self) -> int:
+        return sum(f.count("information") for f in self.files)
+
+    @property
+    def errors(self) -> int:
+        return sum(f.count("error") for f in self.files)
+
 
 @dataclass
 class LintPackage:
@@ -82,6 +100,14 @@ class LintPackage:
     @property
     def total_files(self) -> int:
         return sum(len(t.files) for t in self.tools)
+
+    @property
+    def warnings(self) -> int:
+        return sum(t.warnings for t in self.tools)
+
+    @property
+    def information(self) -> int:
+        return sum(t.information for t in self.tools)
 
 
 # ---------------------------------------------------------------------------
@@ -117,10 +143,23 @@ class ReportSection:
     cov_packages: list[CoveragePackage] = field(default_factory=list)
     kinds: list[str] = field(default_factory=list)
     coverage_comparison: dict | None = None
+    outcome: dict | None = None
+    issues: list[dict] = field(default_factory=list)
+    baselines: list[dict] = field(default_factory=list)
+    comparisons: list[dict] = field(default_factory=list)
 
     @property
     def failures(self) -> int:
         return sum(s.failures + s.errors for s in self.suites) + sum(p.failures for p in self.lint_packages)
+
+    @property
+    def blocking(self) -> bool:
+        return bool(self.failures or any(i["severity"] == "error" for i in self.issues)
+                    or (self.outcome and self.outcome["status"] in ("failed", "error")))
+
+    @property
+    def warnings(self) -> int:
+        return sum(p.warnings for p in self.lint_packages) + sum(i["severity"] == "warning" for i in self.issues)
 
 
 # ---------------------------------------------------------------------------
@@ -268,7 +307,7 @@ def parse_ruff_json_files(json_files: list[Path], verbose: bool = False) -> list
     Groups violations by ROS2 package derived from src/<group>/<pkg>/... paths.
     Only files with violations are represented.
     """
-    file_details: dict[str, list[str]] = {}
+    file_details: dict[str, list[dict]] = {}
 
     for json_file in json_files:
         if verbose:
@@ -286,9 +325,12 @@ def parse_ruff_json_files(json_files: list[Path], verbose: bool = False) -> list
             location = violation.get("location") or {}
             row = location.get("row")
             col = location.get("column")
-            loc = f"{row}:{col}" if row is not None else ""
-            detail = f"{loc}: {code}: {message}" if loc else f"{code}: {message}"
-            file_details.setdefault(filename, []).append(detail)
+            diagnostic = {"severity": "error", "rule": code, "message": message}
+            if row is not None:
+                diagnostic["line"] = row
+            if col is not None:
+                diagnostic["column"] = col
+            file_details.setdefault(filename, []).append(diagnostic)
 
     if not file_details:
         return []
@@ -301,7 +343,7 @@ def parse_ruff_json_files(json_files: list[Path], verbose: bool = False) -> list
             package = parts[src_idx + 2] if len(parts) > src_idx + 2 else parts[src_idx + 1]
         except StopIteration:
             package = parts[1] if len(parts) > 1 else (parts[0] if parts else "unknown")
-        pkg_map.setdefault(package, []).append(LintFile(name=filename, status="failed", details="\n".join(details)))
+        pkg_map.setdefault(package, []).append(LintFile(name=filename, status="failed", diagnostics=details))
 
     return [
         LintPackage(package=pkg, tools=[LintTool(name="ruff", files=files)]) for pkg, files in sorted(pkg_map.items())
@@ -314,7 +356,7 @@ def parse_pyright_json_files(json_files: list[Path], verbose: bool = False) -> l
     Groups diagnostics by ROS2 package derived from src/<group>/<pkg>/... paths.
     Only files with diagnostics are represented.
     """
-    file_details: dict[str, list[str]] = {}
+    file_details: dict[str, list[dict]] = {}
 
     for json_file in json_files:
         if verbose:
@@ -331,22 +373,33 @@ def parse_pyright_json_files(json_files: list[Path], verbose: bool = False) -> l
             print(f"Warning: could not parse {json_file}: {e}", file=sys.stderr)
             continue
 
-        for diag in data.get("generalDiagnostics", []):
+        diagnostics = data.get("generalDiagnostics", [])
+        summary = data.get("summary", {})
+        if not isinstance(summary, dict):
+            raise ValueError("Pyright summary must be an object")
+        for severity, key in (("error", "errorCount"), ("warning", "warningCount"), ("information", "informationCount")):
+            if key in summary:
+                count = summary[key]
+                emitted = sum(diag.get("severity", "error") == severity for diag in diagnostics)
+                # Pyright's --level can omit warnings/information, but never errors.
+                if type(count) is not int or count < emitted or (severity == "error" and count != emitted):
+                    raise ValueError(f"Pyright summary {key} contradicts generalDiagnostics")
+        for diag in diagnostics:
             filename = diag.get("file", "unknown")
             severity = diag.get("severity", "error")
             message = diag.get("message", "")
-            rule = diag.get("rule", "")
+            diagnostic = {"severity": severity, "message": message, "rule": diag.get("rule", "")}
             rng = diag.get("range")
             if rng:
                 start = rng.get("start", {})
-                line = start.get("line", 0) + 1  # pyright uses zero-based lines
-                col = start.get("character", 0) + 1
-                loc = f"{line}:{col}"
-            else:
-                loc = ""
-            parts = [loc, severity, rule, message]
-            detail = ": ".join(p for p in parts if p)
-            file_details.setdefault(filename, []).append(detail)
+                line = start.get("line", 0)
+                col = start.get("character", 0)
+                if any(type(value) is not int or value < 0 for value in (line, col)):
+                    raise ValueError("Pyright positions must be nonnegative integers")
+                diagnostic.update(line=line + 1, column=col + 1)
+            if severity not in ("error", "warning", "information"):
+                raise ValueError(f"unsupported Pyright severity: {severity}")
+            file_details.setdefault(filename, []).append(diagnostic)
 
     if not file_details:
         return []
@@ -359,12 +412,19 @@ def parse_pyright_json_files(json_files: list[Path], verbose: bool = False) -> l
             package = parts[src_idx + 2] if len(parts) > src_idx + 2 else parts[src_idx + 1]
         except StopIteration:
             package = parts[1] if len(parts) > 1 else (parts[0] if parts else "unknown")
-        pkg_map.setdefault(package, []).append(LintFile(name=filename, status="failed", details="\n".join(details)))
+        status = _lint_diagnostic_status(details)
+        pkg_map.setdefault(package, []).append(LintFile(name=filename, status=status, diagnostics=details))
 
     return [
         LintPackage(package=pkg, tools=[LintTool(name="pyright", files=files)])
         for pkg, files in sorted(pkg_map.items())
     ]
+
+
+def _lint_diagnostic_status(diagnostics: list[dict]) -> str:
+    severities = {diagnostic["severity"] for diagnostic in diagnostics}
+    return next((status for severity, status in (("error", "failed"), ("warning", "warning"),
+                 ("information", "information")) if severity in severities), "passed")
 
 
 def parse_coverage_xml_files(xml_files: list[Path], verbose: bool = False) -> list[CoveragePackage]:
@@ -617,15 +677,20 @@ def _render_test_section(suites: list[TestSuite], section: str, title: str) -> s
 
 
 def _render_lint_file(lf: LintFile) -> str:
-    icon = (
-        '<span class="status-icon status-pass">PASS</span>'
-        if lf.status == "passed"
-        else '<span class="status-icon status-fail">FAIL</span>'
-    )
-    details_html = f'<div class="case-details">{_esc(lf.details)}</div>' if lf.details else ""
-    row_cls = "passed" if lf.status == "passed" else "failed"
+    css, label = {"passed": ("pass", "PASS"), "failed": ("fail", "ERROR"),
+                  "warning": ("warning", "WARNING"), "information": ("info", "INFO")}[lf.status]
+    icon = f'<span class="status-icon status-{css}">{label}</span>'
+    details_html = ""
+    for severity in ("error", "warning", "information"):
+        findings = [_diagnostic_text(d) for d in lf.diagnostics if d["severity"] == severity]
+        if findings:
+            details_html += f'<div class="case-details"><strong>{severity.title()} ({len(findings)})</strong>\n'
+            details_html += _esc("\n\n".join(findings)) + "</div>"
+    for text in (lf.message, lf.details):
+        if text:
+            details_html += f'<div class="case-details">{_esc(text)}</div>'
     return f"""
-              <tr class="case-row {row_cls}">
+              <tr class="case-row {lf.status}">
                 <td>
                   <div class="case-name-line">{icon} <span class="case-name">{_esc(lf.name)}</span></div>
                   {details_html}
@@ -633,22 +698,54 @@ def _render_lint_file(lf: LintFile) -> str:
               </tr>"""
 
 
+def _diagnostic_text(diagnostic: dict) -> str:
+    location = str(diagnostic["line"]) if "line" in diagnostic else ""
+    if location and "column" in diagnostic:
+        location += f':{diagnostic["column"]}'
+    return ": ".join(part for part in (location, diagnostic.get("rule", ""), diagnostic["message"]) if part)
+
+
+def _lint_summary(files: list[LintFile]) -> str:
+    diagnostics = [d for file in files for d in file.diagnostics]
+    legacy = [file for file in files if not file.diagnostics]
+    parts = []
+    if diagnostics:
+        counts = [sum(d["severity"] == severity for d in diagnostics)
+                  for severity in ("error", "warning", "information")]
+        parts.append(f"{counts[0]} errors, {counts[1]} warnings, {counts[2]} information")
+    if legacy:
+        counts = [sum(file.status == status for file in legacy)
+                  for status in ("failed", "warning", "information")]
+        word = "check" if len(legacy) == 1 else "checks"
+        if counts[1] or counts[2]:
+            parts.append(f"{len(legacy)} {word}: {counts[0]} failed, {counts[1]} warning, {counts[2]} information")
+        else:
+            parts.append(f"{counts[0]} failed of {len(legacy)} {word}" if counts[0]
+                         else f"{len(legacy)} {word} passed")
+    return "; ".join(parts) or "0 issues"
+
+
+def _lint_status(failures, warnings, information):
+    if failures:
+        return "#ef4444", "FAILED"
+    if warnings:
+        return "#f59e0b", "WARNINGS"
+    return ("#38bdf8", "INFO") if information else ("#22c55e", "PASSED")
+
+
 def _render_lint_tools(pkg_idx: str, tools: list[LintTool]) -> str:
     html = []
     for j, tool in enumerate(tools):
         tid = f"lt-{pkg_idx}-{j}"
-        badge_color = "#22c55e" if tool.failures == 0 else "#ef4444"
-        badge_text = "PASS" if tool.failures == 0 else "FAIL"
+        badge_color, badge_text = _lint_status(tool.failures, tool.warnings, tool.information)
         has_fail_cls = " has-fail" if tool.failures else ""
-        counts = f'<span style="color:#22c55e">{tool.passed}✓</span>'
-        if tool.failures:
-            counts += f' <span style="color:#ef4444">{tool.failures}✗</span>'
+        counts = _lint_summary(tool.files)
         html.append(f"""
             <tr class="class-header lint-tool-header{has_fail_cls}" onclick="toggleLintTool('{tid}')">
               <td colspan="3">
                 <span class="toggle" id="ttoggle-{tid}">▶</span>
                 <span class="class-name lint-tool-name">{_esc(tool.name)}</span>
-                <span class="class-counts">{counts} checks</span>
+                <span class="class-counts">{counts}</span>
                 <span class="badge" style="background:{badge_color}">{badge_text}</span>
               </td>
             </tr>
@@ -667,34 +764,31 @@ def _render_lint_section(lint_packages: list[LintPackage], section: str, title: 
         return _empty_section(section, _esc(title), "0 issues reported.")
 
     total_pkg = len(lint_packages)
-    total_files = sum(p.total_files for p in lint_packages)
     failed_pkg = sum(1 for p in lint_packages if p.failures > 0)
-    overall_pass = failed_pkg == 0
+    warnings = sum(p.warnings for p in lint_packages)
+    information = sum(p.information for p in lint_packages)
 
     rows = []
     for index, pkg in enumerate(lint_packages):
         i = f"{section}-{index}"
-        badge_color = "#22c55e" if pkg.failures == 0 else "#ef4444"
-        badge_text = "PASS" if pkg.failures == 0 else "FAIL"
+        badge_color, badge_text = _lint_status(pkg.failures, pkg.warnings, pkg.information)
+        counts = _lint_summary([file for tool in pkg.tools for file in tool.files])
         rows.append(f"""
         <tr class="suite-header" onclick="toggleLintPkg('{i}')">
           <td><span class="toggle" id="ltoggle-{i}">▶</span> <strong>{_esc(pkg.package)}</strong></td>
           <td><span class="badge" style="background:{badge_color}">{badge_text}</span></td>
-          <td>{pkg.total_files}</td>
-          <td style="color:#22c55e;font-weight:600">{pkg.total_files - pkg.failures}</td>
-          <td style="color:#ef4444;font-weight:600">{pkg.failures}</td>
+          <td>{counts}</td>
         </tr>
         <tr id="lp-{i}-tools" class="suite-cases" style="display:none">
-          <td colspan="5" style="padding:0">
+          <td colspan="3" style="padding:0">
             <table class="cases-table">
               {_render_lint_tools(i, pkg.tools)}
             </table>
           </td>
         </tr>""")
 
-    status_color = "#22c55e" if overall_pass else "#ef4444"
-    status_text = "PASSED" if overall_pass else "FAILED"
-    collapsed = overall_pass
+    status_color, status_text = _lint_status(failed_pkg, warnings, information)
+    collapsed = not (failed_pkg or warnings or information)
     body_display = "none" if collapsed else "block"
     arrow_cls = "" if collapsed else " open"
 
@@ -704,11 +798,11 @@ def _render_lint_section(lint_packages: list[LintPackage], section: str, title: 
     <span class="toggle section-toggle{arrow_cls}" id="section-{section}-toggle">▶</span>
     {_esc(title)}
     <span class="badge" style="background:{status_color};font-size:0.7rem">{status_text}</span>
-    <span style="color:#475569;font-size:0.8rem;font-weight:400;text-transform:none;letter-spacing:0">{total_pkg} package{"s" if total_pkg != 1 else ""} &middot; {total_files} check{"s" if total_files != 1 else ""}{f", {failed_pkg} failing" if failed_pkg else ""}</span>
+    <span style="color:#475569;font-size:0.8rem;font-weight:400;text-transform:none;letter-spacing:0">{total_pkg} package{"s" if total_pkg != 1 else ""}{f", {failed_pkg} failing" if failed_pkg else ""}</span>
   </div>
   <div id="section-{section}-body" style="display:{body_display}">
   <table class="suites-table" style="margin-top:12px">
-    <thead><tr><th>Package</th><th>Status</th><th>Checks</th><th>Passed</th><th>Failed</th></tr></thead>
+    <thead><tr><th>Package</th><th>Status</th><th>Reported findings</th></tr></thead>
     <tbody>{"".join(rows)}</tbody>
   </table>
   </div>
@@ -872,18 +966,21 @@ def _display_sections(sections: list[ReportSection]) -> list[ReportSection]:
 
 
 def _coverage_delta(comparison: dict) -> str:
-    delta = round(comparison["delta_pp"], 1)
-    if not delta:
-        return "unchanged (0.0 pp)"
-    arrow = "↓ " if delta < 0 else "↑ "
-    return f"{arrow}{abs(delta):.1f} pp"
+    return _format_delta(comparison["delta_pp"], "pp")
 
 
-def _coverage_comparison(comparison: dict, *, markdown: bool = False) -> str:
+def _format_delta(delta: float, unit: str) -> str:
+    if delta == 0:
+        return f"→ {'0.0' if unit == 'pp' else '0'} {unit} (unchanged)".strip()
+    magnitude = abs(delta)
+    number = ("<0.1" if magnitude < 0.05 else f"{magnitude:.1f}") if unit == "pp" else f"{magnitude:g}"
+    return f"{'↓ −' if delta < 0 else '↑ +'}{number} {unit}".strip()
+
+
+def _baseline_description(baseline: dict, *, markdown: bool = False) -> str:
     escape = _md if markdown else _esc
-    if comparison["status"] == "unavailable":
-        return "Coverage comparison unavailable: " + escape(comparison["reason"])
-    baseline = comparison["baseline"]
+    if baseline["status"] == "unavailable":
+        return "Unavailable: " + escape(baseline["reason"])
     repository = re.match(r"(https://[^/?#]+/[^/?#]+/[^/?#]+)/actions/runs/\d+(?:[/?#]|$)", baseline["run_url"])
 
     def link(label, url):
@@ -897,15 +994,19 @@ def _coverage_comparison(comparison: dict, *, markdown: bool = False) -> str:
         return link(sha[:7], f"{repository[1]}/commit/{sha}" if repository else None)
 
     result = (
-        f'Baseline: {baseline["line_rate"] * 100:.1f}% at {commit(baseline["sha"])} '
+        f'{baseline["status"].title()}: {commit(baseline["sha"])} '
         f'({link("CI run", baseline["run_url"])}).'
     )
-    if comparison["status"] == "approximate":
+    if baseline["status"] == "approximate":
         relation = "parent" if baseline.get("distance") == 1 else "earlier ancestor"
         result += f" Approximate comparison: baseline is the {relation} of the requested baseline"
         result += f' {commit(baseline["requested_sha"])}.' if baseline.get("requested_sha") else "."
     elif baseline.get("requested_sha") and baseline["requested_sha"] != baseline["sha"]:
         result += f' Requested baseline: {commit(baseline["requested_sha"])}.'
+    if baseline.get("artifact_name"):
+        result += f' Artifact: {escape(baseline["artifact_name"])}.'
+    if baseline.get("reason"):
+        result += " " + escape(baseline["reason"])
     if not markdown and baseline.get("created_at"):
         created = baseline["created_at"]
         try:
@@ -918,6 +1019,95 @@ def _coverage_comparison(comparison: dict, *, markdown: bool = False) -> str:
     return result
 
 
+def _baseline_index(sections):
+    entries = []
+    references = {}
+    for section in sections:
+        baselines = list(section.baselines)
+        if section.coverage_comparison:
+            comparison = section.coverage_comparison
+            baselines.append({"id": "", "status": comparison["status"],
+                              **comparison.get("baseline", {}),
+                              **({"reason": comparison["reason"]} if "reason" in comparison else {})})
+        for baseline in baselines:
+            value = {key: item for key, item in baseline.items() if key not in ("id", "line_rate")}
+            if value not in entries:
+                entries.append(value)
+            references[section.id, baseline["id"]] = f"B{entries.index(value) + 1}"
+    return entries, references
+
+
+def _metadata_tables(sections, *, markdown=False):
+    escape = _md if markdown else _esc
+    baselines, references = _baseline_index(sections)
+    comparisons = []
+    for section in sections:
+        for comparison in section.comparisons:
+            reference = references.get((section.id, comparison.get("baseline_id")), "—")
+            if comparison["status"] == "unavailable":
+                values = ["—", "—", "Unavailable: " + escape(comparison["reason"])]
+            else:
+                unit = comparison["unit"]
+                values = [escape(f'{comparison[key]:g} {unit}'.strip()) for key in ("current", "previous")]
+                values.append(escape(_format_delta(comparison["delta"], comparison["delta_unit"])))
+            comparisons.append([escape(section.title + " — " + comparison["name"]), *values, reference,
+                                escape(comparison.get("details", ""))])
+    baseline_rows = [[f"B{index + 1}", _baseline_description(baseline, markdown=markdown)]
+                     for index, baseline in enumerate(baselines)]
+    parts = []
+    for title, headers, rows in (
+        ("Comparisons", ["Measurement", "Current", "Baseline", "Change", "Reference", "Notes"], comparisons),
+        ("Baselines", ["Reference", "Provenance"], baseline_rows),
+    ):
+        if not rows:
+            continue
+        if markdown:
+            parts.extend(["", f"#### {title}", "", "| " + " | ".join(headers) + " |",
+                          "| " + " | ".join("---" for _ in headers) + " |"])
+            parts.extend("| " + " | ".join(row) + " |" for row in rows)
+        else:
+            parts.append(f'<section class="content"><h2 class="section-title">{title}</h2>'
+                         '<table class="suites-table metadata-table"><thead><tr>'
+                         + "".join(f"<th>{header}</th>" for header in headers) + "</tr></thead><tbody>"
+                         + "".join('<tr class="metadata-row">' + "".join(f"<td>{cell}</td>" for cell in row)
+                                   + "</tr>" for row in rows) + "</tbody></table></section>")
+    return "\n".join(parts)
+
+
+def _report_problems(sections, report_errors, report_warnings, *, markdown=False):
+    failures = []
+    notices = []
+    for section in sections:
+        if section.failures:
+            failures.append(f"{section.title}: {section.failures} failed test/lint checks")
+        if section.outcome and section.outcome["status"] in ("failed", "error"):
+            failures.append(f'{section.title}: {section.outcome["status"]} — {section.outcome.get("message", "")}')
+        for issue in section.issues:
+            message = f'{section.title}: {issue["kind"]} {issue["severity"]}'
+            if issue.get("tool"):
+                message += f' — {issue["tool"]}'
+            if "exit_code" in issue:
+                message += f' (exit {issue["exit_code"]})'
+            message += f': {issue["message"]}'
+            if issue.get("details"):
+                message += "\n" + issue["details"]
+            (failures if issue["severity"] == "error" else notices).append(message)
+    parts = []
+    for title, messages in (("Report input errors (blocking)", report_errors),
+                            ("Reported failures (blocking)", failures),
+                            ("Report warnings (non-blocking)", report_warnings),
+                            ("Reported notices (non-blocking)", notices)):
+        if not messages:
+            continue
+        body = _esc("\n".join("- " + message for message in messages))
+        if markdown:
+            parts.append(f"\n#### {title}\n\n<pre>{body}</pre>\n")
+        else:
+            parts.append(f'<section class="content"><h2 class="section-title">{title}</h2>'
+                         f'<pre class="case-details">{body}</pre></section>')
+    return "\n".join(parts)
+
+
 def render_html(
     sections: list[ReportSection],
     generated_at: str,
@@ -926,15 +1116,19 @@ def render_html(
     report_errors: list[str] | None = None,
     report_warnings: list[str] | None = None,
 ) -> str:
+    metadata = _metadata_tables(sections)
+    problems = _report_problems(sections, report_errors, report_warnings)
+    _, baseline_references = _baseline_index(sections)
+    overall_pass = not report_errors and not any(section.blocking for section in sections)
+    has_warnings = report_warnings or any(section.warnings for section in sections)
     sections = _display_sections(sections)
     repo_name = get_repo_name()
     title = f"{repo_name} — {title}" if repo_name else title
-    overall_pass = not report_errors and not any(section.failures for section in sections)
     status_color = "#22c55e" if overall_pass else "#ef4444"
     status_text = "PASSED" if overall_pass else "FAILED"
-    if overall_pass and (report_warnings or not sections):
+    if overall_pass and (has_warnings or not sections):
         status_color = "#f59e0b"
-        status_text = "WARNINGS" if sections else "NO RESULTS"
+        status_text = ("WARNINGS" if report_warnings else "PASSED WITH WARNINGS") if sections else "NO RESULTS"
 
     summary = []
     content = []
@@ -963,11 +1157,18 @@ def render_html(
                 )
                 parts.append(_render_test_section(section.suites, part_key, part_title))
             elif kind == "lint":
-                files = sum(p.total_files for p in section.lint_packages)
-                failed = sum(p.failures for p in section.lint_packages)
-                if files:
-                    cards.append(("Reported checks", files, "#a5b4fc"))
-                cards.append(("Lint issues", failed, "#ef4444" if failed else "#a5b4fc"))
+                files = [file for package in section.lint_packages for tool in package.tools for file in tool.files]
+                diagnostics = [d for file in files for d in file.diagnostics]
+                legacy = [file for file in files if not file.diagnostics]
+                if legacy:
+                    cards.append(("Reported checks", len(legacy), "#a5b4fc"))
+                    cards.append(("Failed checks", sum(file.status == "failed" for file in legacy), "#ef4444"))
+                    cards.append(("Warning checks", sum(file.status == "warning" for file in legacy), "#f59e0b"))
+                    cards.append(("Info checks", sum(file.status == "information" for file in legacy), "#38bdf8"))
+                for severity, label, color in (("error", "Errors", "#ef4444"), ("warning", "Warnings", "#f59e0b"),
+                                                ("information", "Information", "#38bdf8")):
+                    if diagnostics or not files:
+                        cards.append((label, sum(d["severity"] == severity for d in diagnostics), color))
                 parts.append(_render_lint_section(section.lint_packages, part_key, part_title))
             else:
                 covered = sum(p.lines_covered for p in section.cov_packages)
@@ -982,8 +1183,13 @@ def render_html(
                 parts.append(_render_coverage_section(section.cov_packages, output_path, part_key, part_title))
                 if section.coverage_comparison:
                     if section.coverage_comparison["status"] != "unavailable":
-                        cards.append(("Change", _coverage_delta(section.coverage_comparison), "#67e8f9"))
-                    parts.append(f'<p class="content">{_coverage_comparison(section.coverage_comparison)}</p>')
+                        cards.append(("Change", _esc(_coverage_delta(section.coverage_comparison)), "#67e8f9"))
+                        previous = section.coverage_comparison["baseline"]["line_rate"] * 100
+                        cards.append(("Previous coverage", f"{previous:.1f}%", "#94a3b8"))
+                    reference = baseline_references[section.id, ""]
+                    parts.append(f'<p class="content">Baseline reference: {reference} (see Baselines).</p>')
+        if section.outcome:
+            cards.append(("Reported outcome", _esc(section.outcome["status"]), "#ef4444" if section.blocking else "#94a3b8"))
         summary.append(_summary_group(key, section.title, cards))
         if mixed:
             content.append(
@@ -992,7 +1198,10 @@ def render_html(
         elif parts:
             content.extend(parts)
         else:
-            content.append(_empty_section(key, _esc(section.title), "No identifiable results."))
+            message = "Report metadata supplied." if section.issues or section.baselines or section.comparisons else "No identifiable results."
+            if section.outcome:
+                message = section.outcome.get("message") or section.outcome["status"]
+            content.append(_empty_section(key, _esc(section.title), _esc(message)))
 
     return f"""<!DOCTYPE html>
 <html lang="en">
@@ -1044,6 +1253,11 @@ def render_html(
   .status-fail {{ background: #7f1d1d; color: #fca5a5; }}
   .status-error {{ background: #7f1d1d; color: #fca5a5; }}
   .status-skip {{ background: #713f12; color: #fcd34d; }}
+  .status-warning {{ background: #713f12; color: #fcd34d; }}
+  .status-info {{ background: #164e63; color: #a5f3fc; }}
+  .metadata-row td {{ padding: 10px 14px; border-top: 1px solid #334155; overflow-wrap: anywhere; }}
+  .metadata-row a {{ color: #7dd3fc; }}
+  .metadata-table th:nth-child(2), .metadata-table td:nth-child(2) {{ width: auto; min-width: 0; padding-left: 14px; }}
   .case-name {{ color: #cbd5e1; word-break: break-all; flex: 1; min-width: 0; }}
   .case-time {{ color: #475569; font-size: 0.75rem; white-space: nowrap; flex-shrink: 0; margin-left: auto; }}
   .case-msg {{ color: #fca5a5; font-size: 0.8rem; margin-top: 4px; }}
@@ -1063,8 +1277,10 @@ def render_html(
   <h1>{_esc(title)}</h1>
   <span class="overall-badge">{status_text}</span>
 </div>
+{problems}
 <div class="summary">{"".join(summary)}</div>
 {"".join(content)}
+{metadata}
 <script>
 function toggleSection(name) {{
   const body = document.getElementById('section-' + name + '-body');
@@ -1160,12 +1376,16 @@ def render_markdown_summary(
     report_errors: list[str] | None = None,
     report_warnings: list[str] | None = None,
 ) -> str:
+    metadata = _metadata_tables(sections, markdown=True)
+    problems = _report_problems(sections, report_errors, report_warnings, markdown=True)
+    _, baseline_references = _baseline_index(sections)
+    overall_pass = not report_errors and not any(section.blocking for section in sections)
+    has_warnings = report_warnings or any(section.warnings for section in sections)
     sections = _display_sections(sections)
-    overall_pass = not report_errors and not any(section.failures for section in sections)
     status = "✅ PASSED" if overall_pass else "❌ FAILED"
-    if overall_pass and (report_warnings or not sections):
-        status = "⚠️ WARNINGS" if sections else "⚠️ NO RESULTS"
-    lines = [f"### {title} — {status}", ""]
+    if overall_pass and (has_warnings or not sections):
+        status = ("⚠️ WARNINGS" if report_warnings else "✅ PASSED WITH WARNINGS") if sections else "⚠️ NO RESULTS"
+    lines = [f"### {title} — {status}", problems, ""]
     details = []
     if sections:
         lines.extend(["| Section | Result | Details |", "| --- | --- | --- |"])
@@ -1184,15 +1404,11 @@ def render_markdown_summary(
             parts.append(("Tests", ", ".join(counts) if total else "no tests collected"))
             result = "✅" if total else "⚠️"
         if "lint" in section.kinds:
-            files = sum(p.total_files for p in section.lint_packages)
-            failed = sum(p.failures for p in section.lint_packages)
-            word = "check" if files == 1 else "checks"
-            detail = (
-                f"{failed} failed of {files} {word}" if failed else f"{files} {word} passed" if files else "0 issues"
-            )
+            files = [file for package in section.lint_packages for tool in package.tools for file in tool.files]
+            detail = _lint_summary(files)
             parts.append(("Lint", detail))
             if result == "—":
-                result = "✅"
+                result = "⚠️" if section.warnings else "✅"
         if "coverage" in section.kinds:
             covered = sum(p.lines_covered for p in section.cov_packages)
             valid = sum(p.lines_valid for p in section.cov_packages)
@@ -1203,18 +1419,26 @@ def render_markdown_summary(
                 rate = covered / valid
                 detail = f"{rate * 100:.1f}% ({covered:,}/{valid:,} lines)"
                 if section.coverage_comparison and section.coverage_comparison["status"] != "unavailable":
-                    detail += " · " + _coverage_delta(section.coverage_comparison)
+                    previous = section.coverage_comparison["baseline"]["line_rate"] * 100
+                    detail += f" · baseline {previous:.1f}%"
+                    detail += " · " + _md(_coverage_delta(section.coverage_comparison))
                 elif section.coverage_comparison:
                     result = "⚠️"
             parts.append(("Coverage", detail))
-        if section.failures:
+        if section.outcome:
+            parts.append(("Outcome", _md(section.outcome["status"] +
+                                         (": " + section.outcome["message"] if section.outcome.get("message") else ""))))
+            if result == "—":
+                result = "⏭️" if section.outcome["status"] == "skipped" else "✅"
+        if section.blocking:
             result = "❌"
         detail = "; ".join(f"{kind}: {text}" if len(parts) > 1 else text for kind, text in parts)
-        lines.append(f"| {_md(section.title)} | {result if parts else '⚠️'} | {detail or 'no identifiable results'} |")
+        empty = "report metadata supplied" if section.issues or section.baselines or section.comparisons else "no identifiable results"
+        lines.append(f"| {_md(section.title)} | {result} | {detail or empty} |")
 
         if section.coverage_comparison:
             label = f"**{_md(section.title)}** — " if section.title != "Coverage" else ""
-            details.extend(["", label + _coverage_comparison(section.coverage_comparison, markdown=True)])
+            details.extend(["", label + f"Baseline reference: {baseline_references[section.id, '']} (see Baselines)."])
         items = []
         for suite in sorted(section.suites, key=lambda s: (s.package, s.name)):
             for case in suite.cases:
@@ -1224,20 +1448,28 @@ def render_markdown_summary(
                 messages = (case.message or case.details).strip().splitlines()
                 first = _md(messages[0][:200]) if messages else ""
                 items.append(f"- {_md(label)} ({_md(suite.package)})" + (f" — {first}" if first else ""))
-        items.extend(
-            f"- {_md(lf.name)} — {_md(tool.name)}: {len(lf.details.splitlines()) or 1} error(s)"
-            for pkg in section.lint_packages
-            for tool in pkg.tools
-            for lf in tool.files
-            if lf.status == "failed"
-        )
         if items:
             details.extend(["", f"<details><summary>{_esc(section.title)} failures ({section.failures})</summary>", ""])
             details.extend(items[:max_items])
             if len(items) > max_items:
                 details.append(f"- …and {len(items) - max_items} more — see the full report artifact")
             details.extend(["", "</details>"])
-    return "\n".join(lines + details) + "\n"
+        for severity, label in (("error", "errors"), ("warning", "warnings (non-blocking)"),
+                                ("information", "information (non-blocking)")):
+            items = []
+            for package in section.lint_packages:
+                for tool in package.tools:
+                    for file in tool.files:
+                        findings = [_diagnostic_text(d) for d in file.diagnostics if d["severity"] == severity]
+                        if not file.diagnostics and file.count(severity):
+                            findings = [file.message or file.details or "Reported check"]
+                        items.extend(f"- {_md(file.name)} — {_md(tool.name)}: {_md(message)}" for message in findings)
+            if items:
+                details.extend(["", f"<details><summary>{_esc(section.title)} lint {label}</summary>", "", *items[:max_items]])
+                if len(items) > max_items:
+                    details.append(f"- …and {len(items) - max_items} more — see the full report artifact")
+                details.extend(["", "</details>"])
+    return "\n".join(lines + details + [metadata]) + "\n"
 
 
 # ---------------------------------------------------------------------------
@@ -1246,10 +1478,11 @@ def render_markdown_summary(
 
 
 def _save_report_data(json_path: Path, sections: list[ReportSection]) -> None:
-    data = {"report_sections": [dataclasses.asdict(section) for section in sections]}
+    data = {"schema_version": 1, "report_sections": [dataclasses.asdict(section) for section in sections]}
     for section in data["report_sections"]:
-        if section["coverage_comparison"] is None:
-            del section["coverage_comparison"]
+        for key in ("coverage_comparison", "outcome", "issues", "baselines", "comparisons"):
+            if not section[key]:
+                del section[key]
         for package in section["cov_packages"]:
             # Machine-local coverage links cannot resolve on another runner.
             package["html_dir"] = ""
@@ -1309,6 +1542,10 @@ def _load_report_sections(json_path: Path) -> list[ReportSection]:
                 cov_packages=coverage,
                 kinds=section["kinds"],
                 coverage_comparison=section.get("coverage_comparison"),
+                outcome=section.get("outcome"),
+                issues=section.get("issues", []),
+                baselines=section.get("baselines", []),
+                comparisons=section.get("comparisons", []),
             )
         )
     return sections

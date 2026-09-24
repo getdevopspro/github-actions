@@ -58,8 +58,11 @@ In the reusable Build workflow, set `baseline-enabled: true` and
 `baseline-artifact` to retrieve a reference once for pre/post commands. Lookup is
 off by default, independent of reporting and coverage. Commands receive
 `BASELINE_METADATA` and `BASELINE_PATH`; repository scripts compute comparisons
-and include `coverage_comparison` in their JSON. `build/report/publish` renders those
-values. Custom workflows can call `build/baseline` directly before their producer.
+and include comparisons in their JSON. `build/report/publish` renders those
+values using a documented [report contract](build/report/publish/FORMAT.md).
+Lint warnings/information are separate from blocking errors; baseline provenance
+is reusable across measurements. Existing `coverage_comparison` remains supported.
+Custom workflows can call `build/baseline` directly before their producer.
 The caller needs `actions: read` only when baseline retrieval is enabled;
 PR comments need `pull-requests: write` only when enabled. Prepare retrieves and
 shares enabled baselines in the same job. It inherits caller permissions even

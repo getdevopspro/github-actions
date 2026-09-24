@@ -5,6 +5,11 @@
   "additionalProperties": false,
   "properties": {
     "$schema": {"type": "string"},
+    "schema_version": {"type": "integer", "enum": [1]},
+    "outcome": {"$ref": "#/$defs/outcome"},
+    "issues": {"type": "array", "items": {"$ref": "#/$defs/issue"}},
+    "baselines": {"type": "array", "items": {"$ref": "#/$defs/baseline"}},
+    "comparisons": {"type": "array", "items": {"$ref": "#/$defs/comparison"}},
     "sections": {
       "type": "array",
       "items": {"enum": ["tests", "unit", "system", "lint", "coverage"]}
@@ -22,7 +27,11 @@
     {"required": ["system_suites"]},
     {"required": ["lint_packages"]},
     {"required": ["cov_packages"]},
-    {"required": ["report_sections"]}
+    {"required": ["report_sections"]},
+    {"required": ["outcome"]},
+    {"required": ["issues"]},
+    {"required": ["baselines"]},
+    {"required": ["comparisons"]}
   ],
   "$defs": {
     "sectionId": {"type": "string", "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_.-]*$"},
@@ -43,6 +52,10 @@
       "properties": {
         "id": {"$ref": "#/$defs/sectionId"},
         "title": {"$ref": "#/$defs/sectionTitle"},
+        "outcome": {"$ref": "#/$defs/outcome"},
+        "issues": {"type": "array", "items": {"$ref": "#/$defs/issue"}},
+        "baselines": {"type": "array", "items": {"$ref": "#/$defs/baseline"}},
+        "comparisons": {"type": "array", "items": {"$ref": "#/$defs/comparison"}},
         "coverage_comparison": {"$ref": "#/$defs/coverageComparison"},
         "kinds": {"type": "array", "items": {"enum": ["tests", "lint", "coverage"]}},
         "suites": {"type": "array", "items": {"$ref": "#/$defs/suite"}},
@@ -51,6 +64,86 @@
       }
     },
     "count": {"type": "integer", "minimum": 0},
+    "outcome": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status"],
+      "properties": {
+        "status": {"enum": ["passed", "failed", "error", "skipped"]},
+        "message": {"type": "string"}
+      }
+    },
+    "issue": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "severity", "message"],
+      "properties": {
+        "kind": {"enum": ["tool", "policy", "notice"]},
+        "severity": {"enum": ["error", "warning", "information"]},
+        "message": {"$ref": "#/$defs/sectionTitle"},
+        "tool": {"$ref": "#/$defs/sectionTitle"},
+        "exit_code": {"type": "integer"},
+        "details": {"type": "string"}
+      },
+      "anyOf": [
+        {"required": ["tool"], "properties": {"kind": {"enum": ["tool"]}, "severity": {"enum": ["error"]}}},
+        {"properties": {"kind": {"enum": ["policy"]}, "severity": {"enum": ["error"]}}},
+        {"properties": {"kind": {"enum": ["notice"]}, "severity": {"enum": ["warning", "information"]}}}
+      ]
+    },
+    "baseline": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "status"],
+      "properties": {
+        "id": {"$ref": "#/$defs/sectionId"},
+        "status": {"enum": ["exact", "approximate", "unavailable"]},
+        "sha": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "requested_sha": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "distance": {"$ref": "#/$defs/count"},
+        "run_url": {"type": "string", "pattern": "^https://[^\\s]+$"},
+        "created_at": {"$ref": "#/$defs/sectionTitle"},
+        "artifact_name": {"$ref": "#/$defs/sectionTitle"},
+        "reason": {"$ref": "#/$defs/sectionTitle"}
+      },
+      "anyOf": [
+        {"required": ["sha", "run_url"], "properties": {"status": {"enum": ["exact", "approximate"]}}},
+        {"required": ["reason"], "properties": {"status": {"enum": ["unavailable"]}}}
+      ]
+    },
+    "comparison": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "status"],
+      "properties": {
+        "name": {"$ref": "#/$defs/sectionTitle"},
+        "status": {"enum": ["available", "unavailable"]},
+        "baseline_id": {"$ref": "#/$defs/sectionId"},
+        "current": {"type": "number"},
+        "previous": {"type": "number"},
+        "delta": {"type": "number"},
+        "unit": {"type": "string"},
+        "delta_unit": {"type": "string"},
+        "details": {"type": "string"},
+        "reason": {"$ref": "#/$defs/sectionTitle"}
+      },
+      "anyOf": [
+        {"required": ["baseline_id", "current", "previous", "delta", "unit", "delta_unit"], "properties": {"status": {"enum": ["available"]}}},
+        {"required": ["reason"], "properties": {"status": {"enum": ["unavailable"]}}, "not": {"required": ["delta"]}}
+      ]
+    },
+    "diagnostic": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["severity", "message"],
+      "properties": {
+        "severity": {"enum": ["error", "warning", "information"]},
+        "message": {"type": "string"},
+        "rule": {"type": "string"},
+        "line": {"type": "integer", "minimum": 1},
+        "column": {"type": "integer", "minimum": 1}
+      }
+    },
     "duration": {"type": "number", "minimum": 0},
     "rate": {"type": "number", "minimum": 0, "maximum": 1},
     "case": {
@@ -87,7 +180,8 @@
       "required": ["name", "status"],
       "properties": {
         "name": {"type": "string"},
-        "status": {"enum": ["passed", "failed"]},
+        "status": {"enum": ["passed", "failed", "warning", "information"]},
+        "diagnostics": {"type": "array", "items": {"$ref": "#/$defs/diagnostic"}},
         "message": {"type": "string"},
         "details": {"type": "string"}
       }
