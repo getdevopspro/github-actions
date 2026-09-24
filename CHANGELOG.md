@@ -1,3 +1,9 @@
+## [v11.0.1](https://github.com/getdevopspro/github-actions/compare/v11.0.0..v11.0.1) - 2026-09-24
+
+### Bug Fixes
+
+- _(report)_ Clarify lint and coverage summaries ([`22ecf26`](https://github.com/getdevopspro/github-actions/commit/22ecf262784bafc3ca88b170332a42a12d139e3c))
+
 ## [v11.0.0](https://github.com/getdevopspro/github-actions/compare/v10.0.3..v11.0.0) - 2026-09-24
 
 ### Refactor
