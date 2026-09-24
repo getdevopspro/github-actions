@@ -1,47 +1,25 @@
 """Check pre/post matrix names and their command configuration."""
 
 import json
-import os
 from pathlib import Path
 import re
-import subprocess
 import sys
-import tempfile
-import textwrap
 import unittest
 
 
 WORKFLOW = Path(__file__).resolve().parents[1] / ".github/workflows/build.yml"
+PREPARE = WORKFLOW.parents[2] / "build/report/prepare"
+sys.path.insert(0, str(PREPARE))
+from prepare import prepare_inputs
+
+
 KINDS = ("checks", "lint", "test", "test-unit", "test-coverage", "test-integration", "test-e2e")
 
 
 class BuildStepTests(unittest.TestCase):
     def prepare(self, phase, inputs):
-        workflow = WORKFLOW.read_text()
-        step = workflow.split(f"      - name: Set {phase}-steps matrix\n", 1)[1].split("      - name:", 1)[0]
-        script = textwrap.dedent(step.split("        run: |\n", 1)[1])
-        script = re.sub(
-            r"\$\{\{\s*(.*?)\s*\}\}",
-            lambda match: next(
-                (inputs[key.strip().removeprefix("inputs.")] for key in match[1].split("||")
-                 if inputs.get(key.strip().removeprefix("inputs."))),
-                "",
-            ),
-            script,
-        )
-        with tempfile.TemporaryDirectory() as directory:
-            output = Path(directory) / "output"
-            subprocess.run(
-                [sys.executable, "-c", script],
-                env=dict(os.environ, GITHUB_OUTPUT=str(output)),
-                check=True,
-                capture_output=True,
-                text=True,
-            )
-            values = output.read_text()
-        matrix = json.loads(re.search(r"^matrix<<[^\n]+\n([^\n]+)", values, re.MULTILINE)[1])
-        names = json.loads(re.search(r"^names=(.*)$", values, re.MULTILINE)[1])
-        return names, matrix
+        outputs = prepare_inputs(inputs)
+        return json.loads(outputs[f"{phase}-step-names"]), json.loads(outputs[f"{phase}-step-matrix"])
 
     def test_empty_phases_have_no_matrix_jobs(self):
         for phase in ("pre", "post"):
@@ -85,6 +63,31 @@ class BuildStepTests(unittest.TestCase):
                 })
                 self.assertEqual(names, ["Python Lint", "Unit Tests"])
                 self.assertEqual([config["command"] for config in configurations], ["run-lint", "run-unit-tests"])
+
+    def test_input_text_is_preserved_as_data(self):
+        name = "Checks ''' with quotes"
+        command = 'printf "%s\\n" "$HOME"\njust test --label "quoted"'
+        for phase in ("pre", "post"):
+            with self.subTest(phase=phase):
+                names, configurations = self.prepare(phase, {
+                    f"{phase}-test-name": name,
+                    f"{phase}-test-command": command,
+                })
+                self.assertEqual(names, [name])
+                self.assertEqual(configurations[0]["command"], command)
+
+    def test_typed_workflow_inputs_keep_command_strings(self):
+        _, configurations = self.prepare("post", {
+            "post-test-command": "run-tests",
+            "post-test-docker-login": True,
+            "post-test-qemu-install": False,
+            "post-test-artifact-overwrite": False,
+            "post-test-artifact-retention-days": 30,
+        })
+        self.assertEqual(configurations[0]["docker-login"], "true")
+        self.assertEqual(configurations[0]["qemu-install"], "false")
+        self.assertEqual(configurations[0]["artifact-overwrite"], "false")
+        self.assertEqual(configurations[0]["artifact-retention-days"], "30")
 
     def test_phase_names_are_static_and_only_names_enter_the_matrix(self):
         workflow = WORKFLOW.read_text()

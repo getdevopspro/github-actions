@@ -1,0 +1,37 @@
+name: Prepare Build Steps and Reports
+description: Validate build inputs and prepare pre/post command matrices and report artifact selection.
+inputs:
+  build-inputs:
+    description: JSON object containing the reusable Build workflow inputs, including their defaults.
+    required: true
+outputs:
+  pre-step-matrix:
+    description: JSON array of enabled pre-step configurations in execution matrix order.
+    value: ${{ steps.prepare.outputs.pre-step-matrix }}
+  pre-step-names:
+    description: JSON array of pre-step display names in the same order as pre-step-matrix.
+    value: ${{ steps.prepare.outputs.pre-step-names }}
+  post-step-matrix:
+    description: JSON array of enabled post-step configurations in execution matrix order.
+    value: ${{ steps.prepare.outputs.post-step-matrix }}
+  post-step-names:
+    description: JSON array of post-step display names in the same order as post-step-matrix.
+    value: ${{ steps.prepare.outputs.post-step-names }}
+  artifacts:
+    description: Newline-separated report artifact names; empty when reporting is disabled.
+    value: ${{ steps.prepare.outputs.artifacts }}
+  artifact-sections:
+    description: JSON map of selected artifact names to producer IDs and configured titles.
+    value: ${{ steps.prepare.outputs.artifact-sections }}
+runs:
+  using: composite
+  steps:
+    - name: Prepare build inputs
+      id: prepare
+      shell: bash
+      env:
+        ACTION_PATH: ${{ github.action_path }}
+        BUILD_INPUTS: ${{ inputs.build-inputs }}
+      run: |
+        set -euo pipefail
+        python3 "$ACTION_PATH/prepare.py"

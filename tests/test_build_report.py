@@ -10,12 +10,14 @@ import subprocess
 import sys
 import tarfile
 import tempfile
-import textwrap
 import unittest
 
 
 REPO = Path(__file__).resolve().parents[1]
-ACTION = REPO / "build" / "report"
+ACTION = REPO / "build" / "report" / "publish"
+PREPARE = ACTION.parent / "prepare"
+sys.path.insert(0, str(PREPARE))
+from prepare import prepare_inputs
 sys.path.insert(0, str(ACTION))
 import collect
 
@@ -49,20 +51,8 @@ class SelectionTests(unittest.TestCase):
                 re.MULTILINE,
             )
         )
-        inputs = {**defaults, **inputs}
-        step = workflow.split("      - name: Prepare build inputs\n", 1)[1].split("      - name:", 1)[0]
-        script = textwrap.dedent(step.split("        run: |\n", 1)[1])
-        with tempfile.TemporaryDirectory() as directory:
-            output = Path(directory) / "output"
-            result = subprocess.run(
-                [sys.executable, "-c", script],
-                capture_output=True,
-                text=True,
-                env=dict(os.environ, BUILD_INPUTS=json.dumps(inputs), GITHUB_OUTPUT=str(output)),
-            )
-            if result.returncode:
-                raise ValueError(result.stderr)
-            return action_outputs(output)
+        outputs = prepare_inputs({**defaults, **inputs})
+        return {key: outputs[key] for key in ("artifacts", "artifact-sections")}
 
     @staticmethod
     def producer(prefix="post-test-unit", name="unit-results"):
@@ -214,6 +204,36 @@ class SelectionTests(unittest.TestCase):
         self.assertLess(
             workflow.index("      - name: Prepare build inputs"), workflow.index("      - name: Checkout repository")
         )
+        self.assertEqual(workflow.count("uses: $/build/report/prepare"), 1)
+
+    def test_prepare_action_outputs_match_direct_preparation(self):
+        inputs = {
+            "build-report-enabled": True,
+            **self.producer(),
+            "post-test-unit-name": "Unit Tests",
+            "post-test-unit-docker-login": True,
+            "post-test-unit-artifact-retention-days": 30,
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "output"
+            subprocess.run(
+                [sys.executable, "-B", str(PREPARE / "prepare.py")],
+                env=dict(os.environ, BUILD_INPUTS=json.dumps(inputs), GITHUB_OUTPUT=str(output)),
+                check=True, capture_output=True, text=True,
+            )
+            self.assertEqual(action_outputs(output), prepare_inputs(inputs))
+
+    def test_prepare_action_rejects_invalid_inputs_before_writing_outputs(self):
+        for inputs in ([], {"pre-lint-artifact-name": "lint-results"}):
+            with self.subTest(inputs=inputs), tempfile.TemporaryDirectory() as directory:
+                output = Path(directory) / "output"
+                result = subprocess.run(
+                    [sys.executable, "-B", str(PREPARE / "prepare.py")],
+                    env=dict(os.environ, BUILD_INPUTS=json.dumps(inputs), GITHUB_OUTPUT=str(output)),
+                    capture_output=True, text=True,
+                )
+                self.assertNotEqual(result.returncode, 0)
+                self.assertFalse(output.exists())
 
     def test_baseline_is_explicit_and_independent_of_report_enablement(self):
         # Coverage producers do not opt in, even with baseline options configured.

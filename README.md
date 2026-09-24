@@ -28,7 +28,8 @@ See [.github/workflows/README.md](.github/workflows/README.md) for the reusable 
 
 - [All Green](all-green/README.md) - checks that required PR checks have passed.
 - [Build Baseline](build/baseline/README.md) - retrieves reference artifacts and commit/run metadata for repository-owned comparisons.
-- [Build Report](build/report/README.md) - combines test, lint, and coverage artifacts into an HTML report and job summary, grouped by the producing pre/post steps with fields supplied by artifact content.
+- [Build Report Prepare](build/report/prepare/README.md) - validates build inputs and creates pre/post command matrices and report artifact selection.
+- [Build Report Publish](build/report/publish/README.md) - combines test, lint, and coverage artifacts into an HTML report and job summary, grouped by the producing pre/post steps with fields supplied by artifact content.
 - [Buildx Bake](buildx-bake/README.md) - single-job Docker Buildx Bake image build.
 - [Buildx Bake Prepare](buildx-bake/prepare/README.md) - creates a platform matrix and Docker metadata artifact.
 - [Buildx Bake Build](buildx-bake/build/README.md) - builds and pushes per-platform image digests.
@@ -49,7 +50,7 @@ See [.github/workflows/README.md](.github/workflows/README.md) for the reusable 
 ## Build report migration
 
 When upgrading to a release containing this change, replace direct `build-report`
-action references with `build/report`. The old `baseline-artifact` and
+or `build/report` action references with `build/report/publish`. The old `baseline-artifact` and
 `baseline-workflow` action inputs, and their `build-report-` workflow equivalents,
 are removed. Existing pinned consumers keep their current behavior until upgraded.
 
@@ -57,7 +58,7 @@ In the reusable Build workflow, set `baseline-enabled: true` and
 `baseline-artifact` to retrieve a reference once for pre/post commands. Lookup is
 off by default, independent of reporting and coverage. Commands receive
 `BASELINE_METADATA` and `BASELINE_PATH`; repository scripts compute comparisons
-and include `coverage_comparison` in their JSON. `build/report` renders those
+and include `coverage_comparison` in their JSON. `build/report/publish` renders those
 values. Custom workflows can call `build/baseline` directly before their producer.
 The caller needs `actions: read` only when baseline retrieval is enabled;
 PR comments need `pull-requests: write` only when enabled. Prepare retrieves and
@@ -65,7 +66,7 @@ shares enabled baselines in the same job. It inherits caller permissions even
 when lookup is disabled. Command and image jobs retain their permissions.
 See the [workflow inputs](.github/workflows/README.md#baselines).
 See the [baseline example](build/baseline/README.md#usage) and
-[comparison contract](build/report/README.md#coverage-comparisons).
+[comparison contract](build/report/publish/README.md#coverage-comparisons).
 
 ## Common Entry Points
 

@@ -117,19 +117,19 @@ with:
 
 Use a release containing these inputs; existing pinned consumers keep their
 current behavior until upgraded. A repository script can emit the optional
-[coverage comparison fields](../../build/report/README.md#coverage-comparisons)
+[coverage comparison fields](../../build/report/publish/README.md#coverage-comparisons)
 alongside its results and enable reporting separately.
 
 ### Build reports
 
-The `Build Report` job calls the [Build Report action](../../build/report/README.md)
+The `Build Report` job calls the [Build Report action](../../build/report/publish/README.md)
 after pre/post commands, including failed commands, and exposes `build-report-url`.
 Report sections follow each selected pre/post producer and its configured
 `*-name`. Artifact `section_title` can override the title; artifact content
 supplies the applicable test, lint, and coverage fields. Clean lint results
 remain visible; absent fields are omitted. See the action's
-[formats and schema](../../build/report/README.md#report-formats-and-sections)
-for custom JSON producers and its [warning policy](../../build/report/README.md#results-and-logging).
+[formats and schema](../../build/report/publish/README.md#report-formats-and-sections)
+for custom JSON producers and its [warning policy](../../build/report/publish/README.md#results-and-logging).
 It produces combined test, lint, and coverage results. It uses
 `runner-report-default`, falling back to `runner-default`, and needs Python 3.10+.
 
@@ -147,7 +147,8 @@ and native results alike. IDs stay stable when names change; pre and post sectio
 remain distinct. Tests, lint, and coverage in one artifact stay under its producer.
 Commands still generate the result files; configuration never supplies results.
 
-Prepare validates artifact configuration before checkout and image builds. For
+The [Prepare action](../../build/report/prepare/README.md) validates inputs and
+builds both pre/post command matrices before checkout and image builds. For
 every pre/post step that declares an artifact name or path, a nonempty command,
 valid artifact name, and path are required, even when reporting is disabled.
 Command-only steps need no artifact fields. When reporting is enabled, prepare

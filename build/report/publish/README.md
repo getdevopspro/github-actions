@@ -1,4 +1,4 @@
-# Build Report
+# Build Report Publish
 
 Combines uploaded test, lint, and coverage results into one HTML artifact and a
 GitHub job summary. Use it after the jobs that produce those results, including
@@ -7,9 +7,11 @@ tests. The runner needs Python 3.10 or newer; no consumer checkout is required.
 
 ## Usage
 
-The shared [Build workflow](../../.github/workflows/README.md#build) calls this action
+The shared [Build workflow](../../../.github/workflows/README.md#build) calls this action
 when `build-report-enabled: true` is set; reporting is disabled by default.
-Prepare validates all configured pre/post artifact uploads before checkout.
+The [Prepare action](../prepare/README.md) validates configured pre/post artifact
+uploads before checkout. Direct callers upgrading from `build/report` must use
+`build/report/publish`; the reusable Build workflow keeps its existing inputs.
 Other workflows can call the action directly after adopting a release containing
 the new path (replace the version below with that release):
 
@@ -22,7 +24,7 @@ jobs:
     runs-on: ubuntu-24.04
     permissions: {}
     steps:
-      - uses: getdevopspro/github-actions/build/report@v9.1.0
+      - uses: getdevopspro/github-actions/build/report/publish@v9.1.0
         with:
           artifact-names: |
             unit-test-results
@@ -148,7 +150,7 @@ do not fail the action. Repository scripts enforce any coverage thresholds.
 Repository scripts generate coverage, choose compatible measurements, calculate
 deltas, and apply thresholds. This action renders their values without retrieving
 a baseline or recomputing a comparison. The optional
-[Baseline action](../baseline/README.md) supplies artifact data and provenance.
+[Baseline action](../../baseline/README.md) supplies artifact data and provenance.
 
 Add one `coverage_comparison` to the JSON containing that producer's coverage:
 
@@ -218,6 +220,6 @@ set. With reporting enabled, `pull-requests: write` is needed only for
 requires `actions: read` only in the job calling the Baseline action. The report job inherits caller
 permissions. Every intermediate reusable-workflow calling job must preserve the
 required scopes by inheriting or explicitly granting them; a called workflow
-cannot restore scopes removed by a caller. See the [caller example](../../.github/workflows/README.md#build-reports).
+cannot restore scopes removed by a caller. See the [caller example](../../../.github/workflows/README.md#build-reports).
 
 Run `make test-report` for offline artifact, parser, failure, and comment tests.

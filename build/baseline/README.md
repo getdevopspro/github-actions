@@ -8,7 +8,7 @@ thresholds. Resolving a checkout requires Git; artifact lookup requires
 
 ## Usage
 
-Use a release containing the new `build/baseline` path. The repository supplies
+Use a release containing `build/baseline` and `build/report/publish`. The repository supplies
 `scripts/build-report`, which reads the metadata and artifact, generates current
 results, computes comparisons, and writes report JSON. The command below shows
 that script's expected interface; it is not supplied by this action.
@@ -35,7 +35,7 @@ steps:
     with:
       name: results
       path: build/results.json
-  - uses: getdevopspro/github-actions/build/report@v9.1.0
+  - uses: getdevopspro/github-actions/build/report/publish@v9.1.0
     with:
       artifact-names: results
 ```
@@ -120,7 +120,7 @@ an existing output directory fail immediately.
 
 Repository scripts own measurement scope, compatible tool/configuration checks,
 comparison arithmetic, missing-data handling, and threshold enforcement. For
-coverage, emit the optional [report comparison fields](../report/README.md#coverage-comparisons).
+coverage, emit the optional [report comparison fields](../report/publish/README.md#coverage-comparisons).
 Other comparisons require their own producer and report contract; this action
 only supplies the baseline artifact and provenance.
 
