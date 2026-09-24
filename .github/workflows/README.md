@@ -66,16 +66,17 @@ and provenance through [Build Baseline](../../build/baseline/README.md).
 
 When enabled, prepare validates the artifact name, workflow, and presence of at
 least one pre/post command before checkout. It then resolves the reference from
-that checkout and event. The optional `Build Baseline` job retrieves the artifact
-once without another checkout, using `runner-prepare-default` or `runner-default`.
+that checkout and event, retrieves the artifact once, and uploads the bundle for
+pre/post commands. All of this runs in Prepare on `runner-prepare-default` or
+`runner-default`; baseline retrieval does not start a separate job.
 See the action's [selection rules](../../build/baseline/README.md#selection).
 
 Add `actions: read` to the caller's permissions **only when baseline retrieval is
-enabled**. This optional job inherits caller permissions; existing prepare,
-command, and image jobs retain `contents: read` and `packages: write`. Report
-comments independently require `pull-requests: write` when enabled. Every
-intermediate calling workflow must preserve the required scopes. Prepare checks
-configuration, not live token access.
+enabled**. Prepare inherits caller permissions, including any additional scopes,
+even when baseline retrieval is disabled. Command and image jobs retain
+`contents: read` and `packages: write`. Report comments independently require
+`pull-requests: write` when enabled. Every intermediate calling workflow must
+preserve the required scopes. Prepare checks configuration, not live token access.
 
 Pre/post commands receive these environment variables:
 
@@ -168,9 +169,8 @@ permissions. Optional features require these caller permissions:
 | `pull-requests: write` | `build-report-enabled: true` and `build-report-pr-comment: true`, on `pull_request` events |
 
 PR comments are disabled by default. Coverage comparisons come from artifact
-content produced by repository scripts. Existing build jobs retain their own
-`contents: read` and `packages: write` permissions; reporting adds no access to
-those jobs.
+content produced by repository scripts. Prepare inherits caller permissions;
+command and image jobs retain `contents: read` and `packages: write`.
 
 The old `build-report-baseline-artifact` and `build-report-baseline-workflow`
 inputs are removed. Enable the independent [baseline inputs](#baselines) when

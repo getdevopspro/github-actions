@@ -60,8 +60,10 @@ off by default, independent of reporting and coverage. Commands receive
 and include `coverage_comparison` in their JSON. `build/report` renders those
 values. Custom workflows can call `build/baseline` directly before their producer.
 The caller needs `actions: read` only when baseline retrieval is enabled;
-PR comments need `pull-requests: write` only when enabled. Existing build jobs
-retain their permissions. See the [workflow inputs](.github/workflows/README.md#baselines).
+PR comments need `pull-requests: write` only when enabled. Prepare retrieves and
+shares enabled baselines in the same job. It inherits caller permissions even
+when lookup is disabled. Command and image jobs retain their permissions.
+See the [workflow inputs](.github/workflows/README.md#baselines).
 See the [baseline example](build/baseline/README.md#usage) and
 [comparison contract](build/report/README.md#coverage-comparisons).
 

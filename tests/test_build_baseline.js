@@ -186,22 +186,40 @@ test('malformed prepared references fail before allocating an output directory',
   assert.deepEqual(fs.readdirSync(f.root), ['repo']);
 });
 
-test('disabled baseline leaves command jobs runnable; enabled lookup failure or cancellation blocks them', () => {
+test('commands run with baseline disabled or unavailable and stop after failed preparation or cancellation', () => {
   const workflow = fs.readFileSync(path.join(__dirname, '../.github/workflows/build.yml'), 'utf8');
   for (const phase of ['pre', 'post']) {
     const job = workflow.split(`\n  ${phase}-steps:\n`)[1].split(/\n  [\w-]+:\n/)[0];
     const expression = job.match(/^    if: \$\{\{ (.*) \}\}$/m)[1]
       .replace(/\.([\w]+(?:-[\w]+)+)/g, "['$1']");
     const evaluate = new Function('inputs', 'needs', 'failure', 'cancelled', `return !!(${expression})`);
-    for (const [enabled, status, cancelled, hasCommands, expected] of [
-      [false, 'skipped', false, true, true], [true, 'success', false, true, true],
-      [true, 'failure', false, true, false], [true, 'success', true, true, false],
-      [false, 'skipped', false, false, false], [true, 'success', false, false, false],
+    const pathExpression = job.match(/^          BASELINE_PATH: \$\{\{ (.*) \}\}$/m)[1]
+      .replace(/\.([\w]+(?:-[\w]+)+)/g, "['$1']");
+    const evaluatePath = new Function('inputs', 'needs', 'steps', 'format', `return (${pathExpression})`);
+    for (const [enabled, status, baselineStatus, cancelled, hasCommands, expected] of [
+      [false, 'success', '', false, true, true],
+      [true, 'success', 'exact', false, true, true],
+      [true, 'success', 'approximate', false, true, true],
+      [true, 'success', 'unavailable', false, true, true],
+      [true, 'failure', '', false, true, false],
+      [false, 'failure', '', false, true, false],
+      [true, 'success', 'exact', true, true, false],
+      [false, 'success', '', false, false, false],
+      [true, 'success', 'exact', false, false, false],
     ]) {
-      assert.equal(evaluate({'baseline-enabled': enabled}, {
-        prepare: {result: 'success', outputs: {[`${phase}-step-matrix`]: hasCommands ? '[{}]' : '[]'}},
-        baseline: {result: status},
-      }, () => status === 'failure', () => cancelled), expected, `${phase}: ${enabled}/${status}/${cancelled}/${hasCommands}`);
+      const inputs = {'baseline-enabled': enabled};
+      const needs = {
+        prepare: {result: status, outputs: {
+          [`${phase}-step-matrix`]: hasCommands ? '[{}]' : '[]', 'baseline-status': baselineStatus,
+        }},
+      };
+      assert.equal(evaluate(inputs, needs, () => status === 'failure', () => cancelled), expected,
+        `${phase}: ${enabled}/${status}/${cancelled}/${hasCommands}`);
+      if (expected) {
+        assert.equal(evaluatePath(inputs, needs, {baseline_bundle: {outputs: {'download-path': '/tmp/baseline'}}},
+          (template, value) => template.replace('{0}', value)),
+        enabled && baselineStatus !== 'unavailable' ? '/tmp/baseline/artifacts' : '');
+      }
     }
   }
 });

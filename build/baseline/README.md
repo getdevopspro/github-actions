@@ -52,10 +52,12 @@ Artifact files remain data: never execute scripts downloaded from a baseline.
 
 The [Build workflow](../../.github/workflows/README.md#baselines) calls this action
 when `baseline-enabled: true`. Prepare resolves the reference using its existing
-checkout, then a separate job retrieves the artifact once and shares it with
-pre/post commands. Reporting and coverage configuration do not enable lookup.
+checkout, retrieves the artifact once, and uploads the bundle for pre/post
+commands in the same job. Prepare inherits caller permissions; `actions: read`
+is required only when lookup is enabled. Reporting and coverage configuration
+do not enable lookup.
 
-For custom workflows needing the same split, `resolve-only: 'true'` returns only
+For custom workflows splitting resolution and retrieval, `resolve-only: 'true'` returns only
 the `reference` output (`{"branch":"main","commits":["<40-character SHA>"]}`). It
 uses local Git without API calls, artifact inputs, downloads, or metadata files.
 Pass that JSON through a job output to a second invocation's `reference` input,

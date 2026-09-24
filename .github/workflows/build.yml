@@ -928,9 +928,7 @@ on:
 jobs:
   prepare:
     name: Prepare Steps
-    permissions:
-      contents: read
-      packages: write
+    # Inherit caller permissions so actions: read is required only when baseline lookup is enabled.
     runs-on: ${{ inputs.runner-prepare-default || inputs.runner-default }}
     outputs:
       version: ${{ steps.release_version.outputs.version }}
@@ -940,7 +938,7 @@ jobs:
       image-platform-matrix: ${{ steps.prepare_image.outputs.matrix }}
       build-report-artifacts: ${{ steps.prepare_report.outputs.artifacts }}
       build-report-sections: ${{ steps.prepare_report.outputs.artifact-sections }}
-      baseline-reference: ${{ steps.baseline_reference.outputs.reference }}
+      baseline-status: ${{ steps.baseline.outputs.status }}
     steps:
       - name: Validate versioning strategy
         shell: bash
@@ -1035,12 +1033,27 @@ jobs:
           submodules: ${{ inputs.submodules }}
           token: ${{ secrets.checkout-token || secrets.GITHUB_TOKEN }}
 
-      - name: Resolve baseline reference
-        id: baseline_reference
+      - name: Retrieve baseline
+        id: baseline
         if: inputs.baseline-enabled
         uses: $/build/baseline
         with:
-          resolve-only: 'true'
+          artifact-name: ${{ inputs.baseline-artifact }}
+          workflow: ${{ inputs.baseline-workflow }}
+          allow-ancestor: ${{ inputs.baseline-allow-ancestor }}
+
+      - name: Share baseline with commands
+        if: inputs.baseline-enabled
+        uses: actions/upload-artifact@v7
+        with:
+          name: build-baseline-${{ inputs.source-artifact-name }}
+          path: |
+            ${{ steps.baseline.outputs.metadata-file }}
+            ${{ steps.baseline.outputs.path }}
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 1
+          overwrite: true
 
       - name: Determine commit SHA
         id: determine_sha
@@ -1457,44 +1470,13 @@ jobs:
           if-no-files-found: error
           retention-days: 1
 
-  baseline:
-    name: Build Baseline
-    needs: prepare
-    if: inputs.baseline-enabled
-    # Inherit optional actions: read from the caller, without requiring it when disabled.
-    # Existing prepare, command, and image jobs retain their explicit permissions.
-    runs-on: ${{ inputs.runner-prepare-default || inputs.runner-default }}
-    outputs:
-      status: ${{ steps.baseline.outputs.status }}
-    steps:
-      - name: Retrieve baseline
-        id: baseline
-        uses: $/build/baseline
-        with:
-          reference: ${{ needs.prepare.outputs.baseline-reference }}
-          artifact-name: ${{ inputs.baseline-artifact }}
-          workflow: ${{ inputs.baseline-workflow }}
-          allow-ancestor: ${{ inputs.baseline-allow-ancestor }}
-
-      - name: Share baseline with commands
-        uses: actions/upload-artifact@v7
-        with:
-          name: build-baseline-${{ inputs.source-artifact-name }}
-          path: |
-            ${{ steps.baseline.outputs.metadata-file }}
-            ${{ steps.baseline.outputs.path }}
-          include-hidden-files: true
-          if-no-files-found: error
-          retention-days: 1
-          overwrite: true
-
   pre-steps:
     name : ${{ matrix.pre-steps.name }}
     permissions:
       contents: read
       packages: write
-    needs: [prepare, baseline]
-    if: ${{ !cancelled() && needs.prepare.result == 'success' && (!inputs.baseline-enabled || needs.baseline.result == 'success') && needs.prepare.outputs.pre-step-matrix != '[]' }}
+    needs: prepare
+    if: ${{ !cancelled() && needs.prepare.result == 'success' && needs.prepare.outputs.pre-step-matrix != '[]' }}
     runs-on: ${{ matrix.pre-steps.runner || inputs.runner-pre-default || inputs.runner-default }}
     strategy:
       matrix:
@@ -1547,7 +1529,7 @@ jobs:
         id: command
         env:
           BASELINE_METADATA: ${{ inputs.baseline-enabled && format('{0}/metadata.json', steps.baseline_bundle.outputs.download-path) || '' }}
-          BASELINE_PATH: ${{ inputs.baseline-enabled && needs.baseline.outputs.status != 'unavailable' && format('{0}/artifacts', steps.baseline_bundle.outputs.download-path) || '' }}
+          BASELINE_PATH: ${{ inputs.baseline-enabled && needs.prepare.outputs.baseline-status != 'unavailable' && format('{0}/artifacts', steps.baseline_bundle.outputs.download-path) || '' }}
         uses: $/command
         with:
           command: ${{ matrix.pre-steps.command }}
@@ -1626,7 +1608,6 @@ jobs:
     needs:
       - prepare
       - image-push
-      - baseline
     if: ${{ !failure() && !cancelled() && needs.prepare.outputs.post-step-matrix != '[]' }}
     runs-on: ${{ matrix.post-steps.runner || inputs.runner-post-default || inputs.runner-default }}
     strategy:
@@ -1680,7 +1661,7 @@ jobs:
         id: command
         env:
           BASELINE_METADATA: ${{ inputs.baseline-enabled && format('{0}/metadata.json', steps.baseline_bundle.outputs.download-path) || '' }}
-          BASELINE_PATH: ${{ inputs.baseline-enabled && needs.baseline.outputs.status != 'unavailable' && format('{0}/artifacts', steps.baseline_bundle.outputs.download-path) || '' }}
+          BASELINE_PATH: ${{ inputs.baseline-enabled && needs.prepare.outputs.baseline-status != 'unavailable' && format('{0}/artifacts', steps.baseline_bundle.outputs.download-path) || '' }}
         uses: $/command
         with:
           command: ${{ matrix.post-steps.command }}
@@ -1694,8 +1675,7 @@ jobs:
     name: Build Report
     needs: [prepare, pre-steps, post-steps]
     if: ${{ !cancelled() && inputs.build-report-enabled && needs.prepare.result == 'success' }}
-    # Inherit optional reporting scopes from the caller. The existing jobs keep
-    # their original explicit permissions; reporting does not grant them more access.
+    # Inherit optional reporting scopes from the caller.
     runs-on: ${{ inputs.runner-report-default || inputs.runner-default }}
     outputs:
       artifact-url: ${{ steps.report.outputs.artifact-url }}
