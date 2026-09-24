@@ -1,3 +1,9 @@
+## [v11.0.2](https://github.com/getdevopspro/github-actions/compare/v11.0.1..v11.0.2) - 2026-09-24
+
+### Bug Fixes
+
+- _(report)_ Preserve lint severity and separate baseline metadata ([`ad9c144`](https://github.com/getdevopspro/github-actions/commit/ad9c14435fb82bb7d94bb0d25d0dfafa3aaeb43f))
+
 ## [v11.0.1](https://github.com/getdevopspro/github-actions/compare/v11.0.0..v11.0.1) - 2026-09-24
 
 ### Bug Fixes
