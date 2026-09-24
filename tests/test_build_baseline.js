@@ -65,7 +65,13 @@ async function lookup(f, options = {}) {
         options.artifacts || [{name: env.BASELINE_ARTIFACT, expired: false}]}),
     }}}});
     if (env.BASELINE_RESOLVE_ONLY === 'true') return {outputs, calls, messages};
-    Object.assign(process.env, {BASELINE_ROOT: outputs.root, BASELINE_RESULT: JSON.stringify(outputs.result),
+    // github-script writes its reserved result output after the script completes.
+    core.setOutput('result', '');
+    const action = fs.readFileSync(path.join(__dirname, '../build/baseline/action.yml'), 'utf8');
+    const resultKey = action.match(/BASELINE_RESULT: \$\{\{ steps.find.outputs.([\w-]+) \}\}/)[1];
+    const result = outputs[resultKey];
+    Object.assign(process.env, {BASELINE_ROOT: outputs.root,
+      BASELINE_RESULT: typeof result === 'string' ? result : JSON.stringify(result),
       BASELINE_DOWNLOAD_OUTCOME: options.download || (outputs['run-id'] ? 'success' : 'skipped')});
     baseline.finish({core});
     return {outputs, calls, messages, metadata: JSON.parse(fs.readFileSync(outputs['metadata-file']))};

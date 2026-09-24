@@ -101,7 +101,7 @@ async function find({github, context, core}) {
       result.reason = `Baseline lookup failed (HTTP ${error.status ?? 'unknown'})`;
     }
   }
-  core.setOutput('result', result);
+  core.setOutput('baseline-result', result);
 }
 
 function finish({core}) {

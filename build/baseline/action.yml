@@ -92,7 +92,7 @@ runs:
       env:
         ACTION_PATH: ${{ github.action_path }}
         BASELINE_ROOT: ${{ steps.find.outputs.root }}
-        BASELINE_RESULT: ${{ steps.find.outputs.result }}
+        BASELINE_RESULT: ${{ steps.find.outputs.baseline-result }}
         BASELINE_DOWNLOAD_OUTCOME: ${{ steps.download.outcome }}
       with:
         script: |
