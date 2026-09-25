@@ -1,3 +1,9 @@
+## [v11.1.0](https://github.com/getdevopspro/github-actions/compare/v11.0.2..v11.1.0) - 2026-09-25
+
+### Features
+
+- _(version-file)_ Add Ansible collection version updates ([`6e50609`](https://github.com/getdevopspro/github-actions/commit/6e50609bdb9ea220f9d85ca62f727fbbc2ee3a83))
+
 ## [v11.0.2](https://github.com/getdevopspro/github-actions/compare/v11.0.1..v11.0.2) - 2026-09-24
 
 ### Bug Fixes
