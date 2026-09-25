@@ -52,6 +52,10 @@ on:
         description: 'Set version in file named as input'
         required: false
         type: string
+      version-galaxy:
+        description: 'Set the collection version in the galaxy.yml file named as input'
+        required: false
+        type: string
       version-makefile:
         description: 'Set version in makefile named as input'
         required: false
@@ -1036,6 +1040,7 @@ jobs:
         uses: $/version-file
         with:
           version: ${{ steps.release_version.outputs.version }}
+          version-galaxy: ${{ inputs.version-galaxy }}
           version-makefile: ${{ inputs.version-makefile }}
           version-justfile: ${{ inputs.version-justfile }}
           version-package: ${{ inputs.version-package }}

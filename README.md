@@ -45,7 +45,7 @@ See [.github/workflows/README.md](.github/workflows/README.md) for the reusable 
 - [Test Label Check](test/label/check/README.md) - enforces required manual test labels.
 - [Test Done Label Added](test/label/done/added/README.md) - posts confirmation when a test-done label is present.
 - [Test Done Label Remove](test/label/done/remove/README.md) - removes test-done when new commits require retesting.
-- [Version File](version-file/README.md) - writes a version into common project files.
+- [Version File](version-file/README.md) - writes a version into common project files, including Ansible collection `galaxy.yml` metadata.
 
 ## Build report migration
 

@@ -26,6 +26,8 @@ Calculates a build version, optionally updates version files, runs configurable 
 
 `version-strategy` accepts `semver` (default) or `calver`. CalVer uses UTC `YYYY.M.PATCH` from Git release tags and preserves this workflow's default `-build` output suffix. `version-semver-previous` and `version-semver-next` apply only to SemVer; `version-output-format` and `version-tag-prefix` apply to both. Strategy-specific inputs use `version-semver-` or `version-calver-` prefixes; there are currently no CalVer-only inputs. Keep the default full-history checkout so all release tags are available. See the [CalVer action](../../release/version/calver/README.md) for the calculation and supported template fields.
 
+Set `version-galaxy: path/to/galaxy.yml` to update Ansible collection metadata included in the build. See [Version File](../../version-file/README.md) for accepted versions and file formats. Use a release containing this input.
+
 ```yaml
 jobs:
   build:
@@ -280,3 +282,5 @@ jobs:
 ```
 
 To opt into CalVer, add `version-strategy: calver` to `with:` above. The same input selects CalVer in the Build workflow. Serialize publication in the calling workflow to prevent concurrent releases from choosing the same version.
+
+For an Ansible collection, use `version-galaxy: galaxy.yml` instead of `version-makefile` and include `galaxy.yml` in `git-add-files`. The workflow updates the collection version before creating the release commit and tag; collection packaging and publishing remain separate. See [Version File](../../version-file/README.md) for accepted versions and file formats, and use a release containing this input.

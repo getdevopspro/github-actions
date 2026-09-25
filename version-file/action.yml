@@ -7,6 +7,9 @@ inputs:
   version-file:
     description: 'Set version in file named as input'
     required: false
+  version-galaxy:
+    description: 'Set the collection version in the galaxy.yml file named as input'
+    required: false
   version-makefile:
     description: 'Set version in makefile named as input'
     required: false
@@ -28,35 +31,129 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Set version in file
-      shell: bash
+    - name: Set Ansible collection version
+      if: inputs.version-galaxy != ''
+      shell: python3 {0}
+      env:
+        GALAXY_FILE: ${{ inputs.version-galaxy }}
+        GALAXY_VERSION: ${{ inputs.version }}
       run: |
-        if [ -n "${{ inputs.version-file }}" ]; then
-          echo "set version in file '${{ inputs.version-file }}' to: ${{ inputs.version }}"
-          echo '${{ inputs.version }}' > "${{ inputs.version-file }}"
+        """Update a collection's one-line version scalar without reformatting metadata."""
+
+        import os
+        from pathlib import Path
+        import re
+        import sys
+
+
+        def main():
+            version = os.environ["GALAXY_VERSION"]
+            number = r"(?:0|[1-9][0-9]*)"
+            identifier = rf"(?:{number}|[0-9]*[A-Za-z-][0-9A-Za-z-]*)"
+            semver = (
+                rf"{number}\.{number}\.{number}"
+                rf"(?:-{identifier}(?:\.{identifier})*)?"
+                r"(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?"
+            )
+            if not re.fullmatch(semver, version):
+                sys.exit("version-galaxy: version must use SemVer syntax without a v prefix")
+
+            path = Path(os.environ["GALAXY_FILE"])
+            contents = path.read_bytes()
+            fields = list(re.finditer(
+                rb"^(?:version|'version'|\"version\")[ \t]*:[^\r\n]*",
+                contents, re.MULTILINE,
+            ))
+            if len(fields) != 1:
+                sys.exit("version-galaxy: expected exactly one top-level version field")
+
+            field = fields[0]
+            scalar = re.fullmatch(
+                rb"([^:]+:[ \t]+)(['\"]?)[0-9A-Za-z.+-]+\2((?:[ \t]+#.*)?[ \t]*)",
+                field.group(),
+            )
+            if not scalar:
+                sys.exit("version-galaxy: expected a one-line version scalar")
+            for line in contents[field.end():].splitlines():
+                if not line.strip() or line.lstrip().startswith(b"#"):
+                    continue
+                if line.startswith((b" ", b"\t")):
+                    sys.exit("version-galaxy: expected a one-line version scalar")
+                break
+
+            prefix, quote, suffix = scalar.groups()
+            updated = prefix + quote + version.encode("ascii") + quote + suffix
+            path.write_bytes(contents[:field.start()] + updated + contents[field.end():])
+
+
+        if __name__ == "__main__":
+            try:
+                main()
+            except OSError as error:
+                sys.exit(f"version-galaxy: {error}")
+    - name: Set version in file
+      if: inputs.version-file != ''
+      shell: bash
+      env:
+        VERSION: ${{ inputs.version }}
+        VERSION_FILE: ${{ inputs.version-file }}
+      run: |
+        set -euo pipefail
+        printf '%s\n' "${VERSION}" > "${VERSION_FILE}"
+    - name: Set version in Makefile
+      if: inputs.version-makefile != ''
+      shell: bash
+      env:
+        VERSION: ${{ inputs.version }}
+        VERSION_FILE: ${{ inputs.version-makefile }}
+      run: |
+        set -euo pipefail
+        sed -i -- "s@^VERSION .*@VERSION ?= ${VERSION}@" "${VERSION_FILE}"
+    - name: Set version in justfile
+      if: inputs.version-justfile != ''
+      shell: bash
+      env:
+        VERSION: ${{ inputs.version }}
+        VERSION_FILE: ${{ inputs.version-justfile }}
+      run: |
+        set -euo pipefail
+        sed -i -- "s@^version .*@version := \"${VERSION}\"@" "${VERSION_FILE}"
+    - name: Set version in package.json
+      if: inputs.version-package != ''
+      shell: bash
+      env:
+        VERSION: ${{ inputs.version }}
+        VERSION_FILE: ${{ inputs.version-package }}
+      run: |
+        set -euo pipefail
+        sed -i -- "s@\"version\":.*@\"version\": \"${VERSION}\",@" "${VERSION_FILE}"
+    - name: Set version in package-lock.json
+      if: inputs.version-package-lock != ''
+      shell: bash
+      env:
+        VERSION: ${{ inputs.version }}
+        VERSION_FILE: ${{ inputs.version-package-lock }}
+      run: |
+        set -euo pipefail
+        if [ -f "${VERSION_FILE}" ]; then
+          sed -i -- "1,15s@\"version\":.*\"@\"version\": \"${VERSION}\"@" "${VERSION_FILE}"
         fi
-        if [ -n "${{ inputs.version-makefile }}" ]; then
-          echo "set version in makefile '${{ inputs.version-makefile }}' to: ${{ inputs.version }}"
-          sed -i "s@^VERSION .*@VERSION ?= ${{ inputs.version }}@" "${{ inputs.version-makefile }}"
-        fi
-        if [ -n "${{ inputs.version-justfile }}" ]; then
-          echo "set version in justfile '${{ inputs.version-justfile }}' to: ${{ inputs.version }}"
-          sed -i "s@^version .*@version := \"${{ inputs.version }}\"@" "${{ inputs.version-justfile }}"
-        fi
-        if [ -n "${{ inputs.version-package }}" ]; then
-          echo "set version in file '${{ inputs.version-package }}' to: ${{ inputs.version }}"
-          sed -i "s@\"version\":.*@\"version\": \"${{ inputs.version }}\",@" "${{ inputs.version-package }}"
-        fi
-        if [ -n "${{ inputs.version-package-lock }}" ] && [ -f "${{ inputs.version-package-lock }}" ]; then
-          echo "set version in file '${{ inputs.version-package-lock }}' to: ${{ inputs.version }}"
-          sed -i "1,15s@\"version\":.*\"@\"version\": \"${{ inputs.version }}\"@" "${{ inputs.version-package-lock }}"
-        fi
-        if [ -n "${{ inputs.version-script }}" ]; then
-          echo "set version in script '${{ inputs.version-script }}' to: ${{ inputs.version }}"
-          sed -i "s@^VERSION=.*@VERSION=${{ inputs.version }}@" "${{ inputs.version-script }}"
-        fi
-        if [ -n "${{ inputs.version-chart }}" ]; then
-          echo "set version in chart '${{ inputs.version-chart }}' to: ${{ inputs.version }}"
-          sed -i "s/^version:.*/version: ${{ inputs.version }}/" charts/${{ inputs.version-chart }}/Chart.yaml
-          sed -i "s/tag:.*/tag: ${{ inputs.version }}/" charts/${{ inputs.version-chart }}/values.yaml
-        fi
+    - name: Set version in script
+      if: inputs.version-script != ''
+      shell: bash
+      env:
+        VERSION: ${{ inputs.version }}
+        VERSION_FILE: ${{ inputs.version-script }}
+      run: |
+        set -euo pipefail
+        sed -i -- "s@^VERSION=.*@VERSION=${VERSION}@" "${VERSION_FILE}"
+    - name: Set version in Helm chart
+      if: inputs.version-chart != ''
+      shell: bash
+      env:
+        VERSION: ${{ inputs.version }}
+        VERSION_CHART: ${{ inputs.version-chart }}
+      run: |
+        set -euo pipefail
+        sed -i -- "s/^version:.*/version: ${VERSION}/" "charts/${VERSION_CHART}/Chart.yaml"
+        sed -i -- "s/tag:.*/tag: ${VERSION}/" "charts/${VERSION_CHART}/values.yaml"

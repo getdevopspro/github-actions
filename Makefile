@@ -35,6 +35,7 @@ release: release-version promote
 .PHONY: test-version
 test-version:
 	python3 -B -m unittest discover -s tests -p 'test_release_version.py' -v
+	python3 -B -m unittest discover -s tests -p 'test_version_file.py' -v
 
 .PHONY: test-changelog
 test-changelog:
