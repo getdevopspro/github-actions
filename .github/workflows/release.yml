@@ -390,6 +390,7 @@ jobs:
         id: git_push
         with:
           version: ${{ steps.release_version.outputs.version }}
+          version-tag-prefix: ${{ inputs.version-tag-prefix }}
           git-user-name: ${{ inputs.git-user-name }}
           git-user-email: ${{ inputs.git-user-email }}
           git-add-files: ${{ inputs.git-add-files }}
