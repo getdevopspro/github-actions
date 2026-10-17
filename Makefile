@@ -57,3 +57,7 @@ test-build-checkout:
 .PHONY: test-all-green
 test-all-green:
 	node --test tests/test_all_green.js
+
+.PHONY: test-release-workflow
+test-release-workflow:
+	python3 -B -m unittest discover -s tests -p 'test_release_workflow.py' -v
