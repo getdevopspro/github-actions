@@ -70,7 +70,7 @@ class PullRequestCheckoutTests(unittest.TestCase):
                 self.assertIn("pr-checkout must be merge or head", result.stderr)
                 self.assertEqual(outputs, {})
 
-    def test_checkout_follows_the_resolved_ref(self):
+    def test_checkout_and_metadata_follow_the_resolved_ref(self):
         workflow = WORKFLOW.read_text()
         self.assertLess(
             workflow.index("      - name: Resolve pull request checkout"),
@@ -85,6 +85,37 @@ class PullRequestCheckoutTests(unittest.TestCase):
         ):
             self.assertIn(line, resolve)
         self.assertIn("          ref: ${{ steps.pr_checkout.outputs.ref }}\n", step("Checkout repository"))
+        self.assertIn(
+            "          DOCKER_METADATA_PR_HEAD_SHA: ${{ steps.pr_checkout.outputs.ref != '' }}\n",
+            step("Set image metadata and platform matrix"),
+        )
+
+
+class CommitIdentityTests(unittest.TestCase):
+    def test_commit_sha_is_the_checked_out_commit(self):
+        block = step("Determine commit SHA")
+        self.assertNotIn("pull_request", block)
+        env = {key: value for key, value in os.environ.items() if not key.startswith("GIT_")}
+        env.update({"GIT_CONFIG_GLOBAL": os.devnull, "GIT_CONFIG_NOSYSTEM": "1", "GIT_TERMINAL_PROMPT": "0"})
+        with tempfile.TemporaryDirectory() as repo:
+            def git(*args):
+                return subprocess.run(
+                    ["git", *args], cwd=repo, env=env, check=True, capture_output=True, text=True,
+                ).stdout.strip()
+
+            git("init", "--quiet")
+            git(
+                "-c", "user.name=Checkout Test", "-c", "user.email=test@example.invalid",
+                "-c", "commit.gpgsign=false", "commit", "--quiet", "--allow-empty", "-m", "Test fixture",
+            )
+            result, outputs = run(block, {}, cwd=repo)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(outputs, {"sha": git("rev-parse", "HEAD")})
+
+    def test_sha_tag_rules_have_no_ignored_event_attribute(self):
+        tags = step("Set image metadata and platform matrix").split("          meta-tags: |\n", 1)[1]
+        sha_rules = [line.strip() for line in tags.splitlines() if line.strip().startswith("type=sha")]
+        self.assertEqual(sha_rules, ["type=sha,prefix=,format=long", "type=sha"])
 
 
 if __name__ == "__main__":

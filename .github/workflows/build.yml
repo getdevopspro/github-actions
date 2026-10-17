@@ -14,7 +14,7 @@ on:
         description: 'Detected or calculated version'
         value: ${{ jobs.prepare.outputs.version }}
       commit-sha:
-        description: 'The commit SHA being built'
+        description: 'The checked-out commit SHA the images are built from'
         value: ${{ jobs.prepare.outputs.commit-sha }}
       image-digests:
         description: 'JSON with all merged image manifest digests'
@@ -1029,13 +1029,9 @@ jobs:
         id: determine_sha
         shell: bash
         run: |
-          if [ -n "${{ github.event.pull_request.head.sha }}" ]; then
-            SHA="${{ github.event.pull_request.head.sha }}"
-            echo "Using PR HEAD SHA: ${SHA}"
-          else
-            SHA=$(git rev-parse HEAD)
-            echo "Using current HEAD SHA: ${SHA}"
-          fi
+          set -euo pipefail
+          SHA=$(git rev-parse HEAD)
+          echo "Using checked-out commit: ${SHA}"
           echo "sha=${SHA}" >> "$GITHUB_OUTPUT"
 
       - name: Next semantic version
@@ -1088,7 +1084,8 @@ jobs:
         id: prepare_image
         uses: $/buildx-bake/prepare
         env:
-          DOCKER_METADATA_PR_HEAD_SHA: true
+          # Label and tag the PR head only when it is the commit checked out above.
+          DOCKER_METADATA_PR_HEAD_SHA: ${{ steps.pr_checkout.outputs.ref != '' }}
         with:
           bake-file: ${{ inputs.bake-file }}
           bake-target: ${{ inputs.bake-target }}
@@ -1098,8 +1095,8 @@ jobs:
           meta-labels:
             ${{ inputs.meta-labels }}
           meta-tags: |
-            type=sha,prefix=,format=long,event=push
-            type=sha,event=push
+            type=sha,prefix=,format=long
+            type=sha
             type=ref,event=branch
             type=ref,event=pr
             type=ref,event=tag
