@@ -341,6 +341,7 @@ jobs:
         uses: $/version-file
         with:
           version: ${{ steps.release_version.outputs.version }}
+          version-file: ${{ inputs.version-file }}
           version-galaxy: ${{ inputs.version-galaxy }}
           version-makefile: ${{ inputs.version-makefile }}
           version-justfile: ${{ inputs.version-justfile }}

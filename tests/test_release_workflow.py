@@ -11,6 +11,7 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
 RELEASE = ROOT / ".github/workflows/release.yml"
+BUILD = ROOT / ".github/workflows/build.yml"
 
 
 def step(path, name, indent):
@@ -65,6 +66,14 @@ class CommitShaTests(unittest.TestCase):
         self.assertLess(workflow.index("      - name: checkout repository\n"), sha)
         for later in ("      - name: run make target before push\n", "      - name: push git version\n"):
             self.assertLess(sha, workflow.index(later))
+
+
+class VersionFileTests(unittest.TestCase):
+    def test_workflows_pass_version_file_to_the_action(self):
+        for workflow, name in ((BUILD, "Set version in file"), (RELEASE, "set version in file")):
+            with self.subTest(workflow=workflow.name):
+                self.assertIn("\n      version-file:\n", workflow.read_text())
+                self.assertIn("          version-file: ${{ inputs.version-file }}\n", step(workflow, name, 6))
 
 
 if __name__ == "__main__":
