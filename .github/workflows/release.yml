@@ -14,8 +14,8 @@ on:
         description: 'Detected or calculated version'
         value: ${{ jobs.release.outputs.version }}
       commit-sha:
-        description: 'The commit SHA being built'
-        value: ${{ jobs.release.outputs.version }}
+        description: 'The checked-out commit SHA the release is made from'
+        value: ${{ jobs.release.outputs.commit-sha }}
       changelog:
         description: 'The changelog for the released version'
         value: ${{ jobs.release.outputs.changelog }}
@@ -304,13 +304,9 @@ jobs:
         id: determine_sha
         shell: bash
         run: |
-          if [ -n "${{ github.event.pull_request.head.sha }}" ]; then
-            SHA="${{ github.event.pull_request.head.sha }}"
-            echo "Using PR HEAD SHA: ${SHA}"
-          else
-            SHA=$(git rev-parse HEAD)
-            echo "Using current HEAD SHA: ${SHA}"
-          fi
+          set -euo pipefail
+          SHA=$(git rev-parse HEAD)
+          echo "Using checked-out commit: ${SHA}"
           echo "sha=${SHA}" >> "$GITHUB_OUTPUT"
 
       - id: release_version_semver
