@@ -928,6 +928,11 @@ on:
         required: false
         type: boolean
         default: true
+      pr-checkout:
+        description: 'Commit to build for pull_request events: merge (the PR merged into its base branch) or head (the PR head commit)'
+        required: false
+        type: string
+        default: 'merge'
 
 jobs:
   prepare:
@@ -957,6 +962,30 @@ jobs:
             *) echo '::error::version-strategy must be semver or calver' >&2; exit 1 ;;
           esac
 
+      - name: Resolve pull request checkout
+        id: pr_checkout
+        shell: bash
+        env:
+          PR_CHECKOUT: ${{ inputs.pr-checkout }}
+          EVENT_NAME: ${{ github.event_name }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          ref=''
+          case "${PR_CHECKOUT}" in
+            merge) ;;
+            head)
+              # Only pull_request: pull_request_target must not build PR code with base-repository secrets.
+              if [ "${EVENT_NAME}" = 'pull_request' ]; then
+                ref="${PR_HEAD_SHA}"
+              elif [ -n "${PR_HEAD_SHA}" ]; then
+                echo "::notice::pr-checkout: head applies only to pull_request events; using the default checkout for ${EVENT_NAME}"
+              fi
+              ;;
+            *) echo '::error::pr-checkout must be merge or head' >&2; exit 1 ;;
+          esac
+          printf 'ref=%s\n' "${ref}" >> "${GITHUB_OUTPUT}"
+
       - name: Prepare build inputs
         id: prepare_report
         uses: $/build/report/prepare
@@ -967,6 +996,7 @@ jobs:
         uses: actions/checkout@v6
         id: checkout
         with:
+          ref: ${{ steps.pr_checkout.outputs.ref }}
           fetch-depth: ${{ inputs.fetch-depth }}
           fetch-tags: ${{ inputs.fetch-tags }}
           lfs: ${{ inputs.lfs }}
