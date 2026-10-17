@@ -1,4 +1,4 @@
-VERSION ?= 12.0.1
+VERSION ?= 12.0.2
 WORKFLOW_FOLDER := .github/workflows
 README_FILES := $(shell find . -path './.git' -prune -o -name README.md -print)
 VERSION_REF_FILES := $(WORKFLOW_FOLDER)/*.y*ml $(README_FILES)

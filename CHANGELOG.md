@@ -1,3 +1,9 @@
+## [v12.0.2](https://github.com/getdevopspro/github-actions/compare/v12.0.1..v12.0.2) - 2026-10-17
+
+### Bug Fixes
+
+- _(release)_ Update version references in every README ([`b625241`](https://github.com/getdevopspro/github-actions/commit/b625241e6c9c3397fb7111c3ef3d9296a0b94d8f))
+
 ## [v12.0.1](https://github.com/getdevopspro/github-actions/compare/v12.0.0..v12.0.1) - 2026-10-17
 
 ### Bug Fixes

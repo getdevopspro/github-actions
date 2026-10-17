@@ -6,7 +6,7 @@ Use this action on `pull_request` synchronize events so manual or external test 
 
 ```yaml
 steps:
-  - uses: getdevopspro/github-actions/test/label/done/remove@v8.3.7
+  - uses: getdevopspro/github-actions/test/label/done/remove@v12.0.2
     with:
       label-needed: test-needed
       label-done: test-done

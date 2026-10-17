@@ -21,7 +21,7 @@ The text substitutions keep their existing matching rules, including nested matc
 
 ```yaml
 steps:
-  - uses: getdevopspro/github-actions/version-file@v8.3.7
+  - uses: getdevopspro/github-actions/version-file@v12.0.2
     with:
       version: 1.2.3
       version-makefile: Makefile

@@ -13,7 +13,7 @@ steps:
   - uses: actions/checkout@v6
     with:
       lfs: true
-  - uses: getdevopspro/github-actions/buildx-bake/build@v8.3.7
+  - uses: getdevopspro/github-actions/buildx-bake/build@v12.0.2
     with:
       registry-password: ${{ secrets.GITHUB_TOKEN }}
       registry-image: ghcr.io/example/project

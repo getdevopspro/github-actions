@@ -17,7 +17,7 @@ steps:
   - uses: actions/checkout@v6
     with:
       fetch-depth: 0
-  - uses: getdevopspro/github-actions/release/changelog@v8.3.7
+  - uses: getdevopspro/github-actions/release/changelog@v12.0.2
     with:
       version: v1.2.3
       previous-version: v1.2.2

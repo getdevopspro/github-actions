@@ -13,13 +13,13 @@ Inputs take comma-separated JavaScript regexes, unanchored and case-sensitive; u
 ```yaml
 steps:
   - uses: actions/checkout@v6
-  - uses: getdevopspro/github-actions/all-green@v8.3.7
+  - uses: getdevopspro/github-actions/all-green@v12.0.2
 ```
 
 ```yaml
 steps:
   - uses: actions/checkout@v6
-  - uses: getdevopspro/github-actions/all-green@v12.0.0
+  - uses: getdevopspro/github-actions/all-green@v12.0.2
     with:
       checks-include: '^Lint$,^Unit Tests$'
       fail-on-missing-checks: true
