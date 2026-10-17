@@ -8,7 +8,7 @@
 - Every reusable workflow in `.github/workflows/` must be briefly documented in `.github/workflows/README.md`, except self-maintenance workflows such as `release.self.yml`.
 - Every composite action must have a `README.md` in the same directory as its `action.yml`; include a short purpose statement, when to use it, and a minimal safe example.
 - Link new action and reusable workflow documentation from the root `README.md`.
-- Use stable versioned references in examples. When bumping the repository version, run `make release-version VERSION=<version>` so references in `.github/workflows/` and `README.md` stay aligned.
+- Use stable versioned references in examples. When bumping the repository version, run `make release-version VERSION=<version>` so references in `.github/workflows/` and README files stay aligned.
 - Prefer wrapping maintained upstream actions when they already provide the needed behavior. Add custom logic here when behavior needs to be shared consistently across repositories.
 - Preserve the existing directory layout:
   - `.github/workflows/` for reusable workflows.
