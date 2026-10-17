@@ -2,6 +2,22 @@ name: All Green
 
 on:
   workflow_call:
+    inputs:
+      checks-include:
+        description: 'Comma-separated regexes of the check names to evaluate. Empty or -1 evaluates every check; any other value makes checks-exclude ignored'
+        required: false
+        type: string
+        default: ''
+      checks-exclude:
+        description: 'Comma-separated regexes of the check names to ignore; -1 ignores none. The default skips the advisory Copilot review check'
+        required: false
+        type: string
+        default: '^copilot-pull-request-reviewer$'
+      fail-on-missing-checks:
+        description: 'Whether to fail when a checks-include pattern matches no check'
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   all-green:
@@ -12,3 +28,7 @@ jobs:
 
       - name: All Green
         uses: $/all-green
+        with:
+          checks-include: ${{ inputs.checks-include }}
+          checks-exclude: ${{ inputs.checks-exclude }}
+          fail-on-missing-checks: ${{ inputs.fail-on-missing-checks }}
