@@ -1,6 +1,20 @@
 name: "All Green"
 description: "Checks that all required checks have passed and the PR is green."
 
+inputs:
+  checks-include:
+    description: 'Comma-separated regexes of the check names to evaluate. Empty or -1 evaluates every check; any other value makes checks-exclude ignored'
+    required: false
+    default: ''
+  checks-exclude:
+    description: 'Comma-separated regexes of the check names to ignore; -1 ignores none. The default skips the advisory Copilot review, which would otherwise fail the gate while still in progress'
+    required: false
+    default: '^copilot-pull-request-reviewer$'
+  fail-on-missing-checks:
+    description: 'Whether to fail when a checks-include pattern matches no check'
+    required: false
+    default: 'false'
+
 runs:
   using: "composite"
   steps:
@@ -10,3 +24,7 @@ runs:
         poll: false
         delay: 0
         retries: 0
+        # allcheckspassed rejects include and exclude together, so include wins.
+        checks_include: ${{ inputs.checks-include || '-1' }}
+        checks_exclude: ${{ ((inputs.checks-include == '' || inputs.checks-include == '-1') && inputs.checks-exclude) || '-1' }}
+        fail_on_missing_checks: ${{ inputs.fail-on-missing-checks }}

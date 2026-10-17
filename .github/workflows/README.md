@@ -12,6 +12,8 @@ File: `all-green.yml`
 
 Wraps the `all-green` composite action as a reusable workflow. Use it when a repository wants one final required check that confirms all other required PR checks have passed.
 
+It accepts the action's `checks-include`, `checks-exclude` and `fail-on-missing-checks` inputs with the same defaults; see [All Green](../../all-green/README.md).
+
 ```yaml
 jobs:
   all-green:

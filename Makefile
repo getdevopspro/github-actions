@@ -53,3 +53,7 @@ test-build-steps:
 .PHONY: test-build-checkout
 test-build-checkout:
 	python3 -B -m unittest discover -s tests -p 'test_build_checkout.py' -v
+
+.PHONY: test-all-green
+test-all-green:
+	node --test tests/test_all_green.js
