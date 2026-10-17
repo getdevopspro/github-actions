@@ -1,3 +1,20 @@
+## [v12.0.0](https://github.com/getdevopspro/github-actions/compare/v11.1.0..v12.0.0) - 2026-10-17
+
+### Features
+
+- _(build)_ Add merge or head checkout for pull requests ([`3af0639`](https://github.com/getdevopspro/github-actions/commit/3af0639dca065971cb481fca66aa169e5c296b69))
+- _(build)_ Pass the built commit to step commands ([`a5750da`](https://github.com/getdevopspro/github-actions/commit/a5750da6d43da3050c3ed37813a7e9be3e1eaaa1))
+- _(all-green)_ Make the evaluated checks configurable ([`d160d1c`](https://github.com/getdevopspro/github-actions/commit/d160d1cce563a5472f39fc116e581812589423a4))
+
+### Bug Fixes
+
+- _(build)_ [**breaking**] Tag and label PR images with the commit actually built ([`4bb6ee2`](https://github.com/getdevopspro/github-actions/commit/4bb6ee253af3d61915302bee5f20965c35262e19))
+
+### Documentation
+
+- _(agents)_ Organize instruction indexes ([`e5f42ef`](https://github.com/getdevopspro/github-actions/commit/e5f42eff49ddc2026aa939ed4e765e8e3c8759c9))
+- _(agents)_ Remove shared context imports ([`d1a68b6`](https://github.com/getdevopspro/github-actions/commit/d1a68b686337529b993f9aca1187e1465ad148d4))
+
 ## [v11.1.0](https://github.com/getdevopspro/github-actions/compare/v11.0.2..v11.1.0) - 2026-09-25
 
 ### Features
