@@ -1,6 +1,7 @@
 VERSION ?= 12.0.1
 WORKFLOW_FOLDER := .github/workflows
-VERSION_REF_FILES := $(WORKFLOW_FOLDER)/*.y*ml README.md
+README_FILES := $(shell find . -path './.git' -prune -o -name README.md -print)
+VERSION_REF_FILES := $(WORKFLOW_FOLDER)/*.y*ml $(README_FILES)
 ifneq (,$(findstring xterm,${TERM}))
 	RED          := $(shell tput -Txterm setaf 1)
 	GREEN        := $(shell tput -Txterm setaf 2)
