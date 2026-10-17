@@ -4,6 +4,10 @@ inputs:
   version:
     description: 'The version to push'
     required: true
+  version-tag-prefix:
+    description: 'The prefix for the release tag; the tag is this prefix followed by version'
+    required: false
+    default: 'v'
   git-user-name:
     description: 'The git user name'
     required: false
@@ -21,7 +25,7 @@ runs:
     - name: Push git version
       shell: bash
       env:
-        TAG: ${{ inputs.version }}
+        TAG: ${{ inputs.version-tag-prefix }}${{ inputs.version }}
         DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
       run: |
         set -euo pipefail
@@ -40,16 +44,16 @@ runs:
           echo "No changes to commit"
 
           # Check if the target release tag already exists
-          if [ -z "$(git tag -l "v${TAG}")" ]; then
-            echo "Creating and pushing tag v${TAG}"
-            git tag "v${TAG}"
-            git push --atomic origin "v${TAG}"
+          if [ -z "$(git tag -l "${TAG}")" ]; then
+            echo "Creating and pushing tag ${TAG}"
+            git tag "${TAG}"
+            git push --atomic origin "${TAG}"
           else
-            echo "Tag v${TAG} already exists"
+            echo "Tag ${TAG} already exists"
           fi
         else
           echo "Committing changes and pushing"
-          git commit -m "chore: bump version to v${TAG}" -m "[skip ci]"
-          git tag "v${TAG}"
-          git push --atomic origin "${push_target}" "v${TAG}"
+          git commit -m "chore: bump version to ${TAG}" -m "[skip ci]"
+          git tag "${TAG}"
+          git push --atomic origin "${push_target}" "${TAG}"
         fi
