@@ -1,3 +1,11 @@
+## [v12.0.1](https://github.com/getdevopspro/github-actions/compare/v12.0.0..v12.0.1) - 2026-10-17
+
+### Bug Fixes
+
+- _(release)_ Export the checked-out commit as commit-sha ([`ae29bf8`](https://github.com/getdevopspro/github-actions/commit/ae29bf8cf2edabf0737ba42a6691dce9515377ec))
+- _(version-file)_ Pass the version-file input from both workflows ([`8e1f9ee`](https://github.com/getdevopspro/github-actions/commit/8e1f9eed7eb6e8ac6634e1cf2e75b943cbead0b3))
+- _(release)_ Use version-tag-prefix for the tag git-push creates ([`22bcc2f`](https://github.com/getdevopspro/github-actions/commit/22bcc2fba14f6cad1d2dc1fd9446288f85d04e9b))
+
 ## [v12.0.0](https://github.com/getdevopspro/github-actions/compare/v11.1.0..v12.0.0) - 2026-10-17
 
 ### Features
