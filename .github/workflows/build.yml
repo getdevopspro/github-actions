@@ -1113,6 +1113,8 @@ jobs:
         if: inputs.prepare-command != ''
         id: prepare_command
         shell: bash
+        env:
+          BUILD_COMMIT_SHA: ${{ steps.determine_sha.outputs.sha }}
         run: ${{ inputs.prepare-command }}
 
       - name: Verify Git LFS checkout
@@ -1171,6 +1173,7 @@ jobs:
         name: ${{ fromJson(needs.prepare.outputs.pre-step-names) }}
     env:
       BUILD_STEP_CONFIG: ${{ toJSON(fromJSON(needs.prepare.outputs.pre-step-matrix)[strategy.job-index]) }}
+      BUILD_COMMIT_SHA: ${{ needs.prepare.outputs.commit-sha }}
     steps:
       - name: Download updated source
         uses: atos-actions/download-artifact@v2
@@ -1305,6 +1308,7 @@ jobs:
         name: ${{ fromJson(needs.prepare.outputs.post-step-names) }}
     env:
       BUILD_STEP_CONFIG: ${{ toJSON(fromJSON(needs.prepare.outputs.post-step-matrix)[strategy.job-index]) }}
+      BUILD_COMMIT_SHA: ${{ needs.prepare.outputs.commit-sha }}
     steps:
       - name: Download updated source
         uses: atos-actions/download-artifact@v2

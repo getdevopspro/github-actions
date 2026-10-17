@@ -98,6 +98,17 @@ class BuildStepTests(unittest.TestCase):
                 self.assertIn(f"name: ${{{{ fromJson(needs.prepare.outputs.{phase}-step-names) }}}}", job)
                 self.assertIn(f"toJSON(fromJSON(needs.prepare.outputs.{phase}-step-matrix)[strategy.job-index])", job)
 
+    def test_commands_receive_the_built_commit(self):
+        workflow = WORKFLOW.read_text()
+        self.assertIn("      commit-sha: ${{ steps.determine_sha.outputs.sha }}\n", workflow)
+        for phase in ("pre", "post"):
+            with self.subTest(phase=phase):
+                job = re.split(r"\n  (?=\S)", workflow.split(f"\n  {phase}-steps:\n", 1)[1], maxsplit=1)[0]
+                self.assertIn("      BUILD_COMMIT_SHA: ${{ needs.prepare.outputs.commit-sha }}\n", job)
+        prepare_command = workflow.split("\n      - name: Run prepare command\n", 1)[1].split("\n      - name: ", 1)[0]
+        self.assertIn("          BUILD_COMMIT_SHA: ${{ steps.determine_sha.outputs.sha }}\n", prepare_command)
+        self.assertLess(workflow.index("      - name: Determine commit SHA"), workflow.index("      - name: Run prepare command"))
+
 
 if __name__ == "__main__":
     unittest.main()
