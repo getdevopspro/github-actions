@@ -24,7 +24,7 @@ File: `build.yml`
 
 Calculates a build version, optionally updates version files, runs configurable pre/post commands, builds Docker images with Buildx Bake, and can publish multi-platform images to a registry.
 
-`pr-checkout` selects the commit built for `pull_request` events: `merge` (default) builds GitHub's merge of the PR into its base branch, and `head` builds the PR head commit. Other events, including `pull_request_target`, keep the default checkout. The full-SHA tags, the `sha-` tag, the `org.opencontainers.image.revision` label and the `commit-sha` output name the commit that was built. Earlier releases tagged and labelled merge builds with the PR head SHA as well; callers that pull PR images by head SHA should set `pr-checkout: head`. In `head` mode, the SemVer bump counts only commits reachable from the PR head.
+`pr-checkout` selects the commit built for `pull_request` events: `merge` (default) builds GitHub's merge of the PR into its base branch, and `head` builds the PR head commit. Other events, including `pull_request_target`, keep the default checkout. The full-SHA tags, the `sha-` tag, the `org.opencontainers.image.revision` label and the `commit-sha` output name the commit that was built. Earlier releases tagged and labelled merge builds with the PR head SHA as well; callers that pull PR images by head SHA should set `pr-checkout: head` or use `BUILD_COMMIT_SHA`. In `head` mode, the SemVer bump counts only commits reachable from the PR head.
 
 `version-strategy` accepts `semver` (default) or `calver`. CalVer uses UTC `YYYY.M.PATCH` from Git release tags and preserves this workflow's default `-build` output suffix. `version-semver-previous` and `version-semver-next` apply only to SemVer; `version-output-format` and `version-tag-prefix` apply to both. Strategy-specific inputs use `version-semver-` or `version-calver-` prefixes; there are currently no CalVer-only inputs. Keep the default full-history checkout so all release tags are available. See the [CalVer action](../../release/version/calver/README.md) for the calculation and supported template fields.
 
@@ -55,6 +55,8 @@ Pre/post jobs use the fixed names `Pre Step` and `Post Step`. Enabled commands
 append their configured `*-name` as a matrix suffix, such as `Post Step (System Tests)`
 for `post-test-name: System Tests`. Empty phases keep the fixed name and appear
 as skipped. Command steps and report sections retain the configured name.
+
+Prepare, pre and post commands receive `BUILD_COMMIT_SHA`, the commit the images are built from (the `commit-sha` output). It can differ from `GITHUB_SHA`. Reference it as a shell variable inside the command, for example `post-test-command: ./scripts/test ghcr.io/example/app:$BUILD_COMMIT_SHA`.
 
 The Build workflow enables Git LFS downloads during checkout by default. Set `lfs: false` when the caller does not need Git LFS files.
 
