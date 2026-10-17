@@ -49,3 +49,7 @@ test-report:
 .PHONY: test-build-steps
 test-build-steps:
 	python3 -B -m unittest discover -s tests -p 'test_build_steps.py' -v
+
+.PHONY: test-build-checkout
+test-build-checkout:
+	python3 -B -m unittest discover -s tests -p 'test_build_checkout.py' -v

@@ -24,6 +24,8 @@ File: `build.yml`
 
 Calculates a build version, optionally updates version files, runs configurable pre/post commands, builds Docker images with Buildx Bake, and can publish multi-platform images to a registry. Pull request image SHA tags use the PR head commit rather than GitHub's synthetic merge commit.
 
+`pr-checkout` selects the commit built for `pull_request` events: `merge` (default) builds GitHub's merge of the PR into its base branch, and `head` builds the PR head commit. Other events, including `pull_request_target`, keep the default checkout. In `head` mode, the SemVer bump counts only commits reachable from the PR head.
+
 `version-strategy` accepts `semver` (default) or `calver`. CalVer uses UTC `YYYY.M.PATCH` from Git release tags and preserves this workflow's default `-build` output suffix. `version-semver-previous` and `version-semver-next` apply only to SemVer; `version-output-format` and `version-tag-prefix` apply to both. Strategy-specific inputs use `version-semver-` or `version-calver-` prefixes; there are currently no CalVer-only inputs. Keep the default full-history checkout so all release tags are available. See the [CalVer action](../../release/version/calver/README.md) for the calculation and supported template fields.
 
 Set `version-galaxy: path/to/galaxy.yml` to update Ansible collection metadata included in the build. See [Version File](../../version-file/README.md) for accepted versions and file formats. Use a release containing this input.
