@@ -151,7 +151,7 @@ jobs:
           just-version: ${{ inputs.just-version }}
 
       - name: Setup deploy key
-        uses: webfactory/ssh-agent@v0.9.0
+        uses: webfactory/ssh-agent@v0.10.0
         with:
           ssh-private-key: ${{ secrets.ssh-private-key }}
 
