@@ -6,7 +6,7 @@ Use this action as a required PR check for workflows where manual or external va
 
 ```yaml
 steps:
-  - uses: getdevopspro/github-actions/test/label/check@v12.0.2
+  - uses: getdevopspro/github-actions/test/label/check@v12.0.3
     with:
       label-needed: test-needed
       label-done: test-done

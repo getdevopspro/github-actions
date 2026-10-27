@@ -6,7 +6,7 @@ Use this action from label-related PR workflows to give reviewers a visible conf
 
 ```yaml
 steps:
-  - uses: getdevopspro/github-actions/test/label/done/added@v12.0.2
+  - uses: getdevopspro/github-actions/test/label/done/added@v12.0.3
     with:
       label-done: test-done
       test-name: Robot

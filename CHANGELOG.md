@@ -1,3 +1,9 @@
+## [v12.0.3](https://github.com/getdevopspro/github-actions/compare/v12.0.2..v12.0.3) - 2026-10-27
+
+### Bug Fixes
+
+- _(pr-create)_ Run the deploy key step on Node 24 ([`5a0ccda`](https://github.com/getdevopspro/github-actions/commit/5a0ccdad3422eb67c3a5e3575b2c9c7bb9149172))
+
 ## [v12.0.2](https://github.com/getdevopspro/github-actions/compare/v12.0.1..v12.0.2) - 2026-10-17
 
 ### Bug Fixes

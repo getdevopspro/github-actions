@@ -17,7 +17,7 @@ It accepts the action's `checks-include`, `checks-exclude` and `fail-on-missing-
 ```yaml
 jobs:
   all-green:
-    uses: getdevopspro/github-actions/.github/workflows/all-green.yml@v12.0.2
+    uses: getdevopspro/github-actions/.github/workflows/all-green.yml@v12.0.3
 ```
 
 ## Build
@@ -35,7 +35,7 @@ Set `version-galaxy: path/to/galaxy.yml` to update Ansible collection metadata i
 ```yaml
 jobs:
   build:
-    uses: getdevopspro/github-actions/.github/workflows/build.yml@v12.0.2
+    uses: getdevopspro/github-actions/.github/workflows/build.yml@v12.0.3
     secrets:
       registry-password: ${{ secrets.GITHUB_TOKEN }}
     with:
@@ -203,7 +203,7 @@ target writes Cobertura XML to `build/coverage.xml`.
 ```yaml
 jobs:
   build:
-    uses: getdevopspro/github-actions/.github/workflows/build.yml@v12.0.2
+    uses: getdevopspro/github-actions/.github/workflows/build.yml@v12.0.3
     permissions:
       contents: read        # Existing Build requirement
       packages: write       # Existing Build requirement
@@ -244,7 +244,7 @@ Runs GolangCI-Lint with a pinned Go setup. Use it for Go repositories that want 
 ```yaml
 jobs:
   lint:
-    uses: getdevopspro/github-actions/.github/workflows/golangci-lint.yml@v12.0.2
+    uses: getdevopspro/github-actions/.github/workflows/golangci-lint.yml@v12.0.3
 ```
 
 ## Create Pull Request
@@ -256,7 +256,7 @@ Checks out a target repository, optionally installs `just`, runs a caller-provid
 ```yaml
 jobs:
   sync:
-    uses: getdevopspro/github-actions/.github/workflows/pr-create.yml@v12.0.2
+    uses: getdevopspro/github-actions/.github/workflows/pr-create.yml@v12.0.3
     secrets:
       token: ${{ secrets.REPO_TOKEN }}
     with:
@@ -278,7 +278,7 @@ With changelog generation and prepend enabled, a missing changelog is initialize
 ```yaml
 jobs:
   release:
-    uses: getdevopspro/github-actions/.github/workflows/release.yml@v12.0.2
+    uses: getdevopspro/github-actions/.github/workflows/release.yml@v12.0.3
     secrets:
       checkout-token: ${{ secrets.REPO_TOKEN }}
     with:
