@@ -239,7 +239,7 @@ and configure its artifact name/path before enabling reporting.
 
 File: `golangci-lint.yml`
 
-Runs GolangCI-Lint with a pinned Go setup. Use it for Go repositories that want a shared lint job without maintaining the boilerplate in each repository.
+Runs GolangCI-Lint with a pinned Go setup. Use it for Go repositories that want a shared lint job without maintaining the boilerplate in each repository. It runs golangci-lint v2, so a repository with a v1 `.golangci.yml` must convert it first with `golangci-lint migrate`.
 
 ```yaml
 jobs:
