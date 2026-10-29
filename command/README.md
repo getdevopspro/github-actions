@@ -7,7 +7,7 @@ Use this action for reusable workflow hooks where callers need to provide a chec
 ```yaml
 steps:
   - uses: actions/checkout@v6
-  - uses: getdevopspro/github-actions/command@v12.0.3
+  - uses: getdevopspro/github-actions/command@v13.0.0
     with:
       command: make test
       artifact-name: test-output

@@ -7,7 +7,7 @@ Use this action when a workflow needs shared version detection and semantic vers
 ```yaml
 steps:
   - id: version
-    uses: getdevopspro/github-actions/release/version/semver@v12.0.3
+    uses: getdevopspro/github-actions/release/version/semver@v13.0.0
     with:
       version-semver-previous: auto
       version-semver-next: auto

@@ -1,3 +1,10 @@
+## [v13.0.0](https://github.com/getdevopspro/github-actions/compare/v12.0.3..v13.0.0) - 2026-10-29
+
+### Bug Fixes
+
+- _(pr-create)_ Run the pull request step on Node 24 ([`b5c4ca7`](https://github.com/getdevopspro/github-actions/commit/b5c4ca7cb58b2e303252d9e0e905b4f2c02fea15))
+- _(golangci-lint)_ [**breaking**] Run the lint job on Node 24 ([`d1ca147`](https://github.com/getdevopspro/github-actions/commit/d1ca147fbab51feda6f67c396b7be3a14f405d55))
+
 ## [v12.0.3](https://github.com/getdevopspro/github-actions/compare/v12.0.2..v12.0.3) - 2026-10-27
 
 ### Bug Fixes

@@ -21,7 +21,7 @@ steps:
   - uses: actions/checkout@v6
     with:
       fetch-depth: 0
-  - uses: getdevopspro/github-actions/build/baseline@v12.0.3
+  - uses: getdevopspro/github-actions/build/baseline@v13.0.0
     id: baseline
     with:
       artifact-name: unit-test-results
@@ -35,7 +35,7 @@ steps:
     with:
       name: results
       path: build/results.json
-  - uses: getdevopspro/github-actions/build/report/publish@v12.0.3
+  - uses: getdevopspro/github-actions/build/report/publish@v13.0.0
     with:
       artifact-names: results
 ```

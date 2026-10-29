@@ -6,7 +6,7 @@ Use this action after all platform build jobs complete. It downloads the `bake-m
 
 ```yaml
 steps:
-  - uses: getdevopspro/github-actions/buildx-bake/merge@v12.0.3
+  - uses: getdevopspro/github-actions/buildx-bake/merge@v13.0.0
     with:
       registry-password: ${{ secrets.GITHUB_TOKEN }}
 ```
