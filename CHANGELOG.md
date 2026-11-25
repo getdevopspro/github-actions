@@ -1,3 +1,9 @@
+## [v13.1.0](https://github.com/getdevopspro/github-actions/compare/v13.0.0..v13.1.0) - 2026-11-25
+
+### Features
+
+- _(build)_ Name the Sentry release and pass it to the image build ([`c721bdd`](https://github.com/getdevopspro/github-actions/commit/c721bdd47da1b153e0c95231ea335d4a3d787b7a))
+
 ## [v13.0.0](https://github.com/getdevopspro/github-actions/compare/v12.0.3..v13.0.0) - 2026-10-29
 
 ### Bug Fixes

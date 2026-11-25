@@ -24,7 +24,7 @@ jobs:
     runs-on: ubuntu-24.04
     permissions: {}
     steps:
-      - uses: getdevopspro/github-actions/build/report/publish@v13.0.0
+      - uses: getdevopspro/github-actions/build/report/publish@v13.1.0
         with:
           artifact-names: |
             unit-test-results

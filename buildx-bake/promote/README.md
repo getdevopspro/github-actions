@@ -6,7 +6,7 @@ Use this action when a build has already produced immutable manifest digests and
 
 ```yaml
 steps:
-  - uses: getdevopspro/github-actions/buildx-bake/promote@v13.0.0
+  - uses: getdevopspro/github-actions/buildx-bake/promote@v13.1.0
     with:
       version: 1.2.3
       image-digests: ${{ needs.build.outputs.image-digests }}
