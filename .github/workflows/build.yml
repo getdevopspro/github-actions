@@ -16,6 +16,9 @@ on:
       commit-sha:
         description: 'The checked-out commit SHA the images are built from'
         value: ${{ jobs.prepare.outputs.commit-sha }}
+      sentry-release:
+        description: 'The Sentry release name passed to the image build, when sentry-release-package is set'
+        value: ${{ jobs.prepare.outputs.sentry-release }}
       image-digests:
         description: 'JSON with all merged image manifest digests'
         value: ${{ jobs.image-push.outputs.image-digests }}
@@ -80,6 +83,11 @@ on:
         description: 'Set version in chart named as input'
         required: false
         type: string
+      sentry-release-package:
+        description: 'Package (letters, digits, dots, underscores, hyphens) for the Sentry release name <package>@<version>+<short sha>, where <short sha> is the first 7 characters of commit-sha; when set, the image build gets the name as the SENTRY_RELEASE build argument'
+        required: false
+        type: string
+        default: ''
       bake-file:
         description: 'The bake file'
         required: false
@@ -942,6 +950,7 @@ jobs:
     outputs:
       version: ${{ steps.release_version.outputs.version }}
       commit-sha: ${{ steps.determine_sha.outputs.sha }}
+      sentry-release: ${{ steps.sentry_release.outputs.name }}
       pre-step-matrix: ${{ steps.prepare_report.outputs.pre-step-matrix }}
       pre-step-names: ${{ steps.prepare_report.outputs.pre-step-names }}
       post-step-matrix: ${{ steps.prepare_report.outputs.post-step-matrix }}
@@ -1061,6 +1070,23 @@ jobs:
         run: |
           set -euo pipefail
           printf 'version=%s\nprevious-version=%s\n' "${VERSION}" "${PREVIOUS_VERSION}" >> "${GITHUB_OUTPUT}"
+
+      - name: Name the Sentry release
+        id: sentry_release
+        if: inputs.sentry-release-package != ''
+        shell: bash
+        env:
+          PACKAGE: ${{ inputs.sentry-release-package }}
+          VERSION: ${{ steps.release_version.outputs.version }}
+          COMMIT_SHA: ${{ steps.determine_sha.outputs.sha }}
+        run: |
+          set -euo pipefail
+          # Keep the package a plain name: Sentry rejects slashes, tabs and newlines in release names, and '@' and '+' separate the parts.
+          if [[ ! "${PACKAGE}" =~ ^[A-Za-z0-9._-]+$ ]]; then
+            echo '::error::sentry-release-package must contain only letters, digits, dots, underscores or hyphens' >&2
+            exit 1
+          fi
+          printf 'name=%s@%s+%s\n' "${PACKAGE}" "${VERSION}" "${COMMIT_SHA:0:7}" >> "${GITHUB_OUTPUT}"
 
       - name: Set version in file
         uses: $/version-file
@@ -1261,7 +1287,9 @@ jobs:
           cache-map: ${{ inputs.cache-map }}
           dockerfile: ${{ inputs.dockerfile }}
           cache-scope: ${{ inputs.cache-scope }}
-          bake-set: ${{ inputs.bake-set }}
+          bake-set: |
+            ${{ inputs.bake-set }}
+            ${{ needs.prepare.outputs.sentry-release != '' && format('*.args.SENTRY_RELEASE={0}', needs.prepare.outputs.sentry-release) || '' }}
           registry: ${{ inputs.registry }}
           registry-image: ${{ inputs.registry-image }}
           registry-username: ${{ inputs.registry-username }}

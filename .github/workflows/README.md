@@ -60,6 +60,8 @@ as skipped. Command steps and report sections retain the configured name.
 
 Prepare, pre and post commands receive `BUILD_COMMIT_SHA`, the commit the images are built from (the `commit-sha` output). It can differ from `GITHUB_SHA`. Reference it as a shell variable inside the command, for example `post-test-command: ./scripts/test ghcr.io/example/app:$BUILD_COMMIT_SHA`.
 
+Set `sentry-release-package` to name each build for Sentry as `<package>@<version>+<short sha>`. `<version>` is the workflow's `version` output, and `<short sha>` is the first 7 characters of the commit the images are built from (the `commit-sha` output). The package may contain only letters, digits, dots, underscores and hyphens. To name only release builds, pass the package on push events only. The image build receives the name as the `SENTRY_RELEASE` build argument through a Bake `set` override, so a Dockerfile stage that declares `ARG SENTRY_RELEASE` can bake it in, for example with `ENV`; stages that don't declare it ignore it. Declare it as late as possible: the name changes with every commit, so steps after the `ARG` miss the layer cache. The `sentry-release` output carries the same name, for example to register the release with Sentry after the Release workflow.
+
 The Build workflow enables Git LFS downloads during checkout by default. Set `lfs: false` when the caller does not need Git LFS files.
 
 When `lfs` is enabled, the workflow prints the tracked LFS files and fails before image build if any checked-out file is still an unresolved LFS pointer. Image builds use the uploaded source artifact as a local path context, so the hydrated checkout is what gets baked into the image.

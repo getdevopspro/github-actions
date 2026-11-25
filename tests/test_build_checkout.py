@@ -118,5 +118,51 @@ class CommitIdentityTests(unittest.TestCase):
         self.assertEqual(sha_rules, ["type=sha,prefix=,format=long", "type=sha"])
 
 
+class SentryReleaseNameTests(unittest.TestCase):
+    def name(self, package):
+        env = {"PACKAGE": package, "VERSION": "2026.11.9-build.1532", "COMMIT_SHA": HEAD_SHA}
+        return run(step("Name the Sentry release"), env)
+
+    def test_name_joins_package_version_and_short_commit(self):
+        result, outputs = self.name("example-app")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(outputs, {"name": "example-app@2026.11.9-build.1532+0123456"})
+
+    def test_packages_that_break_the_name_fail(self):
+        for package in ("web app", "org/app", "app@1", "app+1"):
+            with self.subTest(package=package):
+                result, outputs = self.name(package)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn("sentry-release-package must contain only", result.stderr)
+                self.assertEqual(outputs, {})
+
+    def test_name_follows_the_steps_it_reads(self):
+        workflow = WORKFLOW.read_text()
+        name_step = workflow.index("      - name: Name the Sentry release")
+        for earlier in ("      - name: Determine commit SHA", "      - name: Select version outputs"):
+            with self.subTest(earlier=earlier):
+                self.assertLess(workflow.index(earlier), name_step)
+
+    def test_name_reaches_the_output_and_the_image_build(self):
+        block = step("Name the Sentry release")
+        for line in (
+            "        id: sentry_release\n",
+            "        if: inputs.sentry-release-package != ''\n",
+            "          PACKAGE: ${{ inputs.sentry-release-package }}\n",
+            "          VERSION: ${{ steps.release_version.outputs.version }}\n",
+            "          COMMIT_SHA: ${{ steps.determine_sha.outputs.sha }}\n",
+        ):
+            self.assertIn(line, block)
+        workflow = WORKFLOW.read_text()
+        self.assertIn("      sentry-release-package:\n        description:", workflow)
+        self.assertIn("      sentry-release: ${{ steps.sentry_release.outputs.name }}\n", workflow)
+        self.assertIn("        value: ${{ jobs.prepare.outputs.sentry-release }}\n", workflow)
+        self.assertIn(
+            "            ${{ needs.prepare.outputs.sentry-release != '' && "
+            "format('*.args.SENTRY_RELEASE={0}', needs.prepare.outputs.sentry-release) || '' }}\n",
+            workflow,
+        )
+
+
 if __name__ == "__main__":
     unittest.main()
