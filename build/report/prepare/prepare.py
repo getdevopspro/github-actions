@@ -9,6 +9,7 @@ STEP_KINDS = ("checks", "lint", "test", "test-unit", "test-coverage", "test-inte
 STEP_FIELDS = (
     "name", "command", "runner", "docker-login", "qemu-install", "artifact-name",
     "artifact-path", "artifact-overwrite", "artifact-if-no-files-found", "artifact-retention-days",
+    "timeout-minutes",
 )
 
 
