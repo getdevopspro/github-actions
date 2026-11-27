@@ -313,6 +313,11 @@ on:
         required: false
         type: number
         default: 30
+      pre-checks-timeout-minutes:
+        description: 'Maximum minutes to run the checks command (pre-steps) before it times out'
+        required: false
+        type: number
+        default: 360
       pre-lint-name:
         description: 'Name of the pre-lint step'
         required: false
@@ -359,6 +364,11 @@ on:
         required: false
         type: number
         default: 30
+      pre-lint-timeout-minutes:
+        description: 'Maximum minutes to run the lint command (pre-steps) before it times out'
+        required: false
+        type: number
+        default: 360
       pre-test-name:
         description: 'Name of the pre-test step'
         required: false
@@ -405,6 +415,11 @@ on:
         required: false
         type: number
         default: 30
+      pre-test-timeout-minutes:
+        description: 'Maximum minutes to run the test command (pre-steps) before it times out'
+        required: false
+        type: number
+        default: 360
       pre-test-unit-name:
         description: 'Name of the pre-test-unit step'
         required: false
@@ -451,6 +466,11 @@ on:
         required: false
         type: number
         default: 30
+      pre-test-unit-timeout-minutes:
+        description: 'Maximum minutes to run the unit test command (pre-steps) before it times out'
+        required: false
+        type: number
+        default: 360
       pre-test-coverage-name:
         description: 'Name of the pre-test-coverage step'
         required: false
@@ -497,6 +517,11 @@ on:
         required: false
         type: number
         default: 30
+      pre-test-coverage-timeout-minutes:
+        description: 'Maximum minutes to run the test coverage command (pre-steps) before it times out'
+        required: false
+        type: number
+        default: 360
       pre-test-integration-name:
         description: 'Name of the pre-test-integration step'
         required: false
@@ -543,6 +568,11 @@ on:
         required: false
         type: number
         default: 30
+      pre-test-integration-timeout-minutes:
+        description: 'Maximum minutes to run the integration test command (pre-steps) before it times out'
+        required: false
+        type: number
+        default: 360
       pre-test-e2e-name:
         description: 'Name of the pre-test-e2e step'
         required: false
@@ -589,6 +619,11 @@ on:
         required: false
         type: number
         default: 30
+      pre-test-e2e-timeout-minutes:
+        description: 'Maximum minutes to run the e2e test command (pre-steps) before it times out'
+        required: false
+        type: number
+        default: 360
       post-checks-name:
         description: 'Name of the post-checks step'
         required: false
@@ -635,6 +670,11 @@ on:
         required: false
         type: number
         default: 30
+      post-checks-timeout-minutes:
+        description: 'Maximum minutes to run the checks command (post-steps) before it times out'
+        required: false
+        type: number
+        default: 360
       post-lint-name:
         description: 'Name of the post-lint step'
         required: false
@@ -681,6 +721,11 @@ on:
         required: false
         type: number
         default: 30
+      post-lint-timeout-minutes:
+        description: 'Maximum minutes to run the lint command (post-steps) before it times out'
+        required: false
+        type: number
+        default: 360
       post-test-name:
         description: 'Name of the post-test step'
         required: false
@@ -727,6 +772,11 @@ on:
         required: false
         type: number
         default: 30
+      post-test-timeout-minutes:
+        description: 'Maximum minutes to run the test command (post-steps) before it times out'
+        required: false
+        type: number
+        default: 360
       post-test-unit-name:
         description: 'Name of the post-test-unit step'
         required: false
@@ -773,6 +823,11 @@ on:
         required: false
         type: number
         default: 30
+      post-test-unit-timeout-minutes:
+        description: 'Maximum minutes to run the unit test command (post-steps) before it times out'
+        required: false
+        type: number
+        default: 360
       post-test-coverage-name:
         description: 'Name of the post-test-coverage step'
         required: false
@@ -819,6 +874,11 @@ on:
         required: false
         type: number
         default: 30
+      post-test-coverage-timeout-minutes:
+        description: 'Maximum minutes to run the test coverage command (post-steps) before it times out'
+        required: false
+        type: number
+        default: 360
       post-test-integration-name:
         description: 'Name of the post-test-integration step'
         required: false
@@ -865,6 +925,11 @@ on:
         required: false
         type: number
         default: 30
+      post-test-integration-timeout-minutes:
+        description: 'Maximum minutes to run the integration test command (post-steps) before it times out'
+        required: false
+        type: number
+        default: 360
       post-test-e2e-name:
         description: 'Name of the post-test-e2e step'
         required: false
@@ -911,6 +976,11 @@ on:
         required: false
         type: number
         default: 30
+      post-test-e2e-timeout-minutes:
+        description: 'Maximum minutes to run the e2e test command (post-steps) before it times out'
+        required: false
+        type: number
+        default: 360
       source-artifact-name:
         description: 'Name of the artifact to upload and download for source code'
         required: false
@@ -1247,6 +1317,7 @@ jobs:
 
       - name: ${{ matrix.name }}
         id: command
+        timeout-minutes: ${{ fromJSON(fromJSON(env.BUILD_STEP_CONFIG).timeout-minutes) }}
         env:
           BASELINE_METADATA: ${{ inputs.baseline-enabled && format('{0}/metadata.json', steps.baseline_bundle.outputs.download-path) || '' }}
           BASELINE_PATH: ${{ inputs.baseline-enabled && needs.prepare.outputs.baseline-status != 'unavailable' && format('{0}/artifacts', steps.baseline_bundle.outputs.download-path) || '' }}
@@ -1384,6 +1455,7 @@ jobs:
 
       - name: ${{ matrix.name }}
         id: command
+        timeout-minutes: ${{ fromJSON(fromJSON(env.BUILD_STEP_CONFIG).timeout-minutes) }}
         env:
           BASELINE_METADATA: ${{ inputs.baseline-enabled && format('{0}/metadata.json', steps.baseline_bundle.outputs.download-path) || '' }}
           BASELINE_PATH: ${{ inputs.baseline-enabled && needs.prepare.outputs.baseline-status != 'unavailable' && format('{0}/artifacts', steps.baseline_bundle.outputs.download-path) || '' }}

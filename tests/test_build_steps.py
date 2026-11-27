@@ -10,7 +10,7 @@ import unittest
 WORKFLOW = Path(__file__).resolve().parents[1] / ".github/workflows/build.yml"
 PREPARE = WORKFLOW.parents[2] / "build/report/prepare"
 sys.path.insert(0, str(PREPARE))
-from prepare import prepare_inputs
+from prepare import STEP_FIELDS, prepare_inputs
 
 
 KINDS = ("checks", "lint", "test", "test-unit", "test-coverage", "test-integration", "test-e2e")
@@ -43,6 +43,7 @@ class BuildStepTests(unittest.TestCase):
                         "artifact-overwrite": "true",
                         "artifact-if-no-files-found": "error",
                         "artifact-retention-days": str(index + 1),
+                        "timeout-minutes": str(10 * (index + 1)),
                     }
                     inputs.update({f"{phase}-{kind}-{key}": value for key, value in config.items()})
                     expected.append({**config, "docker-version": "28.0.0", "compose-version": "v2.32.4"})
@@ -83,11 +84,21 @@ class BuildStepTests(unittest.TestCase):
             "post-test-qemu-install": False,
             "post-test-artifact-overwrite": False,
             "post-test-artifact-retention-days": 30,
+            "post-test-timeout-minutes": 90,
         })
         self.assertEqual(configurations[0]["docker-login"], "true")
         self.assertEqual(configurations[0]["qemu-install"], "false")
         self.assertEqual(configurations[0]["artifact-overwrite"], "false")
         self.assertEqual(configurations[0]["artifact-retention-days"], "30")
+        self.assertEqual(configurations[0]["timeout-minutes"], "90")
+
+    def test_every_step_field_is_a_workflow_input(self):
+        workflow = WORKFLOW.read_text()
+        for phase in ("pre", "post"):
+            for kind in KINDS:
+                for field in STEP_FIELDS:
+                    with self.subTest(input=f"{phase}-{kind}-{field}"):
+                        self.assertIn(f"\n      {phase}-{kind}-{field}:\n", workflow)
 
     def test_phase_names_are_static_and_only_names_enter_the_matrix(self):
         workflow = WORKFLOW.read_text()
@@ -97,6 +108,14 @@ class BuildStepTests(unittest.TestCase):
                 self.assertIn(f"    name: {phase.title()} Step\n", job)
                 self.assertIn(f"name: ${{{{ fromJson(needs.prepare.outputs.{phase}-step-names) }}}}", job)
                 self.assertIn(f"toJSON(fromJSON(needs.prepare.outputs.{phase}-step-matrix)[strategy.job-index])", job)
+
+    def test_command_steps_apply_the_configured_timeout(self):
+        workflow = WORKFLOW.read_text()
+        for phase in ("pre", "post"):
+            with self.subTest(phase=phase):
+                job = re.split(r"\n  (?=\S)", workflow.split(f"\n  {phase}-steps:\n", 1)[1], maxsplit=1)[0]
+                command = job.split("\n        id: command\n", 1)[1].split("\n      - ", 1)[0]
+                self.assertIn("        timeout-minutes: ${{ fromJSON(fromJSON(env.BUILD_STEP_CONFIG).timeout-minutes) }}\n", command)
 
     def test_commands_receive_the_built_commit(self):
         workflow = WORKFLOW.read_text()
