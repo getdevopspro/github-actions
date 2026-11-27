@@ -1,3 +1,9 @@
+## [v13.2.0](https://github.com/getdevopspro/github-actions/compare/v13.1.0..v13.2.0) - 2026-11-27
+
+### Features
+
+- _(build)_ Bound each pre/post command with timeout-minutes ([`72ed4a4`](https://github.com/getdevopspro/github-actions/commit/72ed4a4753e1487ed85a49d86677db1ae2fe0ecd))
+
 ## [v13.1.0](https://github.com/getdevopspro/github-actions/compare/v13.0.0..v13.1.0) - 2026-11-25
 
 ### Features

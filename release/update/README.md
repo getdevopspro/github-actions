@@ -6,7 +6,7 @@ Use this action when release notes, artifacts, draft status, prerelease status, 
 
 ```yaml
 steps:
-  - uses: getdevopspro/github-actions/release/update@v13.1.0
+  - uses: getdevopspro/github-actions/release/update@v13.2.0
     with:
       tag: v1.2.3
       body: ${{ steps.changelog.outputs.content }}

@@ -13,7 +13,7 @@ steps:
   - uses: actions/checkout@v6
     with:
       lfs: true
-  - uses: getdevopspro/github-actions/buildx-bake@v13.1.0
+  - uses: getdevopspro/github-actions/buildx-bake@v13.2.0
     with:
       meta-tags: type=sha
       registry-password: ${{ secrets.GITHUB_TOKEN }}
